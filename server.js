@@ -16,7 +16,7 @@ const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'mobile_shop_db',
+    database: process.env.DB_NAME || 'railway',
     port: process.env.DB_PORT || 3306
 });
 
@@ -34,9 +34,13 @@ app.get('/', (req, res) => {
 app.post('/api/products', (req, res) => {
     const { name, category, cost_price, selling_price, stock_quantity } = req.body;
     const query = 'INSERT INTO products (name, category, cost_price, selling_price, stock_quantity) VALUES (?, ?, ?, ?, ?)';
+    
     db.query(query, [name, category, cost_price, selling_price, stock_quantity], (err, result) => {
-        if (err) return res.status(500).send(err);
-        res.send({ message: 'Product added successfully', id: result.insertId });
+        if (err) {
+            console.error('Error inserting product:', err);
+            return res.status(500).json({ success: false, message: err.message });
+        }
+        res.json({ success: true, message: 'Product added successfully!', productId: result.insertId });
     });
 });
 
