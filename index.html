@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SHA MOBILE - Management System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 950px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; margin-bottom: 20px; }
+
+        /* Main Navigation Tabs */
+        .tab-nav { display: flex; border-bottom: 2px solid #007bff; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: #e9ecef; color: #333; font-weight: bold; cursor: pointer; border-radius: 6px 6px 0 0; transition: 0.3s; margin-right: 2px; }
+        .tab-btn:hover { background: #dee2e6; }
+        .tab-btn.active { background: #007bff; color: white; }
+
+        /* Sub Navigation Tabs for Inventory */
+        .sub-tab-nav { display: flex; gap: 8px; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 6px; }
+        .sub-tab-btn { flex: 1; padding: 10px; border: 1px solid #007bff; background: white; color: #007bff; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.2s; }
+        .sub-tab-btn:hover { background: #e7f1ff; }
+        .sub-tab-btn.active { background: #007bff; color: white; }
+
+        .tab-content, .sub-tab-content { display: none; }
+        .tab-content.active, .sub-tab-content.active { display: block; }
+
+        input, select, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; }
+        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #218838; }
+        .blue-btn { background-color: #007bff; }
+        .blue-btn:hover { background-color: #0069d9; }
+        .purple-btn { background-color: #6f42c1; }
+        .purple-btn:hover { background-color: #5a32a3; }
+        
+        .search-box { background: #eef2f5; padding: 12px; border-radius: 6px; margin-bottom: 15px; }
+        .search-box input { border: 2px solid #007bff; font-size: 15px; font-weight: bold; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        
+        .low-stock { background-color: #ffcccc !important; color: #cc0000; font-weight: bold; }
+        .report-card { display: flex; gap: 20px; margin-bottom: 20px; }
+        .card { flex: 1; background: #e9ecef; padding: 20px; border-radius: 8px; text-align: center; border-left: 5px solid #007bff; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printableReceipt, #printableReceipt * { visibility: visible; }
+            #printableReceipt { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📱 SHA MOBILE</h1>
+
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-product', this)">Add Product</button>
+        <button class="tab-btn" onclick="switchTab('tab-imei', this)">Add IMEI</button>
+        <button class="tab-btn" onclick="switchTab('tab-pos', this)">POS Billing</button>
+        <button class="tab-btn" onclick="switchTab('tab-used', this)">Used Phones</button>
+        <button class="tab-btn" onclick="switchTab('tab-inventory', this)">Stock Inventory</button>
+        <button class="tab-btn" onclick="switchTab('tab-reports', this)">Reports & History</button>
+    </div>
+
+    <!-- Tab 1: Add Product -->
+    <div id="tab-product" class="tab-content active">
+        <h2>1. Add New Product</h2>
+        <input type="text" id="pName" placeholder="Product Name (eg: iPhone 15 / Fast Charger / JBL Flip 6)">
+        <select id="pCategory">
+            <option value="Phone">Phone (Brand New)</option>
+            <option value="Accessory">Accessory</option>
+            <option value="JBL">JBL</option>
+        </select>
+        <input type="number" id="pCost" placeholder="Cost Price">
+        <input type="number" id="pSelling" placeholder="Selling Price">
+        <input type="number" id="pQty" placeholder="Initial Stock Quantity (Accessories / JBL)">
+        <button onclick="addProduct()">Add Product</button>
+    </div>
+
+    <!-- Tab 2: Add IMEI -->
+    <div id="tab-imei" class="tab-content">
+        <h2>2. Add IMEI for Phones</h2>
+        <input type="number" id="phoneProductId" placeholder="Product ID">
+        <input type="text" id="imeiNo" placeholder="IMEI Number">
+        <button class="blue-btn" onclick="addIMEI()">Add IMEI to Stock</button>
+    </div>
+
+    <!-- Tab 3: POS Billing -->
+    <div id="tab-pos" class="tab-content">
+        <h2>3. POS Billing (New Products)</h2>
+        <input type="text" id="cName" placeholder="Customer Name">
+        <input type="text" id="cPhone" placeholder="Customer Phone Number">
+        <input type="number" id="saleProductId" placeholder="Product ID">
+        <input type="text" id="saleImei" placeholder="IMEI Number (Phones)">
+        <input type="number" id="salePrice" placeholder="Selling Price">
+        <input type="number" id="saleWarranty" placeholder="Warranty (Months)">
+        <button class="purple-btn" onclick="makeSale()">Complete Sale & Print Receipt</button>
+    </div>
+
+    <!-- Tab 4: Used Phones -->
+    <div id="tab-used" class="tab-content">
+        <h2>4. Used Phones Management</h2>
+        <h3>A. Add Used Phone</h3>
+        <input type="text" id="uModel" placeholder="Phone Model">
+        <input type="text" id="uImei" placeholder="IMEI Number">
+        <input type="text" id="uSeller" placeholder="Seller Name">
+        <input type="text" id="uSellerPhone" placeholder="Seller Phone">
+        <input type="number" id="uBuyPrice" placeholder="Bought Price">
+        <input type="number" id="uSellPrice" placeholder="Expected Selling Price">
+        <input type="text" id="uCondition" placeholder="Condition">
+        <button onclick="addUsedPhone()">Add Used Phone</button>
+
+        <br><br>
+        <h3>B. Sell Used Phone & Print Bill</h3>
+        <input type="number" id="sellUsedId" placeholder="Used Phone ID">
+        <input type="text" id="suCustomer" placeholder="Customer Name">
+        <input type="text" id="suPhone" placeholder="Customer Phone">
+        <input type="number" id="suPrice" placeholder="Final Selling Price">
+        <input type="number" id="suWarranty" placeholder="Warranty (Months)">
+        <button class="purple-btn" onclick="sellUsedPhone()">Sell Used Phone</button>
+    </div>
+
+    <!-- Tab 5: Stock Inventory -->
+    <div id="tab-inventory" class="tab-content">
+        <h2>5. Stock Inventory</h2>
+        
+        <div class="search-box">
+            <input type="text" id="invSearchInput" onkeyup="searchInventoryTable()" placeholder="🔍 Search Item ID, Name, Category, or IMEI Number...">
+        </div>
+
+        <div class="sub-tab-nav">
+            <button class="sub-tab-btn active" onclick="switchSubTab('sub-brand-new', this)">Brand New Phones</button>
+            <button class="sub-tab-btn" onclick="switchSubTab('sub-used-phones', this)">Used Phones</button>
+            <button class="sub-tab-btn" onclick="switchSubTab('sub-accessories', this)">Accessories</button>
+            <button class="sub-tab-btn" onclick="switchSubTab('sub-jbl', this)">JBL</button>
+        </div>
+
+        <div id="sub-brand-new" class="sub-tab-content active">
+            <h3>Brand New Phone Stock</h3>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Stock Qty</th><th>Selling Price</th><th>Available IMEIs</th></tr>
+                </thead>
+                <tbody id="brandNewTable"></tbody>
+            </table>
+        </div>
+
+        <div id="sub-used-phones" class="sub-tab-content">
+            <h3>Used Phone Stock</h3>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Model</th><th>IMEI</th><th>Condition</th><th>Buy Price</th><th>Sell Price</th></tr>
+                </thead>
+                <tbody id="usedPhonesStockTable"></tbody>
+            </table>
+        </div>
+
+        <div id="sub-accessories" class="sub-tab-content">
+            <h3>Accessories Stock</h3>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Stock Qty</th><th>Selling Price</th></tr>
+                </thead>
+                <tbody id="accessoriesTable"></tbody>
+            </table>
+        </div>
+
+        <div id="sub-jbl" class="sub-tab-content">
+            <h3>JBL Products Stock</h3>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Stock Qty</th><th>Selling Price</th></tr>
+                </thead>
+                <tbody id="jblTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 6: Reports & Sales History -->
+    <div id="tab-reports" class="tab-content">
+        <h2>6. Sales Reports & History</h2>
+        
+        <div class="report-card">
+            <div class="card">
+                <h3>📅 Today's Sales</h3>
+                <h2 id="dSales">0 Sales</h2>
+                <h3 id="dRev">Rs. 0.00</h3>
+            </div>
+            <div class="card" style="border-left-color: #28a745;">
+                <h3>🗓️ This Month's Sales</h3>
+                <h2 id="mSales">0 Sales</h2>
+                <h3 id="mRev">Rs. 0.00</h3>
+            </div>
+        </div>
+
+        <button class="blue-btn" onclick="loadReports(); loadSalesHistory();">Refresh Reports</button>
+        
+        <h3>Recent Transactions</h3>
+        <table>
+            <thead>
+                <tr><th>Invoice ID</th><th>Customer</th><th>Amount</th><th>Date</th></tr>
+            </thead>
+            <tbody id="salesTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Printable Receipt Template -->
+<div id="printableReceipt" style="display:none; padding: 20px; font-family: monospace;">
+    <h2 style="text-align:center;">SHA MOBILE</h2>
+    <p style="text-align:center; font-size: 12px; margin-top: -10px;">Official Sales Receipt</p>
+    <p>----------------------------------------</p>
+    <p><strong>Invoice ID:</strong> <span id="rInvoice"></span></p>
+    <p><strong>Customer:</strong> <span id="rCustomer"></span> (<span id="rPhone"></span>)</p>
+    <p>----------------------------------------</p>
+    <p><strong>Item / Product:</strong> <span id="rProduct"></span></p>
+    <p><strong>IMEI:</strong> <span id="rImei"></span></p>
+    <p><strong>Warranty:</strong> <span id="rWarranty"></span> Months</p>
+    <p>----------------------------------------</p>
+    <h3>Total Amount: Rs. <span id="rTotal"></span></h3>
+    <p style="text-align:center;">Thank You For Shopping With SHA MOBILE!</p>
+</div>
+
+<script>
+function switchTab(tabId, element) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    element.classList.add('active');
+
+    if (tabId === 'tab-inventory') loadInventory();
+    if (tabId === 'tab-reports') { loadReports(); loadSalesHistory(); }
+}
+
+function switchSubTab(subTabId, element) {
+    document.querySelectorAll('.sub-tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(subTabId).classList.add('active');
+    element.classList.add('active');
+}
+
+async function addProduct() {
+    const data = {
+        name: document.getElementById('pName').value,
+        category: document.getElementById('pCategory').value,
+        cost_price: document.getElementById('pCost').value,
+        selling_price: document.getElementById('pSelling').value,
+        stock_quantity: document.getElementById('pQty').value
+    };
+    const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const result = await res.json();
+    alert(result.message + (result.product_id ? ' (ID: ' + result.product_id + ')' : ''));
+}
+
+async function addIMEI() {
+    const data = { product_id: document.getElementById('phoneProductId').value, imei_number: document.getElementById('imeiNo').value };
+    const res = await fetch('/api/phones/add-imei', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const result = await res.json();
+    alert(result.message || result.error);
+}
+
+async function makeSale() {
+    const cName = document.getElementById('cName').value;
+    const cPhone = document.getElementById('cPhone').value;
+    const pId = document.getElementById('saleProductId').value;
+    const imei = document.getElementById('saleImei').value;
+    const price = document.getElementById('salePrice').value;
+    const warranty = document.getElementById('saleWarranty').value;
+
+    const data = {
+        customer_name: cName, customer_phone: cPhone, total_amount: price,
+        items: [{ product_id: pId, imei_number: imei, quantity: 1, selling_price: price, warranty_months: warranty }]
+    };
+
+    const res = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const result = await res.json();
+
+    if (result.invoice_id) {
+        printReceipt(result.invoice_id, cName, cPhone, 'Product ID: ' + pId, imei || 'N/A', warranty || '0', price);
+    }
+}
+
+async function addUsedPhone() {
+    const data = {
+        phone_model: document.getElementById('uModel').value,
+        imei_number: document.getElementById('uImei').value,
+        seller_name: document.getElementById('uSeller').value,
+        seller_phone: document.getElementById('uSellerPhone').value,
+        buy_price: document.getElementById('uBuyPrice').value,
+        selling_price: document.getElementById('uSellPrice').value,
+        condition: document.getElementById('uCondition').value
+    };
+    const res = await fetch('/api/used-phones', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const result = await res.json();
+    alert(result.message || result.error);
+}
+
+async function sellUsedPhone() {
+    const data = {
+        used_phone_id: document.getElementById('sellUsedId').value,
+        customer_name: document.getElementById('suCustomer').value,
+        customer_phone: document.getElementById('suPhone').value,
+        selling_price: document.getElementById('suPrice').value,
+        warranty_months: document.getElementById('suWarranty').value
+    };
+
+    const res = await fetch('/api/sell-used-phone', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const result = await res.json();
+
+    if (result.invoice_id) {
+        alert('Used Phone Sold Successfully!');
+        printReceipt(result.invoice_id, data.customer_name, data.customer_phone, result.phone_model + ' (Used)', result.imei_number, data.warranty_months, data.selling_price);
+    } else {
+        alert(result.error);
+    }
+}
+
+async function loadInventory() {
+    const res = await fetch('/api/inventory');
+    const data = await res.json();
+    
+    let brandNewRows = '', accessoryRows = '', jblRows = '';
+
+    data.forEach(item => {
+        const isLow = item.stock_quantity <= 1;
+        const rowHTML = `<tr class="${isLow ? 'low-stock' : ''}">
+            <td>${item.product_id}</td>
+            <td>${item.name}</td>
+            <td>${item.stock_quantity} ${isLow ? '⚠️ LOW' : ''}</td>
+            <td>Rs. ${item.selling_price}</td>
+            ${item.category === 'Phone' ? `<td>${item.available_imeis || 'None'}</td>` : ''}
+        </tr>`;
+
+        if (item.category === 'Phone') brandNewRows += rowHTML;
+        else if (item.category === 'Accessory') accessoryRows += rowHTML;
+        else if (item.category === 'JBL') jblRows += rowHTML;
+    });
+
+    document.getElementById('brandNewTable').innerHTML = brandNewRows;
+    document.getElementById('accessoriesTable').innerHTML = accessoryRows;
+    document.getElementById('jblTable').innerHTML = jblRows;
+
+    const resUsed = await fetch('/api/used-phones');
+    const dataUsed = await resUsed.json();
+    let usedRows = '';
+    dataUsed.forEach(item => {
+        usedRows += `<tr>
+            <td>${item.used_phone_id}</td>
+            <td>${item.phone_model}</td>
+            <td>${item.imei_number}</td>
+            <td>${item.condition}</td>
+            <td>Rs. ${item.buy_price}</td>
+            <td>Rs. ${item.selling_price}</td>
+        </tr>`;
+    });
+    document.getElementById('usedPhonesStockTable').innerHTML = usedRows;
+}
+
+function searchInventoryTable() {
+    const input = document.getElementById('invSearchInput').value.toUpperCase();
+    const activeSubTab = document.querySelector('.sub-tab-content.active');
+    if (!activeSubTab) return;
+
+    const rows = activeSubTab.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const text = row.textContent || row.innerText;
+        if (text.toUpperCase().indexOf(input) > -1) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+async function loadReports() {
+    const res = await fetch('/api/reports/sales');
+    const data = await res.json();
+    
+    document.getElementById('dSales').innerText = data.daily.total_sales + ' Sales';
+    document.getElementById('dRev').innerText = 'Rs. ' + (parseFloat(data.daily.total_revenue) || 0).toFixed(2);
+    
+    document.getElementById('mSales').innerText = data.monthly.total_sales + ' Sales';
+    document.getElementById('mRev').innerText = 'Rs. ' + (parseFloat(data.monthly.total_revenue) || 0).toFixed(2);
+}
+
+async function loadSalesHistory() {
+    const res = await fetch('/api/sales-history');
+    const data = await res.json();
+    let rows = '';
+    data.forEach(sale => {
+        rows += `<tr>
+            <td>${sale.invoice_id}</td>
+            <td>${sale.customer_name} (${sale.customer_phone})</td>
+            <td>Rs. ${sale.total_amount}</td>
+            <td>${new Date(sale.created_at).toLocaleString()}</td>
+        </tr>`;
+    });
+    document.getElementById('salesTable').innerHTML = rows;
+}
+
+function printReceipt(invId, cust, phone, prod, imei, war, total) {
+    document.getElementById('rInvoice').innerText = invId;
+    document.getElementById('rCustomer').innerText = cust;
+    document.getElementById('rPhone').innerText = phone;
+    document.getElementById('rProduct').innerText = prod;
+    document.getElementById('rImei').innerText = imei;
+    document.getElementById('rWarranty').innerText = war;
+    document.getElementById('rTotal').innerText = total;
+
+    document.getElementById('printableReceipt').style.display = 'block';
+    window.print();
+    document.getElementById('printableReceipt').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
