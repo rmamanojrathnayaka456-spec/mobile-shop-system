@@ -1,10 +1,11 @@
 {
   "name": "mobile-shop-system",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Mobile Shop Management POS System",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+     "start": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -13,7 +14,7 @@
   "dependencies": {
     "body-parser": "^2.3.0",
     "cors": "^2.8.6",
-    "express": "^5.3.0",
-    "mysql2": "^3.24.6"
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0"
   }
 }
