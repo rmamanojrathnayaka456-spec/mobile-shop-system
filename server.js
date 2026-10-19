@@ -11,18 +11,26 @@ app.use(bodyParser.json());
 // HTML/CSS Static Files Serve කිරීම
 app.use(express.static(__dirname));
 
-// Railway Environment Variables මගින් Database එකට සම්බන්ධ වීම
-const db = mysql.createConnection({
+// MySQL Connection Pool එකක් සාදාගැනීම (Connection drop වීම වැළැක්වීමට)
+const db = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'railway',
-    port: process.env.DB_PORT || 3306
+    port: process.env.DB_PORT || 3306,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-db.connect(err => {
-    if (err) console.error('Database connection failed:', err);
-    else console.log('Connected to MySQL Database!');
+// Database connection එක පරීක්ෂා කිරීම
+db.getConnection((err, connection) => {
+    if (err) {
+        console.error('Database connection failed:', err);
+    } else {
+        console.log('Connected to MySQL Database Pool!');
+        connection.release();
+    }
 });
 
 // Root URL එකට ගිය විට index.html open වීම
