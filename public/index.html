@@ -22,6 +22,8 @@
         table, th, td { border: 1px solid #ddd; }
         th, td { padding: 10px; text-align: left; }
         th { background-color: #007bff; color: white; }
+        .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .cart-section { background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -32,9 +34,9 @@
     <!-- Navigation Tabs -->
     <ul class="nav-tabs">
         <li><button class="active" onclick="switchTab('addProductTab', this)">1. Add Product</button></li>
-        <li><button onclick="switchTab('posTab', this)">2. Billing / POS</button></li>
+        <li><button onclick="switchTab('posTab', this); loadPosProducts();">2. Billing / POS</button></li>
         <li><button onclick="switchTab('phoneStockTab', this); loadPhoneStock();">3. Phone Stock (IMEI)</button></li>
-        <li><button onclick="switchTab('salesHistoryTab', this)">4. Sales History</button></li>
+        <li><button onclick="switchTab('salesHistoryTab', this); loadSalesHistory();">4. Sales History</button></li>
         <li><button onclick="switchTab('stockTab', this); loadInventory();">5. Stock Inventory</button></li>
     </ul>
 
@@ -83,8 +85,53 @@
 
     <!-- 2. Billing / POS Tab -->
     <div id="posTab" class="tab-content">
-        <h3>2. Billing & POS Section</h3>
-        <p>POS & Checkout Feature Coming Soon / In Progress...</p>
+        <h3>2. Billing & Checkout</h3>
+        <div class="pos-grid">
+            <div>
+                <div class="form-group">
+                    <label for="pos_select_product">Select Product:</label>
+                    <select id="pos_select_product" onchange="handleProductSelect()">
+                        <option value="">-- Select Product --</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="imei_field_wrapper" style="display: none;">
+                    <label for="pos_select_imei">Select Available IMEI:</label>
+                    <select id="pos_select_imei">
+                        <option value="">-- Select IMEI --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="pos_quantity">Quantity:</label>
+                    <input type="number" id="pos_quantity" value="1" min="1">
+                </div>
+
+                <button class="btn-submit" onclick="addToCart()">Add to Bill</button>
+            </div>
+
+            <div class="cart-section">
+                <h4>Bill Details</h4>
+                <div class="form-group">
+                    <label for="customer_name">Customer Name:</label>
+                    <input type="text" id="customer_name" placeholder="Enter Customer Name">
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartTableBody"></tbody>
+                </table>
+
+                <h3 style="margin-top: 15px;">Total: Rs. <span id="cartTotal">0.00</span></h3>
+                <button class="btn-submit" style="background-color: #007bff;" onclick="completeSale()">Checkout & Complete Sale</button>
+            </div>
+        </div>
     </div>
 
     <!-- 3. Phone Stock (IMEI) Tab -->
@@ -99,16 +146,26 @@
                     <th>Status</th>
                 </tr>
             </thead>
-            <tbody id="phoneStockTableBody">
-                <!-- Loaded dynamically -->
-            </tbody>
+            <tbody id="phoneStockTableBody"></tbody>
         </table>
     </div>
 
     <!-- 4. Sales History Tab -->
     <div id="salesHistoryTab" class="tab-content">
         <h3>4. Sales History</h3>
-        <p>Sales Reports and History Coming Soon...</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sale ID</th>
+                    <th>Customer Name</th>
+                    <th>Product Name</th>
+                    <th>Qty</th>
+                    <th>Total Price</th>
+                    <th>IMEI Sold</th>
+                </tr>
+            </thead>
+            <tbody id="salesHistoryTableBody"></tbody>
+        </table>
     </div>
 
     <!-- 5. Stock Inventory Tab -->
@@ -125,14 +182,15 @@
                     <th>Available IMEI</th>
                 </tr>
             </thead>
-            <tbody id="inventoryTableBody">
-                <!-- Loaded dynamically -->
-            </tbody>
+            <tbody id="inventoryTableBody"></tbody>
         </table>
     </div>
 </div>
 
 <script>
+    let posProductsList = [];
+    let cart = [];
+
     function switchTab(tabId, element) {
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.nav-tabs button').forEach(btn => btn.classList.remove('active'));
@@ -172,6 +230,110 @@
             alert('Failed to connect to the server!');
         }
     });
+
+    async function loadPosProducts() {
+        try {
+            const response = await fetch('/api/inventory');
+            posProductsList = await response.json();
+
+            const select = document.getElementById('pos_select_product');
+            select.innerHTML = '<option value="">-- Select Product --</option>';
+
+            posProductsList.forEach(item => {
+                if(item.stock_quantity > 0) {
+                    const opt = document.createElement('option');
+                    opt.value = item.product_id;
+                    opt.textContent = `${item.name} - Rs. ${item.selling_price} (Stock: ${item.stock_quantity})`;
+                    select.appendChild(opt);
+                }
+            });
+        } catch(err) {
+            console.error('Error loading POS products:', err);
+        }
+    }
+
+    function handleProductSelect() {
+        const productId = document.getElementById('pos_select_product').value;
+        const imeiWrapper = document.getElementById('imei_field_wrapper');
+        const imeiSelect = document.getElementById('pos_select_imei');
+
+        const selectedProduct = posProductsList.find(p => p.product_id == productId);
+
+        if (selectedProduct && selectedProduct.imei_number) {
+            imeiWrapper.style.display = 'block';
+            imeiSelect.innerHTML = `<option value="${selectedProduct.imei_number}">${selectedProduct.imei_number}</option>`;
+        } else {
+            imeiWrapper.style.display = 'none';
+            imeiSelect.innerHTML = '<option value="">-- Select IMEI --</option>';
+        }
+    }
+
+    function addToCart() {
+        const productId = document.getElementById('pos_select_product').value;
+        const qty = parseInt(document.getElementById('pos_quantity').value) || 1;
+        const imei = document.getElementById('pos_select_imei').value;
+
+        if (!productId) return alert('Please select a product!');
+
+        const product = posProductsList.find(p => p.product_id == productId);
+
+        cart.push({
+            product_id: product.product_id,
+            name: product.name,
+            price: product.selling_price,
+            quantity: qty,
+            imei_number: imei || null,
+            subtotal: product.selling_price * qty
+        });
+
+        renderCart();
+    }
+
+    function renderCart() {
+        const tbody = document.getElementById('cartTableBody');
+        tbody.innerHTML = '';
+        let total = 0;
+
+        cart.forEach((item) => {
+            total += item.subtotal;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.name} ${item.imei_number ? '('<br>+item.imei_number+')' : ''}</td>
+                <td>${item.quantity}</td>
+                <td>Rs. ${item.subtotal}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('cartTotal').textContent = total.toFixed(2);
+    }
+
+    async function completeSale() {
+        if (cart.length === 0) return alert('Bill is empty!');
+        const customerName = document.getElementById('customer_name').value || 'Cash Customer';
+
+        try {
+            const response = await fetch('/api/sales', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customer_name: customerName, items: cart })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('Sale completed successfully!');
+                cart = [];
+                renderCart();
+                document.getElementById('customer_name').value = '';
+                loadPosProducts();
+            } else {
+                alert('Checkout failed: ' + data.error);
+            }
+        } catch (err) {
+            alert('Server connection error during checkout!');
+        }
+    }
 
     async function loadInventory() {
         try {
@@ -218,6 +380,31 @@
             });
         } catch (err) {
             console.error('Error loading phone stock:', err);
+        }
+    }
+
+    async function loadSalesHistory() {
+        try {
+            const response = await fetch('/api/sales');
+            const data = await response.json();
+
+            const tbody = document.getElementById('salesHistoryTableBody');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.sale_id}</td>
+                    <td>${item.customer_name}</td>
+                    <td>${item.product_name}</td>
+                    <td>${item.quantity}</td>
+                    <td>Rs. ${item.total_price}</td>
+                    <td>${item.imei_number || 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            console.error('Error loading sales history:', err);
         }
     }
 </script>

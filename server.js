@@ -22,19 +22,25 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Test Database Connection
-db.getConnection((err, connection) => {
-    if (err) {
-        console.error('❌ Database connection error:', err.message);
-    } else {
-        console.log('✅ Connected to Railway MySQL Database successfully!');
-        connection.release();
-    }
+// Auto Create Sales Table if not exists
+db.query(`
+    CREATE TABLE IF NOT EXISTS sales (
+        sale_id INT AUTO_INCREMENT PRIMARY KEY,
+        customer_name VARCHAR(100),
+        product_id INT,
+        quantity INT,
+        total_price DECIMAL(10,2),
+        imei_number VARCHAR(50),
+        sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`, (err) => {
+    if (err) console.error("❌ Error creating sales table:", err.message);
+    else console.log("✅ Sales table verified.");
 });
 
 // ------------------- API ENDPOINTS -------------------
 
-// 1. Add Product and IMEI (Atomic Transaction)
+// 1. Add Product and IMEI
 app.post('/api/products', (req, res) => {
     const { name, category, cost_price, selling_price, stock_quantity, imei_number } = req.body;
 
@@ -47,7 +53,6 @@ app.post('/api/products', (req, res) => {
                 return res.status(500).json({ error: "Transaction initiation failed: " + err.message });
             }
 
-            // Step A: Insert into products table
             const insertProductQuery = `
                 INSERT INTO products (name, category, cost_price, selling_price, stock_quantity)
                 VALUES (?, ?, ?, ?, ?)
@@ -63,7 +68,6 @@ app.post('/api/products', (req, res) => {
 
                 const newProductId = result.insertId;
 
-                // Step B: Insert IMEI into phone_stock table if IMEI is provided
                 if (imei_number && imei_number.trim() !== '') {
                     const insertIMEIQuery = `
                         INSERT INTO phone_stock (product_id, imei_number, status)
@@ -90,7 +94,6 @@ app.post('/api/products', (req, res) => {
                         });
                     });
                 } else {
-                    // No IMEI provided (For Accessories/JBL)
                     connection.commit((err) => {
                         if (err) {
                             return connection.rollback(() => {
@@ -107,7 +110,60 @@ app.post('/api/products', (req, res) => {
     });
 });
 
-// 2. Fetch Stock Inventory
+// 2. Complete Sale / Checkout
+app.post('/api/sales', (req, res) => {
+    const { customer_name, items } = req.body;
+
+    db.getConnection((err, connection) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+
+        connection.beginTransaction((err) => {
+            if (err) {
+                connection.release();
+                return res.status(500).json({ error: "Transaction failed" });
+            }
+
+            let completed = 0;
+            items.forEach(item => {
+                const insertSale = `
+                    INSERT INTO sales (customer_name, product_id, quantity, total_price, imei_number)
+                    VALUES (?, ?, ?, ?, ?)
+                `;
+
+                connection.query(insertSale, [customer_name, item.product_id, item.quantity, item.subtotal, item.imei_number], (err) => {
+                    if (err) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(500).json({ error: "Sale record failed" });
+                        });
+                    }
+
+                    // Deduct stock quantity
+                    const updateStock = `UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?`;
+                    connection.query(updateStock, [item.quantity, item.product_id], (err) => {
+                        if (err) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                res.status(500).json({ error: "Stock update failed" });
+                            });
+                        }
+
+                        completed++;
+                        if (completed === items.length) {
+                            connection.commit((err) => {
+                                connection.release();
+                                if (err) return res.status(500).json({ error: "Commit failed" });
+                                res.json({ message: "Sale completed!" });
+                            });
+                        }
+                    });
+                });
+            });
+        });
+    });
+});
+
+// 3. Fetch Inventory
 app.get('/api/inventory', (req, res) => {
     const query = `
         SELECT p.product_id, p.name, p.category, p.stock_quantity, p.selling_price, ps.imei_number
@@ -117,14 +173,27 @@ app.get('/api/inventory', (req, res) => {
     `;
 
     db.query(query, (err, results) => {
-        if (err) {
-            return res.status(500).json({ error: "Failed to fetch inventory: " + err.message });
-        }
+        if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
 });
 
-// Express 5 compatible catch-all route for serving frontend
+// 4. Fetch Sales History
+app.get('/api/sales', (req, res) => {
+    const query = `
+        SELECT s.sale_id, s.customer_name, p.name AS product_name, s.quantity, s.total_price, s.imei_number
+        FROM sales s
+        JOIN products p ON s.product_id = p.product_id
+        ORDER BY s.sale_id DESC
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+
+// Express 5 RegExp catch-all route
 app.get(/.*$/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
