@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create/Update Sales Table Structure
+// Auto Create/Update Sales Table Schema
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,11 +36,24 @@ db.query(`
         sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, (err) => {
-    if (err) console.error("❌ Error creating sales table:", err.message);
-    else {
-        console.log("✅ Sales table verified.");
-        db.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(20)`, () => {});
-        db.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10,2) DEFAULT 0.00`, () => {});
+    if (err) {
+        console.error("❌ Error creating sales table:", err.message);
+    } else {
+        console.log("✅ Sales table created/verified.");
+        
+        // Ensure missing columns are added if sales table already existed
+        const alterQueries = [
+            `ALTER TABLE sales ADD COLUMN IF NOT EXISTS product_id INT`,
+            `ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(20)`,
+            `ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10,2) DEFAULT 0.00`,
+            `ALTER TABLE sales ADD COLUMN IF NOT EXISTS imei_number VARCHAR(50)`
+        ];
+
+        alterQueries.forEach(q => {
+            db.query(q, (err) => {
+                if (err) console.log("Column check/addition note:", err.message);
+            });
+        });
     }
 });
 
@@ -129,7 +142,6 @@ app.delete('/api/products/:id', (req, res) => {
                 return res.status(500).json({ error: "Transaction failed" });
             }
 
-            // Step 1: Delete associated IMEI entries from phone_stock
             connection.query(`DELETE FROM phone_stock WHERE product_id = ?`, [productId], (err) => {
                 if (err) {
                     return connection.rollback(() => {
@@ -138,7 +150,6 @@ app.delete('/api/products/:id', (req, res) => {
                     });
                 }
 
-                // Step 2: Delete product from products table
                 connection.query(`DELETE FROM products WHERE product_id = ?`, [productId], (err) => {
                     if (err) {
                         return connection.rollback(() => {
@@ -230,7 +241,7 @@ app.get('/api/sales', (req, res) => {
     const query = `
         SELECT s.sale_id, s.customer_name, s.customer_phone, p.name AS product_name, s.quantity, s.discount_amount, s.total_price, s.imei_number
         FROM sales s
-        JOIN products p ON s.product_id = p.product_id
+        LEFT JOIN products p ON s.sale_id IS NOT NULL AND s.product_id = p.product_id
         ORDER BY s.sale_id DESC
     `;
 
