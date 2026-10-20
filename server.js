@@ -125,7 +125,7 @@ app.get('/api/inventory', (req, res) => {
 });
 
 // Express 5 compatible catch-all route for serving frontend
-app.get('(.*)', (req, res) => {
+app.get(/.*$/, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
