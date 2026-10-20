@@ -39,7 +39,6 @@ db.query(`
     if (err) console.error("❌ Error creating sales table:", err.message);
     else {
         console.log("✅ Sales table verified.");
-        // Alter table if columns are missing from older versions
         db.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(20)`, () => {});
         db.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10,2) DEFAULT 0.00`, () => {});
     }
@@ -117,7 +116,49 @@ app.post('/api/products', (req, res) => {
     });
 });
 
-// 2. Complete Sale / Checkout
+// 2. Delete Product from Stock Inventory
+app.delete('/api/products/:id', (req, res) => {
+    const productId = req.params.id;
+
+    db.getConnection((err, connection) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+
+        connection.beginTransaction((err) => {
+            if (err) {
+                connection.release();
+                return res.status(500).json({ error: "Transaction failed" });
+            }
+
+            // Step 1: Delete associated IMEI entries from phone_stock
+            connection.query(`DELETE FROM phone_stock WHERE product_id = ?`, [productId], (err) => {
+                if (err) {
+                    return connection.rollback(() => {
+                        connection.release();
+                        res.status(500).json({ error: "Failed to delete phone stock: " + err.message });
+                    });
+                }
+
+                // Step 2: Delete product from products table
+                connection.query(`DELETE FROM products WHERE product_id = ?`, [productId], (err) => {
+                    if (err) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(500).json({ error: "Failed to delete product: " + err.message });
+                        });
+                    }
+
+                    connection.commit((err) => {
+                        connection.release();
+                        if (err) return res.status(500).json({ error: "Commit failed" });
+                        res.json({ message: `Product ID ${productId} deleted successfully!` });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// 3. Complete Sale / Checkout
 app.post('/api/sales', (req, res) => {
     const { customer_name, customer_phone, items } = req.body;
 
@@ -145,7 +186,6 @@ app.post('/api/sales', (req, res) => {
                         });
                     }
 
-                    // Deduct stock quantity
                     const updateStock = `UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?`;
                     connection.query(updateStock, [item.quantity, item.product_id], (err) => {
                         if (err) {
@@ -170,7 +210,7 @@ app.post('/api/sales', (req, res) => {
     });
 });
 
-// 3. Fetch Inventory
+// 4. Fetch Inventory
 app.get('/api/inventory', (req, res) => {
     const query = `
         SELECT p.product_id, p.name, p.category, p.stock_quantity, p.selling_price, ps.imei_number
@@ -185,7 +225,7 @@ app.get('/api/inventory', (req, res) => {
     });
 });
 
-// 4. Fetch Sales History
+// 5. Fetch Sales History
 app.get('/api/sales', (req, res) => {
     const query = `
         SELECT s.sale_id, s.customer_name, s.customer_phone, p.name AS product_name, s.quantity, s.discount_amount, s.total_price, s.imei_number
