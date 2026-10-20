@@ -6,10 +6,10 @@
     <title>SHA MOBILE - POS System</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
-        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .nav-tabs { display: flex; list-style: none; padding: 0; border-bottom: 2px solid #ccc; margin-bottom: 20px; }
-        .nav-tabs li { margin-right: 10px; }
-        .nav-tabs button { padding: 10px 20px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 5px 5px 0 0; font-weight: bold; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .nav-tabs { display: flex; list-style: none; padding: 0; border-bottom: 2px solid #ccc; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav-tabs li { margin-right: 5px; margin-bottom: 5px; }
+        .nav-tabs button { padding: 10px 15px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 5px 5px 0 0; font-weight: bold; }
         .nav-tabs button.active { background: #007bff; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -31,11 +31,14 @@
 
     <!-- Navigation Tabs -->
     <ul class="nav-tabs">
-        <li><button class="active" onclick="switchTab('addProductTab', this)">Add Product</button></li>
-        <li><button onclick="switchTab('stockTab', this); loadInventory();">Stock Inventory</button></li>
+        <li><button class="active" onclick="switchTab('addProductTab', this)">1. Add Product</button></li>
+        <li><button onclick="switchTab('posTab', this)">2. Billing / POS</button></li>
+        <li><button onclick="switchTab('phoneStockTab', this); loadPhoneStock();">3. Phone Stock (IMEI)</button></li>
+        <li><button onclick="switchTab('salesHistoryTab', this)">4. Sales History</button></li>
+        <li><button onclick="switchTab('stockTab', this); loadInventory();">5. Stock Inventory</button></li>
     </ul>
 
-    <!-- Add Product Tab -->
+    <!-- 1. Add Product Tab -->
     <div id="addProductTab" class="tab-content active">
         <h3>1. Add New Product</h3>
         <form id="addProductForm">
@@ -69,7 +72,6 @@
                 <input type="number" id="stock_quantity" value="1" required>
             </div>
 
-            <!-- Integrated IMEI Input Field -->
             <div class="form-group">
                 <label for="product_imei">IMEI Number (Phones සඳහා පමණයි):</label>
                 <input type="text" id="product_imei" placeholder="Enter 15-digit IMEI Number (Optional)">
@@ -79,7 +81,37 @@
         </form>
     </div>
 
-    <!-- Stock Inventory Tab -->
+    <!-- 2. Billing / POS Tab -->
+    <div id="posTab" class="tab-content">
+        <h3>2. Billing & POS Section</h3>
+        <p>POS & Checkout Feature Coming Soon / In Progress...</p>
+    </div>
+
+    <!-- 3. Phone Stock (IMEI) Tab -->
+    <div id="phoneStockTab" class="tab-content">
+        <h3>3. Phone Stock (IMEI Numbers)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>IMEI Number</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="phoneStockTableBody">
+                <!-- Loaded dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 4. Sales History Tab -->
+    <div id="salesHistoryTab" class="tab-content">
+        <h3>4. Sales History</h3>
+        <p>Sales Reports and History Coming Soon...</p>
+    </div>
+
+    <!-- 5. Stock Inventory Tab -->
     <div id="stockTab" class="tab-content">
         <h3>5. Stock Inventory</h3>
         <table>
@@ -94,7 +126,7 @@
                 </tr>
             </thead>
             <tbody id="inventoryTableBody">
-                <!-- Data dynamically inserted here -->
+                <!-- Loaded dynamically -->
             </tbody>
         </table>
     </div>
@@ -163,6 +195,29 @@
             });
         } catch (err) {
             console.error('Error loading inventory:', err);
+        }
+    }
+
+    async function loadPhoneStock() {
+        try {
+            const response = await fetch('/api/inventory');
+            const data = await response.json();
+
+            const tbody = document.getElementById('phoneStockTableBody');
+            tbody.innerHTML = '';
+
+            data.filter(item => item.imei_number).forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.product_id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.imei_number}</td>
+                    <td><span style="color:green; font-weight:bold;">Available</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            console.error('Error loading phone stock:', err);
         }
     }
 </script>
