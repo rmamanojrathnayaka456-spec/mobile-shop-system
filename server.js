@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto-create/verify Database Schema matching MySQL Workbench
+// Auto-create & Auto-alter Tables to sync missing columns automatically
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -76,7 +76,27 @@ db.query(`
         FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE SET NULL
     )
 `, (err) => {
-    if (err) console.error("❌ Error creating sale_items table:", err.message);
+    if (err) {
+        console.error("❌ Error creating sale_items table:", err.message);
+    } else {
+        console.log("✅ Verifying sale_items columns...");
+        // Auto-patch missing columns on existing database table
+        const patchQueries = [
+            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS imei_number VARCHAR(50) DEFAULT 'N/A'`,
+            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00`,
+            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10,2) DEFAULT 0.00`,
+            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00`,
+            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS warranty_months INT DEFAULT 0`
+        ];
+
+        patchQueries.forEach(q => {
+            db.query(q, (err) => {
+                if (err && !err.message.includes('Duplicate column')) {
+                    console.log("Column patch note:", err.message);
+                }
+            });
+        });
+    }
 });
 
 // ------------------- API ENDPOINTS -------------------
