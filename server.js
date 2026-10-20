@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public'))); // public folder එක static ලෙස serve කිරීම
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Database Connection Setup using Railway Environment Variables
 const db = mysql.createPool({
@@ -124,8 +124,8 @@ app.get('/api/inventory', (req, res) => {
     });
 });
 
-// Serve frontend on root URL
-app.get('*', (req, res) => {
+// Express 5 compatible catch-all route for serving frontend
+app.get('(.*)', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
