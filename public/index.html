@@ -6,7 +6,7 @@
     <title>SHA MOBILE - POS System</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
-        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .nav-tabs { display: flex; list-style: none; padding: 0; border-bottom: 2px solid #ccc; margin-bottom: 20px; flex-wrap: wrap; }
         .nav-tabs li { margin-right: 5px; margin-bottom: 5px; }
         .nav-tabs button { padding: 10px 15px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 5px 5px 0 0; font-weight: bold; }
@@ -24,6 +24,7 @@
         th { background-color: #007bff; color: white; }
         .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .cart-section { background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #ddd; }
+        .search-bar { width: 100%; padding: 10px; margin-bottom: 15px; font-size: 15px; border: 1px solid #007bff; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -88,8 +89,9 @@
         <h3>2. Billing & Checkout</h3>
         <div class="pos-grid">
             <div>
+                <!-- Select Product by ID or Name -->
                 <div class="form-group">
-                    <label for="pos_select_product">Select Product:</label>
+                    <label for="pos_select_product">Select Product (Product ID or Name):</label>
                     <select id="pos_select_product" onchange="handleProductSelect()">
                         <option value="">-- Select Product --</option>
                     </select>
@@ -102,6 +104,18 @@
                     </select>
                 </div>
 
+                <!-- Custom Selling Price -->
+                <div class="form-group">
+                    <label for="pos_selling_price">Selling Price (Rs.):</label>
+                    <input type="number" step="0.01" id="pos_selling_price" placeholder="0.00">
+                </div>
+
+                <!-- Discount Price -->
+                <div class="form-group">
+                    <label for="pos_discount_price">Discount Amount (Rs.):</label>
+                    <input type="number" step="0.01" id="pos_discount_price" value="0" placeholder="0.00">
+                </div>
+
                 <div class="form-group">
                     <label for="pos_quantity">Quantity:</label>
                     <input type="number" id="pos_quantity" value="1" min="1">
@@ -112,9 +126,15 @@
 
             <div class="cart-section">
                 <h4>Bill Details</h4>
+                <!-- Customer Name & Phone Number -->
                 <div class="form-group">
                     <label for="customer_name">Customer Name:</label>
                     <input type="text" id="customer_name" placeholder="Enter Customer Name">
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_phone">Customer Phone Number:</label>
+                    <input type="text" id="customer_phone" placeholder="Enter Phone Number (e.g. 0771234567)">
                 </div>
 
                 <table>
@@ -123,12 +143,14 @@
                             <th>Product</th>
                             <th>Qty</th>
                             <th>Price</th>
+                            <th>Discount</th>
+                            <th>Subtotal</th>
                         </tr>
                     </thead>
                     <tbody id="cartTableBody"></tbody>
                 </table>
 
-                <h3 style="margin-top: 15px;">Total: Rs. <span id="cartTotal">0.00</span></h3>
+                <h3 style="margin-top: 15px;">Total Payable: Rs. <span id="cartTotal">0.00</span></h3>
                 <button class="btn-submit" style="background-color: #007bff;" onclick="completeSale()">Checkout & Complete Sale</button>
             </div>
         </div>
@@ -158,8 +180,10 @@
                 <tr>
                     <th>Sale ID</th>
                     <th>Customer Name</th>
+                    <th>Phone No</th>
                     <th>Product Name</th>
                     <th>Qty</th>
+                    <th>Discount</th>
                     <th>Total Price</th>
                     <th>IMEI Sold</th>
                 </tr>
@@ -168,13 +192,17 @@
         </table>
     </div>
 
-    <!-- 5. Stock Inventory Tab -->
+    <!-- 5. Stock Inventory Tab with Search Bar -->
     <div id="stockTab" class="tab-content">
         <h3>5. Stock Inventory</h3>
-        <table>
+        
+        <!-- Search Bar for Product ID or Name -->
+        <input type="text" id="inventorySearchInput" class="search-bar" onkeyup="filterInventory()" placeholder="🔍 Search Stock by Product ID or Product Name...">
+
+        <table id="inventoryTable">
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>Product ID</th>
                     <th>Name</th>
                     <th>Category</th>
                     <th>Stock Qty</th>
@@ -243,7 +271,7 @@
                 if(item.stock_quantity > 0) {
                     const opt = document.createElement('option');
                     opt.value = item.product_id;
-                    opt.textContent = `${item.name} - Rs. ${item.selling_price} (Stock: ${item.stock_quantity})`;
+                    opt.textContent = `[ID: ${item.product_id}] ${item.name} - Rs. ${item.selling_price} (Stock: ${item.stock_quantity})`;
                     select.appendChild(opt);
                 }
             });
@@ -256,34 +284,47 @@
         const productId = document.getElementById('pos_select_product').value;
         const imeiWrapper = document.getElementById('imei_field_wrapper');
         const imeiSelect = document.getElementById('pos_select_imei');
+        const sellingPriceInput = document.getElementById('pos_selling_price');
 
         const selectedProduct = posProductsList.find(p => p.product_id == productId);
 
-        if (selectedProduct && selectedProduct.imei_number) {
-            imeiWrapper.style.display = 'block';
-            imeiSelect.innerHTML = `<option value="${selectedProduct.imei_number}">${selectedProduct.imei_number}</option>`;
+        if (selectedProduct) {
+            sellingPriceInput.value = selectedProduct.selling_price;
+
+            if (selectedProduct.imei_number) {
+                imeiWrapper.style.display = 'block';
+                imeiSelect.innerHTML = `<option value="${selectedProduct.imei_number}">${selectedProduct.imei_number}</option>`;
+            } else {
+                imeiWrapper.style.display = 'none';
+                imeiSelect.innerHTML = '<option value="">-- Select IMEI --</option>';
+            }
         } else {
+            sellingPriceInput.value = '';
             imeiWrapper.style.display = 'none';
-            imeiSelect.innerHTML = '<option value="">-- Select IMEI --</option>';
         }
     }
 
     function addToCart() {
         const productId = document.getElementById('pos_select_product').value;
         const qty = parseInt(document.getElementById('pos_quantity').value) || 1;
+        const sellingPrice = parseFloat(document.getElementById('pos_selling_price').value) || 0;
+        const discountPrice = parseFloat(document.getElementById('pos_discount_price').value) || 0;
         const imei = document.getElementById('pos_select_imei').value;
 
         if (!productId) return alert('Please select a product!');
 
         const product = posProductsList.find(p => p.product_id == productId);
 
+        const netSubtotal = (sellingPrice * qty) - discountPrice;
+
         cart.push({
             product_id: product.product_id,
             name: product.name,
-            price: product.selling_price,
+            price: sellingPrice,
+            discount: discountPrice,
             quantity: qty,
             imei_number: imei || null,
-            subtotal: product.selling_price * qty
+            subtotal: netSubtotal > 0 ? netSubtotal : 0
         });
 
         renderCart();
@@ -298,9 +339,11 @@
             total += item.subtotal;
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${item.name} ${item.imei_number ? '('<br>+item.imei_number+')' : ''}</td>
+                <td>[ID: ${item.product_id}] ${item.name} ${item.imei_number ? '<br><small>IMEI: '+item.imei_number+'</small>' : ''}</td>
                 <td>${item.quantity}</td>
-                <td>Rs. ${item.subtotal}</td>
+                <td>Rs. ${item.price}</td>
+                <td>Rs. ${item.discount}</td>
+                <td>Rs. ${item.subtotal.toFixed(2)}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -311,12 +354,13 @@
     async function completeSale() {
         if (cart.length === 0) return alert('Bill is empty!');
         const customerName = document.getElementById('customer_name').value || 'Cash Customer';
+        const customerPhone = document.getElementById('customer_phone').value || 'N/A';
 
         try {
             const response = await fetch('/api/sales', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ customer_name: customerName, items: cart })
+                body: JSON.stringify({ customer_name: customerName, customer_phone: customerPhone, items: cart })
             });
 
             const data = await response.json();
@@ -326,6 +370,7 @@
                 cart = [];
                 renderCart();
                 document.getElementById('customer_name').value = '';
+                document.getElementById('customer_phone').value = '';
                 loadPosProducts();
             } else {
                 alert('Checkout failed: ' + data.error);
@@ -346,7 +391,7 @@
             data.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${item.product_id}</td>
+                    <td><strong>${item.product_id}</strong></td>
                     <td>${item.name}</td>
                     <td>${item.category}</td>
                     <td>${item.stock_quantity}</td>
@@ -357,6 +402,28 @@
             });
         } catch (err) {
             console.error('Error loading inventory:', err);
+        }
+    }
+
+    // Filter Stock Inventory by ID or Name
+    function filterInventory() {
+        const input = document.getElementById('inventorySearchInput').value.toUpperCase();
+        const tr = document.getElementById('inventoryTableBody').getElementsByTagName('tr');
+
+        for (let i = 0; i < tr.length; i++) {
+            const idTd = tr[i].getElementsByTagName('td')[0];
+            const nameTd = tr[i].getElementsByTagName('td')[1];
+
+            if (idTd || nameTd) {
+                const idValue = idTd.textContent || idTd.innerText;
+                const nameValue = nameTd.textContent || nameTd.innerText;
+
+                if (idValue.toUpperCase().indexOf(input) > -1 || nameValue.toUpperCase().indexOf(input) > -1) {
+                    tr[i].style.display = '';
+                } else {
+                    tr[i].style.display = 'none';
+                }
+            }
         }
     }
 
@@ -396,8 +463,10 @@
                 tr.innerHTML = `
                     <td>${item.sale_id}</td>
                     <td>${item.customer_name}</td>
+                    <td>${item.customer_phone || 'N/A'}</td>
                     <td>${item.product_name}</td>
                     <td>${item.quantity}</td>
+                    <td>Rs. ${item.discount_amount || '0.00'}</td>
                     <td>Rs. ${item.total_price}</td>
                     <td>${item.imei_number || 'N/A'}</td>
                 `;

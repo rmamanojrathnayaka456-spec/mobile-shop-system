@@ -22,20 +22,27 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Sales Table if not exists
+// Auto Create/Update Sales Table Structure
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
         customer_name VARCHAR(100),
+        customer_phone VARCHAR(20),
         product_id INT,
         quantity INT,
+        discount_amount DECIMAL(10,2) DEFAULT 0.00,
         total_price DECIMAL(10,2),
         imei_number VARCHAR(50),
         sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, (err) => {
     if (err) console.error("❌ Error creating sales table:", err.message);
-    else console.log("✅ Sales table verified.");
+    else {
+        console.log("✅ Sales table verified.");
+        // Alter table if columns are missing from older versions
+        db.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(20)`, () => {});
+        db.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10,2) DEFAULT 0.00`, () => {});
+    }
 });
 
 // ------------------- API ENDPOINTS -------------------
@@ -112,10 +119,10 @@ app.post('/api/products', (req, res) => {
 
 // 2. Complete Sale / Checkout
 app.post('/api/sales', (req, res) => {
-    const { customer_name, items } = req.body;
+    const { customer_name, customer_phone, items } = req.body;
 
     db.getConnection((err, connection) => {
-        if (err) return res.status(500).json({ error: "Database error" });
+        if (err) return res.status(500).json({ error: "Database connection failed" });
 
         connection.beginTransaction((err) => {
             if (err) {
@@ -126,15 +133,15 @@ app.post('/api/sales', (req, res) => {
             let completed = 0;
             items.forEach(item => {
                 const insertSale = `
-                    INSERT INTO sales (customer_name, product_id, quantity, total_price, imei_number)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO sales (customer_name, customer_phone, product_id, quantity, discount_amount, total_price, imei_number)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 `;
 
-                connection.query(insertSale, [customer_name, item.product_id, item.quantity, item.subtotal, item.imei_number], (err) => {
+                connection.query(insertSale, [customer_name, customer_phone, item.product_id, item.quantity, item.discount, item.subtotal, item.imei_number], (err) => {
                     if (err) {
                         return connection.rollback(() => {
                             connection.release();
-                            res.status(500).json({ error: "Sale record failed" });
+                            res.status(500).json({ error: "Sale record failed: " + err.message });
                         });
                     }
 
@@ -181,7 +188,7 @@ app.get('/api/inventory', (req, res) => {
 // 4. Fetch Sales History
 app.get('/api/sales', (req, res) => {
     const query = `
-        SELECT s.sale_id, s.customer_name, p.name AS product_name, s.quantity, s.total_price, s.imei_number
+        SELECT s.sale_id, s.customer_name, s.customer_phone, p.name AS product_name, s.quantity, s.discount_amount, s.total_price, s.imei_number
         FROM sales s
         JOIN products p ON s.product_id = p.product_id
         ORDER BY s.sale_id DESC
