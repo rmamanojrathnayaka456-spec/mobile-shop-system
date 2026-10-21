@@ -236,8 +236,8 @@
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1;">
                 <div class="form-group">
-                    <label>🔍 Search Product (Type ID e.g. 001 or Name):</label>
-                    <input type="text" id="posSearchInput" class="form-control" placeholder="Type ID (001) or Name..." oninput="filterPosProducts()">
+                    <label>🔍 Type Product ID (e.g. 001) or Name to Auto-Select:</label>
+                    <input type="text" id="posSearchInput" class="form-control" placeholder="Type ID (001) or Name..." oninput="filterAndAutoSelectPos()">
                 </div>
 
                 <div class="form-group">
@@ -342,7 +342,7 @@
 <script>
     let billCart = [];
     let inventoryData = [];
-    let posMasterData = []; // Dedicated store for POS filtering
+    let posMasterData = [];
 
     function switchTab(evt, tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -402,7 +402,7 @@
         .then(res => res.json())
         .then(data => {
             inventoryData = data;
-            posMasterData = data; // Keep master copy
+            posMasterData = data;
             renderPosSelectOptions(data);
         });
     }
@@ -421,16 +421,21 @@
         });
     }
 
-    function filterPosProducts() {
+    // AUTO SELECT PRODUCT AND LOAD DETAILS WHEN TYPING ID OR NAME
+    function filterAndAutoSelectPos() {
         const searchTerm = document.getElementById('posSearchInput').value.toLowerCase().trim();
+        const select = document.getElementById('posSelectProduct');
+
         if(!searchTerm) {
             renderPosSelectOptions(posMasterData);
+            document.getElementById('posSellingPrice').value = '';
+            document.getElementById('posSelectIMEI').innerHTML = '<option value="">N/A (No IMEI)</option>';
             return;
         }
 
         const filtered = posMasterData.filter(item => {
             const formattedId = item.formatted_id || String(item.product_id).padStart(3, '0');
-            return formattedId.includes(searchTerm) ||
+            return formattedId.toLowerCase() === searchTerm ||
                    item.product_id.toString() === searchTerm ||
                    (item.name && item.name.toLowerCase().includes(searchTerm)) ||
                    (item.brand && item.brand.toLowerCase().includes(searchTerm)) ||
@@ -438,6 +443,15 @@
         });
 
         renderPosSelectOptions(filtered);
+
+        // If exact match or single result is found, auto-select it immediately
+        if(filtered.length > 0) {
+            select.value = filtered[0].product_id;
+            loadProductDetails();
+        } else {
+            document.getElementById('posSellingPrice').value = '';
+            document.getElementById('posSelectIMEI').innerHTML = '<option value="">N/A (No IMEI)</option>';
+        }
     }
 
     function loadProductDetails() {
@@ -445,7 +459,10 @@
         const imeiSelect = document.getElementById('posSelectIMEI');
         imeiSelect.innerHTML = '<option value="">N/A (No IMEI)</option>';
 
-        if(!prodId) return;
+        if(!prodId) {
+            document.getElementById('posSellingPrice').value = '';
+            return;
+        }
 
         const productItems = inventoryData.filter(i => i.product_id == prodId);
         if(productItems.length > 0) {
@@ -531,7 +548,7 @@
                 renderBillTable();
                 document.getElementById('custName').value = '';
                 document.getElementById('custPhone').value = '';
-                fetchPosInventory(); // Refresh stock
+                fetchPosInventory();
             }
         })
         .catch(err => alert("Checkout error: " + err.message));
@@ -548,7 +565,7 @@
 
     function renderInventoryTable(data) {
         const tbody = document.querySelector('#inventoryTable tbody');
-        tbody.innerHTML = '';
+        tbody.innerHTML = '',
         data.forEach(item => {
             const displayId = item.formatted_id || String(item.product_id).padStart(3, '0');
             tbody.innerHTML += `
