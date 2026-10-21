@@ -82,7 +82,8 @@ db.query(`
         selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         discount_amount DECIMAL(10,2) DEFAULT 0.00,
         total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-        warranty_months INT DEFAULT 0
+        warranty_months INT DEFAULT 0,
+        FOREIGN KEY (invoice_id) REFERENCES sales(invoice_id) ON DELETE CASCADE
     )
 `, () => {
     safeAddColumn('sale_items', "imei_number VARCHAR(50) DEFAULT 'N/A'");
@@ -266,7 +267,7 @@ app.post('/api/sales', (req, res) => {
                                 });
                             }
 
-                            if (item.imei_number) {
+                            if (item.imei_number && item.imei_number !== 'N/A') {
                                 connection.query(`UPDATE phone_stock SET status = 'Sold' WHERE imei_number = ?`, [item.imei_number], () => {});
                             }
 
@@ -286,7 +287,66 @@ app.post('/api/sales', (req, res) => {
     });
 });
 
-// 4. Fetch Inventory (Includes Padded Product ID e.g. 001)
+// 4. Delete Single Sale Endpoint
+app.delete('/api/sales/:sale_item_id', (req, res) => {
+    const saleItemId = req.params.sale_item_id;
+
+    db.getConnection((err, connection) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+
+        connection.beginTransaction((err) => {
+            if (err) {
+                connection.release();
+                return res.status(500).json({ error: "Transaction failed" });
+            }
+
+            // Get sale item details to restore stock
+            connection.query(`SELECT product_id, quantity, imei_number FROM sale_items WHERE sale_item_id = ?`, [saleItemId], (err, results) => {
+                if (err || results.length === 0) {
+                    return connection.rollback(() => {
+                        connection.release();
+                        res.status(404).json({ error: "Sale record not found" });
+                    });
+                }
+
+                const item = results[0];
+
+                // Restore product quantity
+                connection.query(`UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?`, [item.quantity, item.product_id], (err) => {
+                    if (err) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(500).json({ error: "Failed to restore stock quantity" });
+                        });
+                    }
+
+                    // Restore IMEI if phone
+                    if (item.imei_number && item.imei_number !== 'N/A') {
+                        connection.query(`UPDATE phone_stock SET status = 'Available' WHERE imei_number = ?`, [item.imei_number], () => {});
+                    }
+
+                    // Delete the sale item
+                    connection.query(`DELETE FROM sale_items WHERE sale_item_id = ?`, [saleItemId], (err) => {
+                        if (err) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                res.status(500).json({ error: "Failed to delete sale record" });
+                            });
+                        }
+
+                        connection.commit((err) => {
+                            connection.release();
+                            if (err) return res.status(500).json({ error: "Commit failed" });
+                            res.json({ message: "Sale record deleted and stock restored successfully!" });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// 5. Fetch Inventory
 app.get('/api/inventory', (req, res) => {
     const query = `
         SELECT 
@@ -311,19 +371,73 @@ app.get('/api/inventory', (req, res) => {
     });
 });
 
-// 5. Fetch Sales History
+// 6. Fetch Detailed Sales History
 app.get('/api/sales', (req, res) => {
     const query = `
-        SELECT s.invoice_id AS sale_id, s.customer_name, s.customer_phone, p.name AS product_name, si.quantity, si.discount_amount, si.total_price, si.imei_number
+        SELECT 
+            si.sale_item_id,
+            s.invoice_id AS sale_id, 
+            s.customer_name, 
+            s.customer_phone, 
+            p.name AS product_name, 
+            si.quantity, 
+            si.discount_amount, 
+            si.total_price, 
+            si.imei_number,
+            s.created_at
         FROM sales s
         JOIN sale_items si ON s.invoice_id = si.invoice_id
         LEFT JOIN products p ON si.product_id = p.product_id
-        ORDER BY s.invoice_id DESC
+        ORDER BY si.sale_item_id DESC
     `;
 
     db.query(query, (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
+    });
+});
+
+// 7. Fetch Sales Summary Statistics (Daily, Monthly, Most Sold)
+app.get('/api/sales/summary', (req, res) => {
+    const dailyQuery = `
+        SELECT COALESCE(SUM(total_amount), 0) AS daily_total 
+        FROM sales 
+        WHERE DATE(created_at) = CURDATE()
+    `;
+
+    const monthlyQuery = `
+        SELECT COALESCE(SUM(total_amount), 0) AS monthly_total 
+        FROM sales 
+        WHERE MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE())
+    `;
+
+    const topItemsQuery = `
+        SELECT p.name AS product_name, SUM(si.quantity) AS total_sold
+        FROM sale_items si
+        JOIN sales s ON si.invoice_id = s.invoice_id
+        LEFT JOIN products p ON si.product_id = p.product_id
+        WHERE MONTH(s.created_at) = MONTH(CURRENT_DATE()) AND YEAR(s.created_at) = YEAR(CURRENT_DATE())
+        GROUP BY si.product_id, p.name
+        ORDER BY total_sold DESC
+        LIMIT 5
+    `;
+
+    db.query(dailyQuery, (err, dailyRes) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.query(monthlyQuery, (err, monthlyRes) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            db.query(topItemsQuery, (err, topItemsRes) => {
+                if (err) return res.status(500).json({ error: err.message });
+
+                res.json({
+                    daily_total: dailyRes[0].daily_total,
+                    monthly_total: monthlyRes[0].monthly_total,
+                    most_sold_items: topItemsRes
+                });
+            });
+        });
     });
 });
 
