@@ -28,7 +28,7 @@ function safeAddColumn(table, columnDefinition) {
     });
 }
 
-// Auto Create & Patch Tables with Model Number, Brand, Color and Category
+// Auto Create & Patch Tables
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -129,6 +129,7 @@ app.post('/api/products', (req, res) => {
                 }
 
                 const newProductId = result.insertId;
+                const formattedId = String(newProductId).padStart(3, '0');
 
                 if (imei_number && imei_number.trim() !== '') {
                     const insertIMEIQuery = `
@@ -147,14 +148,14 @@ app.post('/api/products', (req, res) => {
                         connection.commit((err) => {
                             connection.release();
                             if (err) return res.status(500).json({ error: err.message });
-                            res.json({ message: "Product added successfully!" });
+                            res.json({ message: `Product added successfully with Product ID: ${formattedId}` });
                         });
                     });
                 } else {
                     connection.commit((err) => {
                         connection.release();
                         if (err) return res.status(500).json({ error: err.message });
-                        res.json({ message: "Product added successfully!" });
+                        res.json({ message: `Product added successfully with Product ID: ${formattedId}` });
                     });
                 }
             });
@@ -202,7 +203,7 @@ app.delete('/api/products/:id', (req, res) => {
                         connection.commit((err) => {
                             connection.release();
                             if (err) return res.status(500).json({ error: "Commit failed" });
-                            res.json({ message: `Product ID ${productId} deleted successfully!` });
+                            res.json({ message: `Product ID ${String(productId).padStart(3, '0')} deleted successfully!` });
                         });
                     });
                 });
@@ -285,10 +286,20 @@ app.post('/api/sales', (req, res) => {
     });
 });
 
-// 4. Fetch Inventory
+// 4. Fetch Inventory (Includes Padded Product ID e.g. 001)
 app.get('/api/inventory', (req, res) => {
     const query = `
-        SELECT p.product_id, p.name, p.brand, p.color, p.category, p.model_number, p.stock_quantity, p.selling_price, ps.imei_number
+        SELECT 
+            p.product_id, 
+            LPAD(p.product_id, 3, '0') AS formatted_id,
+            p.name, 
+            p.brand, 
+            p.color, 
+            p.category, 
+            p.model_number, 
+            p.stock_quantity, 
+            p.selling_price, 
+            ps.imei_number
         FROM products p
         LEFT JOIN phone_stock ps ON p.product_id = ps.product_id AND ps.status = 'Available'
         ORDER BY p.product_id DESC
