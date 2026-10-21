@@ -21,14 +21,14 @@ const db = mysql.createPool({
 });
 
 function safeAddColumn(table, columnDefinition) {
-    db.query(`ALTER TABLE ${table} ADD COLUMN${columnDefinition}`, (err) => {
+    db.query(`ALTER TABLE ${table} ADD COLUMN ${columnDefinition}`, (err) => {
         if (err && !err.message.includes('Duplicate column')) {
             console.log(`Note on ${table} schema patch:`, err.message);
         }
     });
 }
 
-// Auto Create & Patch Tables with Brand and Color
+// Auto Create & Patch Tables with Model Number, Brand, Color and Category
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,6 +36,7 @@ db.query(`
         brand VARCHAR(50) DEFAULT 'Generic',
         color VARCHAR(50) DEFAULT 'N/A',
         category VARCHAR(50) NOT NULL,
+        model_number VARCHAR(100) DEFAULT 'N/A',
         cost_price DECIMAL(10,2) NOT NULL,
         selling_price DECIMAL(10,2) NOT NULL,
         stock_quantity INT DEFAULT 0,
@@ -47,6 +48,7 @@ db.query(`
     } else {
         safeAddColumn('products', "brand VARCHAR(50) DEFAULT 'Generic'");
         safeAddColumn('products', "color VARCHAR(50) DEFAULT 'N/A'");
+        safeAddColumn('products', "model_number VARCHAR(100) DEFAULT 'N/A'");
     }
 });
 
@@ -93,7 +95,7 @@ db.query(`
 
 // 1. Add Product Endpoint
 app.post('/api/products', (req, res) => {
-    const { name, brand, color, category, cost_price, selling_price, stock_quantity, imei_number } = req.body;
+    const { name, brand, color, category, model_number, cost_price, selling_price, stock_quantity, imei_number } = req.body;
 
     db.getConnection((err, connection) => {
         if (err) return res.status(500).json({ error: "Database connection failed" });
@@ -105,15 +107,16 @@ app.post('/api/products', (req, res) => {
             }
 
             const insertProductQuery = `
-                INSERT INTO products (name, brand, color, category, cost_price, selling_price, stock_quantity)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO products (name, brand, color, category, model_number, cost_price, selling_price, stock_quantity)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
             connection.query(insertProductQuery, [
-                name, 
+                name || brand + " " + (model_number !== 'N/A' ? model_number : ''), 
                 brand || 'Generic', 
                 color || 'N/A', 
-                category, 
+                category || 'Phone',
+                model_number || 'N/A', 
                 cost_price, 
                 selling_price, 
                 stock_quantity || 1
@@ -144,7 +147,7 @@ app.post('/api/products', (req, res) => {
                         connection.commit((err) => {
                             connection.release();
                             if (err) return res.status(500).json({ error: err.message });
-                            res.json({ message: "Product, Brand, Colour & IMEI added successfully!" });
+                            res.json({ message: "Product added successfully!" });
                         });
                     });
                 } else {
@@ -159,7 +162,7 @@ app.post('/api/products', (req, res) => {
     });
 });
 
-// 2. Delete Product
+// 2. Safe Delete Product
 app.delete('/api/products/:id', (req, res) => {
     const productId = req.params.id;
 
@@ -285,7 +288,7 @@ app.post('/api/sales', (req, res) => {
 // 4. Fetch Inventory
 app.get('/api/inventory', (req, res) => {
     const query = `
-        SELECT p.product_id, p.name, p.brand, p.color, p.category, p.stock_quantity, p.selling_price, ps.imei_number
+        SELECT p.product_id, p.name, p.brand, p.color, p.category, p.model_number, p.stock_quantity, p.selling_price, ps.imei_number
         FROM products p
         LEFT JOIN phone_stock ps ON p.product_id = ps.product_id AND ps.status = 'Available'
         ORDER BY p.product_id DESC
