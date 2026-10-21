@@ -520,3 +520,68 @@
         const tbody = document.querySelector('#inventoryTable tbody');
         tbody.innerHTML = '';
         data.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.product_id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.brand || 'Generic'}</td>
+                    <td>${item.color || 'N/A'}</td>
+                    <td>${item.model_number || 'N/A'}</td>
+                    <td>${item.category}</td>
+                    <td>${item.stock_quantity}</td>
+                    <td>Rs. ${item.selling_price}</td>
+                    <td>${item.imei_number || 'N/A'}</td>
+                    <td><button class="btn btn-danger" onclick="deleteProduct(${item.product_id})">Delete</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    function filterInventory() {
+        const searchTerm = document.getElementById('inventorySearch').value.toLowerCase().trim();
+        const filtered = inventoryData.filter(item => {
+            return (item.name && item.name.toLowerCase().includes(searchTerm)) ||
+                   (item.brand && item.brand.toLowerCase().includes(searchTerm)) ||
+                   (item.color && item.color.toLowerCase().includes(searchTerm)) ||
+                   (item.model_number && item.model_number.toLowerCase().includes(searchTerm)) ||
+                   (item.imei_number && item.imei_number.toLowerCase().includes(searchTerm));
+        });
+        renderInventoryTable(filtered);
+    }
+
+    function deleteProduct(id) {
+        if(!confirm("Are you sure you want to delete this product?")) return;
+
+        fetch('/api/products/' + id, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message || data.error);
+            fetchFullInventory();
+        });
+    }
+
+    function fetchSalesHistory() {
+        fetch('/api/sales')
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.querySelector('#salesHistoryTable tbody');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.sale_id}</td>
+                        <td>${item.customer_name || 'Cash Customer'}</td>
+                        <td>${item.customer_phone || 'N/A'}</td>
+                        <td>${item.product_name || 'N/A'}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.imei_number || 'N/A'}</td>
+                        <td>Rs. ${item.total_price}</td>
+                    </tr>
+                `;
+            });
+        });
+    }
+</script>
+
+</body>
+</html>
