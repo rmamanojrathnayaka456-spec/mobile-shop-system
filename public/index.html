@@ -73,23 +73,23 @@
 
     <!-- Navigation Tabs -->
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('addProduct')">1. Add Product</button>
-        <button class="tab-btn" onclick="switchTab('billingPos')">2. Billing / POS</button>
-        <button class="tab-btn" onclick="switchTab('inventory')">3. Stock Inventory</button>
-        <button class="tab-btn" onclick="switchTab('salesHistory')">4. Sales History</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'addProduct')">1. Add Product</button>
+        <button class="tab-btn" onclick="switchTab(event, 'billingPos')">2. Billing / POS</button>
+        <button class="tab-btn" onclick="switchTab(event, 'inventory')">3. Stock Inventory</button>
+        <button class="tab-btn" onclick="switchTab(event, 'salesHistory')">4. Sales History</button>
     </div>
 
     <!-- TAB 1: Add Product -->
     <div id="addProduct" class="tab-content active">
         <!-- Sub Tabs -->
         <div class="sub-nav-tabs">
-            <button class="sub-tab-btn active" onclick="switchSubTab('brandNewPhones')">Brand New Phones</button>
-            <button class="sub-tab-btn" onclick="switchSubTab('usedPhones')">Used Phones</button>
-            <button class="sub-tab-btn" onclick="switchSubTab('accessories')">Accessories</button>
-            <button class="sub-tab-btn" onclick="switchSubTab('jblProducts')">JBL</button>
+            <button class="sub-tab-btn active" onclick="switchSubTab(event, 'brandNewPhones')">Brand New Phones</button>
+            <button class="sub-tab-btn" onclick="switchSubTab(event, 'usedPhones')">Used Phones</button>
+            <button class="sub-tab-btn" onclick="switchSubTab(event, 'accessories')">Accessories</button>
+            <button class="sub-tab-btn" onclick="switchSubTab(event, 'jblProducts')">JBL</button>
         </div>
 
-        <!-- 1. Brand New Phones (Category Dropdown Removed) -->
+        <!-- 1. Brand New Phones -->
         <div id="brandNewPhones" class="sub-tab-content active">
             <h3>1. Add New Product / Phone</h3>
             <form onsubmit="saveProduct(event, 'Brand New Phone')">
@@ -338,24 +338,30 @@
     let billCart = [];
     let inventoryData = [];
 
-    function switchTab(tabId) {
+    // FIXED TAB SWITCHING FUNCTION
+    function switchTab(evt, tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         
         document.getElementById(tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
+        if (evt && evt.currentTarget) {
+            evt.currentTarget.classList.add('active');
+        }
 
         if(tabId === 'billingPos') fetchPosInventory();
         if(tabId === 'inventory') fetchFullInventory();
         if(tabId === 'salesHistory') fetchSalesHistory();
     }
 
-    function switchSubTab(subTabId) {
+    // FIXED SUB TAB SWITCHING FUNCTION
+    function switchSubTab(evt, subTabId) {
         document.querySelectorAll('.sub-tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
         
         document.getElementById(subTabId).classList.add('active');
-        event.currentTarget.classList.add('active');
+        if (evt && evt.currentTarget) {
+            evt.currentTarget.classList.add('active');
+        }
     }
 
     function saveProduct(e, categoryType) {
@@ -370,4 +376,147 @@
             model_number: form.querySelector('.p-model') ? form.querySelector('.p-model').value : 'N/A',
             cost_price: form.querySelector('.p-cost').value,
             selling_price: form.querySelector('.p-selling').value,
-            stock_quantity: form.querySelector('.p-qty') ? form.querySelector('.p-qty').value
+            stock_quantity: form.querySelector('.p-qty') ? form.querySelector('.p-qty').value : 1,
+            imei_number: form.querySelector('.p-imei') ? form.querySelector('.p-imei').value : ''
+        };
+
+        fetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message || data.error);
+            if(!data.error) form.reset();
+        })
+        .catch(err => alert("Error: " + err.message));
+    }
+
+    function fetchPosInventory() {
+        fetch('/api/inventory')
+        .then(res => res.json())
+        .then(data => {
+            inventoryData = data;
+            const select = document.getElementById('posSelectProduct');
+            select.innerHTML = '<option value="">-- Select Product --</option>';
+            
+            const uniqueProducts = {};
+            data.forEach(item => {
+                if(!uniqueProducts[item.product_id]) {
+                    uniqueProducts[item.product_id] = item;
+                    select.innerHTML += `<option value="${item.product_id}">[ID: ${item.product_id}] ${item.name} (${item.brand} - ${item.color}) - Rs. ${item.selling_price} (Stock: ${item.stock_quantity})</option>`;
+                }
+            });
+        });
+    }
+
+    function loadProductDetails() {
+        const prodId = document.getElementById('posSelectProduct').value;
+        const imeiSelect = document.getElementById('posSelectIMEI');
+        imeiSelect.innerHTML = '<option value="">N/A (No IMEI)</option>';
+
+        if(!prodId) return;
+
+        const productItems = inventoryData.filter(i => i.product_id == prodId);
+        if(productItems.length > 0) {
+            document.getElementById('posSellingPrice').value = productItems[0].selling_price;
+            productItems.forEach(item => {
+                if(item.imei_number) {
+                    imeiSelect.innerHTML += `<option value="${item.imei_number}">${item.imei_number}</option>`;
+                }
+            });
+        }
+    }
+
+    function addToBill() {
+        const prodId = document.getElementById('posSelectProduct').value;
+        const prodSelect = document.getElementById('posSelectProduct');
+        const prodName = prodSelect.options[prodSelect.selectedIndex].text;
+        const price = parseFloat(document.getElementById('posSellingPrice').value);
+        const discount = parseFloat(document.getElementById('posDiscount').value) || 0;
+        const qty = parseInt(document.getElementById('posQuantity').value) || 1;
+        const imei = document.getElementById('posSelectIMEI').value;
+
+        if(!prodId) return alert("Select a product");
+
+        const subtotal = (price - discount) * qty;
+
+        billCart.push({
+            product_id: prodId,
+            product_name: prodName,
+            price: price,
+            discount: discount,
+            quantity: qty,
+            subtotal: subtotal,
+            imei_number: imei
+        });
+
+        renderBillTable();
+    }
+
+    function renderBillTable() {
+        const tbody = document.querySelector('#billTable tbody');
+        tbody.innerHTML = '';
+        let total = 0;
+
+        billCart.forEach((item, index) => {
+            total += item.subtotal;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.product_name}<br><small>IMEI: ${item.imei_number || 'N/A'}</small></td>
+                    <td>${item.quantity}</td>
+                    <td>Rs. ${item.subtotal.toFixed(2)}</td>
+                    <td><button class="btn btn-danger" onclick="removeFromBill(${index})">Remove</button></td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('grandTotal').innerText = total.toFixed(2);
+    }
+
+    function removeFromBill(index) {
+        billCart.splice(index, 1);
+        renderBillTable();
+    }
+
+    function completeCheckout() {
+        if(billCart.length === 0) return alert("Cart is empty!");
+
+        const payload = {
+            customer_name: document.getElementById('custName').value,
+            customer_phone: document.getElementById('custPhone').value,
+            items: billCart
+        };
+
+        fetch('/api/sales', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message || data.error);
+            if(!data.error) {
+                billCart = [];
+                renderBillTable();
+                document.getElementById('custName').value = '';
+                document.getElementById('custPhone').value = '';
+            }
+        })
+        .catch(err => alert("Checkout error: " + err.message));
+    }
+
+    function fetchFullInventory() {
+        fetch('/api/inventory')
+        .then(res => res.json())
+        .then(data => {
+            inventoryData = data;
+            renderInventoryTable(data);
+        });
+    }
+
+    function renderInventoryTable(data) {
+        const tbody = document.querySelector('#inventoryTable tbody');
+        tbody.innerHTML = '';
+        data.forEach(item => {
