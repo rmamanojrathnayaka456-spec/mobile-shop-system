@@ -91,7 +91,7 @@ db.query(`
     safeAddColumn('sale_items', "warranty_months INT DEFAULT 0");
 });
 
-// 1. Add Product Endpoint (Supports Brand & Color)
+// 1. Add Product Endpoint
 app.post('/api/products', (req, res) => {
     const { name, brand, color, category, cost_price, selling_price, stock_quantity, imei_number } = req.body;
 
@@ -198,4 +198,125 @@ app.delete('/api/products/:id', (req, res) => {
 
                         connection.commit((err) => {
                             connection.release();
-                            if (err) return res.status(500).json({ error: "
+                            if (err) return res.status(500).json({ error: "Commit failed" });
+                            res.json({ message: `Product ID ${productId} deleted successfully!` });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// 3. Complete Sale / Checkout
+app.post('/api/sales', (req, res) => {
+    const { customer_name, customer_phone, items } = req.body;
+
+    if (!items || items.length === 0) return res.status(400).json({ error: "Cart is empty" });
+
+    const grandTotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+
+    db.getConnection((err, connection) => {
+        if (err) return res.status(500).json({ error: "Database connection failed" });
+
+        connection.beginTransaction((err) => {
+            if (err) {
+                connection.release();
+                return res.status(500).json({ error: "Transaction failed" });
+            }
+
+            const insertSalesHeader = `INSERT INTO sales (customer_name, customer_phone, total_amount) VALUES (?, ?, ?)`;
+
+            connection.query(insertSalesHeader, [customer_name || 'Cash Customer', customer_phone || 'N/A', grandTotal], (err, result) => {
+                if (err) {
+                    return connection.rollback(() => {
+                        connection.release();
+                        res.status(500).json({ error: "Sales header creation failed" });
+                    });
+                }
+
+                const invoiceId = result.insertId;
+                let completedItems = 0;
+
+                items.forEach(item => {
+                    const insertSaleItem = `
+                        INSERT INTO sale_items (invoice_id, product_id, imei_number, quantity, selling_price, discount_amount, total_price, warranty_months)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `;
+
+                    connection.query(insertSaleItem, [
+                        invoiceId, item.product_id, item.imei_number || 'N/A', item.quantity || 1, item.price, item.discount || 0, item.subtotal, item.warranty_months || 0
+                    ], (err) => {
+                        if (err) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                res.status(500).json({ error: "Sale item insertion failed" });
+                            });
+                        }
+
+                        connection.query(`UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?`, [item.quantity, item.product_id], (err) => {
+                            if (err) {
+                                return connection.rollback(() => {
+                                    connection.release();
+                                    res.status(500).json({ error: "Stock update failed" });
+                                });
+                            }
+
+                            if (item.imei_number) {
+                                connection.query(`UPDATE phone_stock SET status = 'Sold' WHERE imei_number = ?`, [item.imei_number], () => {});
+                            }
+
+                            completedItems++;
+                            if (completedItems === items.length) {
+                                connection.commit((err) => {
+                                    connection.release();
+                                    if (err) return res.status(500).json({ error: "Commit failed" });
+                                    res.json({ message: "Sale completed successfully!", invoice_id: invoiceId });
+                                });
+                            }
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// 4. Fetch Inventory
+app.get('/api/inventory', (req, res) => {
+    const query = `
+        SELECT p.product_id, p.name, p.brand, p.color, p.category, p.stock_quantity, p.selling_price, ps.imei_number
+        FROM products p
+        LEFT JOIN phone_stock ps ON p.product_id = ps.product_id AND ps.status = 'Available'
+        ORDER BY p.product_id DESC
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+
+// 5. Fetch Sales History
+app.get('/api/sales', (req, res) => {
+    const query = `
+        SELECT s.invoice_id AS sale_id, s.customer_name, s.customer_phone, p.name AS product_name, si.quantity, si.discount_amount, si.total_price, si.imei_number
+        FROM sales s
+        JOIN sale_items si ON s.invoice_id = si.invoice_id
+        LEFT JOIN products p ON si.product_id = p.product_id
+        ORDER BY s.invoice_id DESC
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+
+app.get(/.*$/, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
