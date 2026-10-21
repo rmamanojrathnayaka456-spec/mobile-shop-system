@@ -46,9 +46,9 @@
                 <input type="text" id="productName" class="form-control" placeholder="e.g. iPhone 13 Pro / Fast Charger" required>
             </div>
 
-            <!-- Brand Selection Dropdown -->
+            <!-- Brand Select Bar (Dropdown) -->
             <div class="form-group">
-                <label>Select Brand:</label>
+                <label>Select Phone Brand:</label>
                 <select id="productBrand" class="form-control" required>
                     <option value="">-- Select Brand --</option>
                     <option value="Apple">Apple (iPhone)</option>
@@ -65,23 +65,10 @@
                 </select>
             </div>
 
-            <!-- Colour Selection Dropdown -->
+            <!-- Colour Type Field (Text Input) -->
             <div class="form-group">
-                <label>Select Colour:</label>
-                <select id="productColor" class="form-control" required>
-                    <option value="">-- Select Colour --</option>
-                    <option value="Black">Black</option>
-                    <option value="White">White</option>
-                    <option value="Silver">Silver</option>
-                    <option value="Space Gray">Space Gray</option>
-                    <option value="Gold">Gold</option>
-                    <option value="Blue">Blue</option>
-                    <option value="Red">Red</option>
-                    <option value="Green">Green</option>
-                    <option value="Purple">Purple</option>
-                    <option value="Yellow">Yellow</option>
-                    <option value="Other">Other</option>
-                </select>
+                <label>Type Colour:</label>
+                <input type="text" id="productColor" class="form-control" placeholder="e.g. Midnight Black, Pacific Blue, Gold" required>
             </div>
 
             <div class="form-group">
@@ -231,7 +218,6 @@
         if(tabId === 'salesHistory') fetchSalesHistory();
     }
 
-    // HERE IS THE PRODUCT DATA ADDED FOR ADD PRODUCT FORM SUBMIT
     document.getElementById('addProductForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -273,7 +259,7 @@
             data.forEach(item => {
                 if(!uniqueProducts[item.product_id]) {
                     uniqueProducts[item.product_id] = item;
-                    select.innerHTML += `<option value="${item.product_id}">[ID: ${item.product_id}] ${item.name} - Rs. ${item.selling_price} (Stock: ${item.stock_quantity})</option>`;
+                    select.innerHTML += `<option value="${item.product_id}">[ID: ${item.product_id}] ${item.name} (${item.brand} - ${item.color}) - Rs. ${item.selling_price} (Stock: ${item.stock_quantity})</option>`;
                 }
             });
         });
@@ -313,4 +299,126 @@
 
         billCart.push({
             product_id: prodId,
-            product
+            product_name: prodName,
+            price: price,
+            discount: discount,
+            quantity: qty,
+            subtotal: subtotal,
+            imei_number: imei
+        });
+
+        renderBillTable();
+    }
+
+    function renderBillTable() {
+        const tbody = document.querySelector('#billTable tbody');
+        tbody.innerHTML = '';
+        let total = 0;
+
+        billCart.forEach((item, index) => {
+            total += item.subtotal;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.product_name}<br><small>IMEI: ${item.imei_number || 'N/A'}</small></td>
+                    <td>${item.quantity}</td>
+                    <td>Rs. ${item.subtotal.toFixed(2)}</td>
+                    <td><button class="btn btn-danger" onclick="removeFromBill(${index})">Remove</button></td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('grandTotal').innerText = total.toFixed(2);
+    }
+
+    function removeFromBill(index) {
+        billCart.splice(index, 1);
+        renderBillTable();
+    }
+
+    function completeCheckout() {
+        if(billCart.length === 0) return alert("Cart is empty!");
+
+        const payload = {
+            customer_name: document.getElementById('custName').value,
+            customer_phone: document.getElementById('custPhone').value,
+            items: billCart
+        };
+
+        fetch('/api/sales', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message || data.error);
+            if(!data.error) {
+                billCart = [];
+                renderBillTable();
+                document.getElementById('custName').value = '';
+                document.getElementById('custPhone').value = '';
+            }
+        })
+        .catch(err => alert("Checkout error: " + err.message));
+    }
+
+    function fetchFullInventory() {
+        fetch('/api/inventory')
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.querySelector('#inventoryTable tbody');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.product_id}</td>
+                        <td>${item.name}</td>
+                        <td>${item.brand || 'Generic'}</td>
+                        <td>${item.color || 'N/A'}</td>
+                        <td>${item.category}</td>
+                        <td>${item.stock_quantity}</td>
+                        <td>Rs. ${item.selling_price}</td>
+                        <td>${item.imei_number || 'N/A'}</td>
+                        <td><button class="btn btn-danger" onclick="deleteProduct(${item.product_id})">Delete</button></td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    function deleteProduct(id) {
+        if(!confirm("Are you sure you want to delete this product?")) return;
+
+        fetch('/api/products/' + id, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message || data.error);
+            fetchFullInventory();
+        });
+    }
+
+    function fetchSalesHistory() {
+        fetch('/api/sales')
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.querySelector('#salesHistoryTable tbody');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.sale_id}</td>
+                        <td>${item.customer_name || 'Cash Customer'}</td>
+                        <td>${item.customer_phone || 'N/A'}</td>
+                        <td>${item.product_name || 'N/A'}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.imei_number || 'N/A'}</td>
+                        <td>Rs. ${item.total_price}</td>
+                    </tr>
+                `;
+            });
+        });
+    }
+</script>
+
+</body>
+</html>

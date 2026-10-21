@@ -21,7 +21,7 @@ const db = mysql.createPool({
 });
 
 function safeAddColumn(table, columnDefinition) {
-    db.query(`ALTER TABLE ${table} ADD COLUMN ${columnDefinition}`, (err) => {
+    db.query(`ALTER TABLE ${table} ADD COLUMN${columnDefinition}`, (err) => {
         if (err && !err.message.includes('Duplicate column')) {
             console.log(`Note on ${table} schema patch:`, err.message);
         }
@@ -34,7 +34,7 @@ db.query(`
         product_id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         brand VARCHAR(50) DEFAULT 'Generic',
-        color VARCHAR(30) DEFAULT 'N/A',
+        color VARCHAR(50) DEFAULT 'N/A',
         category VARCHAR(50) NOT NULL,
         cost_price DECIMAL(10,2) NOT NULL,
         selling_price DECIMAL(10,2) NOT NULL,
@@ -46,7 +46,7 @@ db.query(`
         console.error("❌ Error creating products table:", err.message);
     } else {
         safeAddColumn('products', "brand VARCHAR(50) DEFAULT 'Generic'");
-        safeAddColumn('products', "color VARCHAR(30) DEFAULT 'N/A'");
+        safeAddColumn('products', "color VARCHAR(50) DEFAULT 'N/A'");
     }
 });
 
@@ -144,7 +144,7 @@ app.post('/api/products', (req, res) => {
                         connection.commit((err) => {
                             connection.release();
                             if (err) return res.status(500).json({ error: err.message });
-                            res.json({ message: "Product, Brand, Color & IMEI added successfully!" });
+                            res.json({ message: "Product, Brand, Colour & IMEI added successfully!" });
                         });
                     });
                 } else {
@@ -159,7 +159,7 @@ app.post('/api/products', (req, res) => {
     });
 });
 
-// 2. Safe Delete Product
+// 2. Delete Product
 app.delete('/api/products/:id', (req, res) => {
     const productId = req.params.id;
 
