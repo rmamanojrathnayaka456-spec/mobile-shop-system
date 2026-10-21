@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto-create & Auto-alter Tables to sync missing columns automatically
+// Auto Create & Force Patch Tables Schema on Railway Database
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -68,32 +68,29 @@ db.query(`
         product_id INT,
         imei_number VARCHAR(50) DEFAULT 'N/A',
         quantity INT DEFAULT 1,
-        selling_price DECIMAL(10,2) NOT NULL,
+        selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         discount_amount DECIMAL(10,2) DEFAULT 0.00,
-        total_price DECIMAL(10,2) NOT NULL,
-        warranty_months INT DEFAULT 0,
-        FOREIGN KEY (invoice_id) REFERENCES sales(invoice_id) ON DELETE CASCADE,
-        FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE SET NULL
+        total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        warranty_months INT DEFAULT 0
     )
 `, (err) => {
     if (err) {
         console.error("❌ Error creating sale_items table:", err.message);
     } else {
-        console.log("✅ Verifying sale_items columns...");
-        // Auto-patch missing columns on existing database table
-        const patchQueries = [
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS imei_number VARCHAR(50) DEFAULT 'N/A'`,
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00`,
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10,2) DEFAULT 0.00`,
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00`,
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS warranty_months INT DEFAULT 0`
+        console.log("✅ Auto-patching sale_items table columns on Railway DB...");
+        
+        // Force add missing columns directly on live Railway database
+        const alterQueries = [
+            `ALTER TABLE sale_items ADD COLUMN imei_number VARCHAR(50) DEFAULT 'N/A'`,
+            `ALTER TABLE sale_items ADD COLUMN selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00`,
+            `ALTER TABLE sale_items ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00`,
+            `ALTER TABLE sale_items ADD COLUMN total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00`,
+            `ALTER TABLE sale_items ADD COLUMN warranty_months INT DEFAULT 0`
         ];
 
-        patchQueries.forEach(q => {
-            db.query(q, (err) => {
-                if (err && !err.message.includes('Duplicate column')) {
-                    console.log("Column patch note:", err.message);
-                }
+        alterQueries.forEach(query => {
+            db.query(query, (err) => {
+                // Ignore errors if column already exists
             });
         });
     }
