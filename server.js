@@ -5,12 +5,10 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database Connection Setup using Railway Environment Variables
 const db = mysql.createPool({
     host: process.env.DB_HOST || 'mysql.railway.internal',
     user: process.env.DB_USER || 'root',
@@ -22,7 +20,6 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Helper function to safely add columns to existing MySQL tables
 function safeAddColumn(table, columnDefinition) {
     db.query(`ALTER TABLE ${table} ADD COLUMN ${columnDefinition}`, (err) => {
         if (err && !err.message.includes('Duplicate column')) {
@@ -31,11 +28,13 @@ function safeAddColumn(table, columnDefinition) {
     });
 }
 
-// Auto-create & Auto-patch Tables
+// Auto Create & Patch Tables with Brand and Color
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
+        brand VARCHAR(50) DEFAULT 'Generic',
+        color VARCHAR(30) DEFAULT 'N/A',
         category VARCHAR(50) NOT NULL,
         cost_price DECIMAL(10,2) NOT NULL,
         selling_price DECIMAL(10,2) NOT NULL,
@@ -43,7 +42,12 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, (err) => {
-    if (err) console.error("❌ Error creating products table:", err.message);
+    if (err) {
+        console.error("❌ Error creating products table:", err.message);
+    } else {
+        safeAddColumn('products', "brand VARCHAR(50) DEFAULT 'Generic'");
+        safeAddColumn('products', "color VARCHAR(30) DEFAULT 'N/A'");
+    }
 });
 
 db.query(`
@@ -54,9 +58,7 @@ db.query(`
         status ENUM('Available', 'Sold') DEFAULT 'Available',
         FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
     )
-`, (err) => {
-    if (err) console.error("❌ Error creating phone_stock table:", err.message);
-});
+`);
 
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
@@ -66,9 +68,7 @@ db.query(`
         total_amount DECIMAL(10,2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`, (err) => {
-    if (err) console.error("❌ Error creating sales table:", err.message);
-});
+`);
 
 db.query(`
     CREATE TABLE IF NOT EXISTS sale_items (
@@ -82,41 +82,42 @@ db.query(`
         total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         warranty_months INT DEFAULT 0
     )
-`, (err) => {
-    if (err) {
-        console.error("❌ Error creating sale_items table:", err.message);
-    } else {
-        console.log("✅ Patching all sale_items columns on Railway DB...");
-        safeAddColumn('sale_items', "imei_number VARCHAR(50) DEFAULT 'N/A'");
-        safeAddColumn('sale_items', "quantity INT DEFAULT 1");
-        safeAddColumn('sale_items', "selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00");
-        safeAddColumn('sale_items', "discount_amount DECIMAL(10,2) DEFAULT 0.00");
-        safeAddColumn('sale_items', "total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00");
-        safeAddColumn('sale_items', "warranty_months INT DEFAULT 0");
-    }
+`, () => {
+    safeAddColumn('sale_items', "imei_number VARCHAR(50) DEFAULT 'N/A'");
+    safeAddColumn('sale_items', "quantity INT DEFAULT 1");
+    safeAddColumn('sale_items', "selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00");
+    safeAddColumn('sale_items', "discount_amount DECIMAL(10,2) DEFAULT 0.00");
+    safeAddColumn('sale_items', "total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00");
+    safeAddColumn('sale_items', "warranty_months INT DEFAULT 0");
 });
 
-// ------------------- API ENDPOINTS -------------------
-
-// 1. Add Product and IMEI
+// 1. Add Product Endpoint (Supports Brand & Color)
 app.post('/api/products', (req, res) => {
-    const { name, category, cost_price, selling_price, stock_quantity, imei_number } = req.body;
+    const { name, brand, color, category, cost_price, selling_price, stock_quantity, imei_number } = req.body;
 
     db.getConnection((err, connection) => {
-        if (err) return res.status(500).json({ error: "Database pool connection failed" });
+        if (err) return res.status(500).json({ error: "Database connection failed" });
 
         connection.beginTransaction((err) => {
             if (err) {
                 connection.release();
-                return res.status(500).json({ error: "Transaction initiation failed: " + err.message });
+                return res.status(500).json({ error: "Transaction failed" });
             }
 
             const insertProductQuery = `
-                INSERT INTO products (name, category, cost_price, selling_price, stock_quantity)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO products (name, brand, color, category, cost_price, selling_price, stock_quantity)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             `;
 
-            connection.query(insertProductQuery, [name, category, cost_price, selling_price, stock_quantity || 1], (err, result) => {
+            connection.query(insertProductQuery, [
+                name, 
+                brand || 'Generic', 
+                color || 'N/A', 
+                category, 
+                cost_price, 
+                selling_price, 
+                stock_quantity || 1
+            ], (err, result) => {
                 if (err) {
                     return connection.rollback(() => {
                         connection.release();
@@ -136,30 +137,20 @@ app.post('/api/products', (req, res) => {
                         if (err) {
                             return connection.rollback(() => {
                                 connection.release();
-                                res.status(400).json({ error: "IMEI insertion failed or IMEI already exists!" });
+                                res.status(400).json({ error: "IMEI insertion failed or already exists!" });
                             });
                         }
 
                         connection.commit((err) => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).json({ error: err.message });
-                                });
-                            }
                             connection.release();
-                            res.json({ message: "Product and IMEI added successfully!" });
+                            if (err) return res.status(500).json({ error: err.message });
+                            res.json({ message: "Product, Brand, Color & IMEI added successfully!" });
                         });
                     });
                 } else {
                     connection.commit((err) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.status(500).json({ error: err.message });
-                            });
-                        }
                         connection.release();
+                        if (err) return res.status(500).json({ error: err.message });
                         res.json({ message: "Product added successfully!" });
                     });
                 }
@@ -168,7 +159,7 @@ app.post('/api/products', (req, res) => {
     });
 });
 
-// 2. Safely Delete Product from Stock Inventory (Fixes Foreign Key Constraint Error)
+// 2. Safe Delete Product
 app.delete('/api/products/:id', (req, res) => {
     const productId = req.params.id;
 
@@ -181,177 +172,30 @@ app.delete('/api/products/:id', (req, res) => {
                 return res.status(500).json({ error: "Transaction failed" });
             }
 
-            // Step A: Set product_id in sale_items to NULL so sales history stays intact
             connection.query(`UPDATE sale_items SET product_id = NULL WHERE product_id = ?`, [productId], (err) => {
                 if (err) {
                     return connection.rollback(() => {
                         connection.release();
-                        res.status(500).json({ error: "Failed to update sale_items references: " + err.message });
+                        res.status(500).json({ error: "Failed to update sale_items references" });
                     });
                 }
 
-                // Step B: Delete product IMEI numbers from phone_stock
                 connection.query(`DELETE FROM phone_stock WHERE product_id = ?`, [productId], (err) => {
                     if (err) {
                         return connection.rollback(() => {
                             connection.release();
-                            res.status(500).json({ error: "Failed to delete phone stock: " + err.message });
+                            res.status(500).json({ error: "Failed to delete phone stock" });
                         });
                     }
 
-                    // Step C: Delete product from products table
                     connection.query(`DELETE FROM products WHERE product_id = ?`, [productId], (err) => {
                         if (err) {
                             return connection.rollback(() => {
                                 connection.release();
-                                res.status(500).json({ error: "Failed to delete product: " + err.message });
+                                res.status(500).json({ error: "Failed to delete product" });
                             });
                         }
 
                         connection.commit((err) => {
                             connection.release();
-                            if (err) return res.status(500).json({ error: "Commit failed" });
-                            res.json({ message: `Product ID ${productId} deleted successfully!` });
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// 3. Complete Sale / Checkout
-app.post('/api/sales', (req, res) => {
-    const { customer_name, customer_phone, items } = req.body;
-
-    if (!items || items.length === 0) {
-        return res.status(400).json({ error: "Cart is empty" });
-    }
-
-    const grandTotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-
-    db.getConnection((err, connection) => {
-        if (err) return res.status(500).json({ error: "Database connection failed" });
-
-        connection.beginTransaction((err) => {
-            if (err) {
-                connection.release();
-                return res.status(500).json({ error: "Transaction initiation failed" });
-            }
-
-            const insertSalesHeader = `
-                INSERT INTO sales (customer_name, customer_phone, total_amount)
-                VALUES (?, ?, ?)
-            `;
-
-            connection.query(insertSalesHeader, [customer_name || 'Cash Customer', customer_phone || 'N/A', grandTotal], (err, result) => {
-                if (err) {
-                    return connection.rollback(() => {
-                        connection.release();
-                        res.status(500).json({ error: "Sales header creation failed: " + err.message });
-                    });
-                }
-
-                const invoiceId = result.insertId;
-                let completedItems = 0;
-
-                items.forEach(item => {
-                    const insertSaleItem = `
-                        INSERT INTO sale_items (invoice_id, product_id, imei_number, quantity, selling_price, discount_amount, total_price, warranty_months)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    `;
-
-                    connection.query(insertSaleItem, [
-                        invoiceId, 
-                        item.product_id, 
-                        item.imei_number || 'N/A', 
-                        item.quantity || 1, 
-                        item.price, 
-                        item.discount || 0, 
-                        item.subtotal, 
-                        item.warranty_months || 0
-                    ], (err) => {
-                        if (err) {
-                            return connection.rollback(() => {
-                                connection.release();
-                                res.status(500).json({ error: "Sale item insertion failed: " + err.message });
-                            });
-                        }
-
-                        const updateStock = `UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?`;
-                        connection.query(updateStock, [item.quantity, item.product_id], (err) => {
-                            if (err) {
-                                return connection.rollback(() => {
-                                    connection.release();
-                                    res.status(500).json({ error: "Stock update failed" });
-                                });
-                            }
-
-                            if (item.imei_number) {
-                                connection.query(`UPDATE phone_stock SET status = 'Sold' WHERE imei_number = ?`, [item.imei_number], () => {});
-                            }
-
-                            completedItems++;
-                            if (completedItems === items.length) {
-                                connection.commit((err) => {
-                                    connection.release();
-                                    if (err) return res.status(500).json({ error: "Commit failed" });
-                                    res.json({ message: "Sale completed successfully!", invoice_id: invoiceId });
-                                });
-                            }
-                        });
-                    });
-                });
-            });
-        });
-    });
-});
-
-// 4. Fetch Inventory
-app.get('/api/inventory', (req, res) => {
-    const query = `
-        SELECT p.product_id, p.name, p.category, p.stock_quantity, p.selling_price, ps.imei_number
-        FROM products p
-        LEFT JOIN phone_stock ps ON p.product_id = ps.product_id AND ps.status = 'Available'
-        ORDER BY p.product_id DESC
-    `;
-
-    db.query(query, (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
-});
-
-// 5. Fetch Sales History
-app.get('/api/sales', (req, res) => {
-    const query = `
-        SELECT 
-            s.invoice_id AS sale_id, 
-            s.customer_name, 
-            s.customer_phone, 
-            p.name AS product_name, 
-            si.quantity, 
-            si.discount_amount, 
-            si.total_price, 
-            si.imei_number
-        FROM sales s
-        JOIN sale_items si ON s.invoice_id = si.invoice_id
-        LEFT JOIN products p ON si.product_id = p.product_id
-        ORDER BY s.invoice_id DESC
-    `;
-
-    db.query(query, (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
-});
-
-// Express 5 RegExp catch-all route
-app.get(/.*$/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Start Server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+                            if (err) return res.status(500).json({ error: "
