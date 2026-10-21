@@ -22,6 +22,15 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
+// Helper function to safely add columns to existing MySQL tables
+function safeAddColumn(table, columnDefinition) {
+    db.query(`ALTER TABLE ${table} ADD COLUMN ${columnDefinition}`, (err) => {
+        if (err && !err.message.includes('Duplicate column')) {
+            console.log(`Note on ${table} schema patch:`, err.message);
+        }
+    });
+}
+
 // Auto-create & Auto-patch Tables to sync missing columns automatically
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
@@ -79,21 +88,13 @@ db.query(`
     } else {
         console.log("✅ Patching all sale_items columns on Railway DB...");
         
-        // Force add all potentially missing columns directly to the live Railway DB
-        const alterQueries = [
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS imei_number VARCHAR(50) DEFAULT 'N/A'`,
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS quantity INT DEFAULT 1`,
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00`,
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10,2) DEFAULT 0.00`,
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00`,
-            `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS warranty_months INT DEFAULT 0`
-        ];
-
-        alterQueries.forEach(query => {
-            db.query(query, (err) => {
-                // Ignore column exists errors
-            });
-        });
+        // Force patch missing columns safely
+        safeAddColumn('sale_items', "imei_number VARCHAR(50) DEFAULT 'N/A'");
+        safeAddColumn('sale_items', "quantity INT DEFAULT 1");
+        safeAddColumn('sale_items', "selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00");
+        safeAddColumn('sale_items', "discount_amount DECIMAL(10,2) DEFAULT 0.00");
+        safeAddColumn('sale_items', "total_price DECIMAL(10,2) NOT NULL DEFAULT 0.00");
+        safeAddColumn('sale_items', "warranty_months INT DEFAULT 0");
     }
 });
 
