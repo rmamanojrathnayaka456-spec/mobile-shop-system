@@ -31,7 +31,7 @@ function safeAddColumn(table, columnDefinition) {
     });
 }
 
-// Auto-create & Auto-patch Tables to sync missing columns automatically
+// Auto-create & Auto-patch Tables
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -87,8 +87,6 @@ db.query(`
         console.error("❌ Error creating sale_items table:", err.message);
     } else {
         console.log("✅ Patching all sale_items columns on Railway DB...");
-        
-        // Force patch missing columns safely
         safeAddColumn('sale_items', "imei_number VARCHAR(50) DEFAULT 'N/A'");
         safeAddColumn('sale_items', "quantity INT DEFAULT 1");
         safeAddColumn('sale_items', "selling_price DECIMAL(10,2) NOT NULL DEFAULT 0.00");
@@ -170,7 +168,7 @@ app.post('/api/products', (req, res) => {
     });
 });
 
-// 2. Delete Product from Stock Inventory
+// 2. Safely Delete Product from Stock Inventory (Fixes Foreign Key Constraint Error)
 app.delete('/api/products/:id', (req, res) => {
     const productId = req.params.id;
 
@@ -183,26 +181,38 @@ app.delete('/api/products/:id', (req, res) => {
                 return res.status(500).json({ error: "Transaction failed" });
             }
 
-            connection.query(`DELETE FROM phone_stock WHERE product_id = ?`, [productId], (err) => {
+            // Step A: Set product_id in sale_items to NULL so sales history stays intact
+            connection.query(`UPDATE sale_items SET product_id = NULL WHERE product_id = ?`, [productId], (err) => {
                 if (err) {
                     return connection.rollback(() => {
                         connection.release();
-                        res.status(500).json({ error: "Failed to delete phone stock: " + err.message });
+                        res.status(500).json({ error: "Failed to update sale_items references: " + err.message });
                     });
                 }
 
-                connection.query(`DELETE FROM products WHERE product_id = ?`, [productId], (err) => {
+                // Step B: Delete product IMEI numbers from phone_stock
+                connection.query(`DELETE FROM phone_stock WHERE product_id = ?`, [productId], (err) => {
                     if (err) {
                         return connection.rollback(() => {
                             connection.release();
-                            res.status(500).json({ error: "Failed to delete product: " + err.message });
+                            res.status(500).json({ error: "Failed to delete phone stock: " + err.message });
                         });
                     }
 
-                    connection.commit((err) => {
-                        connection.release();
-                        if (err) return res.status(500).json({ error: "Commit failed" });
-                        res.json({ message: `Product ID ${productId} deleted successfully!` });
+                    // Step C: Delete product from products table
+                    connection.query(`DELETE FROM products WHERE product_id = ?`, [productId], (err) => {
+                        if (err) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                res.status(500).json({ error: "Failed to delete product: " + err.message });
+                            });
+                        }
+
+                        connection.commit((err) => {
+                            connection.release();
+                            if (err) return res.status(500).json({ error: "Commit failed" });
+                            res.json({ message: `Product ID ${productId} deleted successfully!` });
+                        });
                     });
                 });
             });
