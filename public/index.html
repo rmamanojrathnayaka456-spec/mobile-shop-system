@@ -236,8 +236,8 @@
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1;">
                 <div class="form-group">
-                    <label>🔍 Filter Product (Type Product ID e.g. 001, Brand, or Name):</label>
-                    <input type="text" id="posSearchInput" class="form-control" placeholder="e.g. 001 or iPhone..." oninput="filterPosProducts()">
+                    <label>🔍 Search Product (Type ID e.g. 001 or Name):</label>
+                    <input type="text" id="posSearchInput" class="form-control" placeholder="Type ID (001) or Name..." oninput="filterPosProducts()">
                 </div>
 
                 <div class="form-group">
@@ -342,6 +342,7 @@
 <script>
     let billCart = [];
     let inventoryData = [];
+    let posMasterData = []; // Dedicated store for POS filtering
 
     function switchTab(evt, tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -401,6 +402,7 @@
         .then(res => res.json())
         .then(data => {
             inventoryData = data;
+            posMasterData = data; // Keep master copy
             renderPosSelectOptions(data);
         });
     }
@@ -422,11 +424,11 @@
     function filterPosProducts() {
         const searchTerm = document.getElementById('posSearchInput').value.toLowerCase().trim();
         if(!searchTerm) {
-            renderPosSelectOptions(inventoryData);
+            renderPosSelectOptions(posMasterData);
             return;
         }
 
-        const filtered = inventoryData.filter(item => {
+        const filtered = posMasterData.filter(item => {
             const formattedId = item.formatted_id || String(item.product_id).padStart(3, '0');
             return formattedId.includes(searchTerm) ||
                    item.product_id.toString() === searchTerm ||
@@ -459,13 +461,13 @@
     function addToBill() {
         const prodId = document.getElementById('posSelectProduct').value;
         const prodSelect = document.getElementById('posSelectProduct');
+        if(!prodId || prodSelect.selectedIndex === 0) return alert("Select a product");
+
         const prodName = prodSelect.options[prodSelect.selectedIndex].text;
         const price = parseFloat(document.getElementById('posSellingPrice').value);
         const discount = parseFloat(document.getElementById('posDiscount').value) || 0;
         const qty = parseInt(document.getElementById('posQuantity').value) || 1;
         const imei = document.getElementById('posSelectIMEI').value;
-
-        if(!prodId) return alert("Select a product");
 
         const subtotal = (price - discount) * qty;
 
@@ -529,6 +531,7 @@
                 renderBillTable();
                 document.getElementById('custName').value = '';
                 document.getElementById('custPhone').value = '';
+                fetchPosInventory(); // Refresh stock
             }
         })
         .catch(err => alert("Checkout error: " + err.message));
