@@ -3,699 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHA MOBILE - POS System</title>
+    <title>SHA Mobile POS & Inventory System</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
-        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .nav-tabs { display: flex; border-bottom: 2px solid #ccc; margin-bottom: 20px; }
-        .tab-btn { padding: 10px 20px; border: none; background: #e0e0e0; cursor: pointer; font-weight: bold; border-radius: 5px 5px 0 0; margin-right: 5px; }
-        .tab-btn.active { background: #007bff; color: white; }
-        .sub-nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
-        .sub-tab-btn { padding: 8px 16px; border: 1px solid #007bff; background: #fff; color: #007bff; cursor: pointer; font-weight: bold; border-radius: 20px; }
-        .sub-tab-btn.active { background: #007bff; color: white; }
-        .tab-content, .sub-tab-content { display: none; }
-        .tab-content.active, .sub-tab-content.active { display: block; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-        .form-control { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-primary { background: #007bff; color: white; }
-        .btn-danger { background: #dc3545; color: white; padding: 5px 10px; font-size: 12px; }
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .branch-selector { background: #e8f4fd; padding: 8px 12px; border-radius: 6px; border: 1px solid #b8daff; }
+        select, input, button { padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        select { background: #fff; font-weight: bold; color: #007bff; cursor: pointer; }
+        button { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #218838; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; }
+        .tab-btn.inactive { background: #e0e0e0; color: #333; }
+        .section { display: none; background: #fafafa; padding: 20px; border-radius: 6px; border: 1px solid #eee; }
+        .section.active { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background: #343a40; color: white; }
-        
-        /* Summary Dashboard Cards */
-        .summary-cards { display: flex; gap: 15px; margin-bottom: 20px; }
-        .card { flex: 1; padding: 15px; background: #f8f9fa; border-left: 5px solid #007bff; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .card.green { border-left-color: #28a745; }
-        .card.orange { border-left-color: #fd7e14; }
-        .card h4 { margin: 0 0 5px 0; color: #6c757d; font-size: 14px; }
-        .card h2 { margin: 0; color: #333; font-size: 22px; }
-        .card ul { margin: 5px 0 0 0; padding-left: 20px; font-size: 13px; }
+        th { background: #007bff; color: white; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h2>📱 SHA MOBILE POS SYSTEM</h2>
+            <div class="branch-selector">
+                <label for="shopSelect"><strong>Select Branch:</strong></label>
+                <select id="shopSelect" onchange="changeShop()">
+                    <!-- Loaded dynamically -->
+                </select>
+            </div>
+        </header>
 
-<datalist id="sriLankaBrands">
-    <option value="Apple">
-    <option value="Samsung">
-    <option value="Xiaomi / Redmi">
-    <option value="POCO">
-    <option value="Vivo">
-    <option value="Oppo">
-    <option value="Realme">
-    <option value="Infinix">
-    <option value="Tecno">
-    <option value="OnePlus">
-    <option value="Honor">
-    <option value="Nokia">
-    <option value="Motorola">
-    <option value="Google Pixel">
-    <option value="Huawei">
-    <option value="ZTE / Nubia">
-    <option value="Sony">
-    <option value="Asus">
-    <option value="Nothing Phone">
-    <option value="JBL">
-    <option value="Generic">
-</datalist>
-
-<datalist id="colorList">
-    <option value="Black">
-    <option value="White">
-    <option value="Silver">
-    <option value="Space Gray">
-    <option value="Gold">
-    <option value="Pacific Blue">
-    <option value="Midnight Black">
-    <option value="Sierra Blue">
-    <option value="Deep Purple">
-    <option value="Titanium Gray">
-    <option value="Red">
-    <option value="Green">
-</datalist>
-
-<div class="container">
-    <h2>📱 SHA MOBILE POS SYSTEM</h2>
-
-    <!-- Navigation Tabs -->
-    <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab(event, 'addProduct')">1. Add Product</button>
-        <button class="tab-btn" onclick="switchTab(event, 'billingPos')">2. Billing / POS</button>
-        <button class="tab-btn" onclick="switchTab(event, 'inventory')">3. Stock Inventory</button>
-        <button class="tab-btn" onclick="switchTab(event, 'salesHistory')">4. Sales History</button>
-    </div>
-
-    <!-- TAB 1: Add Product -->
-    <div id="addProduct" class="tab-content active">
-        <!-- Sub Tabs -->
-        <div class="sub-nav-tabs">
-            <button class="sub-tab-btn active" onclick="switchSubTab(event, 'brandNewPhones')">Brand New Phones</button>
-            <button class="sub-tab-btn" onclick="switchSubTab(event, 'usedPhones')">Used Phones</button>
-            <button class="sub-tab-btn" onclick="switchSubTab(event, 'accessories')">Accessories</button>
-            <button class="sub-tab-btn" onclick="switchSubTab(event, 'jblProducts')">JBL</button>
+        <div class="tabs">
+            <button class="tab-btn" onclick="switchTab(1)">1. Add Product</button>
+            <button class="tab-btn inactive" onclick="switchTab(2)">2. Stock Inventory</button>
+            <button class="tab-btn inactive" onclick="switchTab(3)">3. Sales History</button>
         </div>
 
-        <!-- 1. Brand New Phones -->
-        <div id="brandNewPhones" class="sub-tab-content active">
+        <!-- Tab 1: Add Product -->
+        <div id="tab1" class="section active">
             <h3>1. Add New Product / Phone</h3>
-            <form onsubmit="saveProduct(event, 'Brand New Phone')">
-                <div class="form-group">
-                    <label>Product / Model Name:</label>
-                    <input type="text" class="form-control p-name" placeholder="e.g. iPhone 13 Pro / Fast Charger" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Select Phone Brand:</label>
-                    <input list="sriLankaBrands" class="form-control p-brand" placeholder="Select or type brand..." required>
-                </div>
-
-                <div class="form-group">
-                    <label>Type Colour:</label>
-                    <input list="colorList" class="form-control p-color" placeholder="e.g. Midnight Black, Pacific Blue, Gold" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Cost Price (Rs.):</label>
-                    <input type="number" step="0.01" class="form-control p-cost" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Selling Price (Rs.):</label>
-                    <input type="number" step="0.01" class="form-control p-selling" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Stock Quantity:</label>
-                    <input type="number" class="form-control p-qty" value="1" required>
-                </div>
-
-                <div class="form-group">
-                    <label>IMEI Number (Optional for phones):</label>
-                    <input type="text" class="form-control p-imei" placeholder="Enter 15-digit IMEI">
-                </div>
-
-                <button type="submit" class="btn btn-success">Add Product to System</button>
+            <form id="productForm" onsubmit="addProduct(event)">
+                <label>Product / Model Name:</label>
+                <input type="text" id="pName" placeholder="e.g. iPhone 13 Pro / Fast Charger" required>
+                
+                <label>Select Phone Brand:</label>
+                <input type="text" id="pBrand" placeholder="e.g. Apple, Samsung, Xiaomi">
+                
+                <label>Type Colour:</label>
+                <input type="text" id="pColor" placeholder="e.g. Midnight Black, Gold">
+                
+                <label>Cost Price (Rs.):</label>
+                <input type="number" id="pCost" placeholder="0.00" step="0.01">
+                
+                <label>Selling Price (Rs.):</label>
+                <input type="number" id="pPrice" placeholder="0.00" step="0.01" required>
+                
+                <label>Stock Quantity:</label>
+                <input type="number" id="pStock" value="1" required>
+                
+                <label>IMEI Number (Optional for phones):</label>
+                <input type="text" id="pImei" placeholder="Enter 15-digit IMEI">
+                
+                <button type="submit" style="margin-top: 15px;">Add Product to System</button>
             </form>
         </div>
 
-        <!-- 2. Used Phones Layout -->
-        <div id="usedPhones" class="sub-tab-content">
-            <h3>Add Used Phone</h3>
-            <form onsubmit="saveProduct(event, 'Used Phone')">
-                <div class="form-group">
-                    <label>Product / Model Name:</label>
-                    <input type="text" class="form-control p-name" placeholder="e.g. iPhone 11 Used" required>
-                </div>
-                <div class="form-group">
-                    <label>Brand:</label>
-                    <input list="sriLankaBrands" class="form-control p-brand" placeholder="Select or type brand..." required>
-                </div>
-                <div class="form-group">
-                    <label>Color:</label>
-                    <input list="colorList" class="form-control p-color" placeholder="e.g. Black, White" required>
-                </div>
-                <div class="form-group">
-                    <label>IMEI Number:</label>
-                    <input type="text" class="form-control p-imei" placeholder="Enter 15-digit IMEI" required>
-                </div>
-                <div class="form-group">
-                    <label>Cost Price (Rs.):</label>
-                    <input type="number" step="0.01" class="form-control p-cost" required>
-                </div>
-                <div class="form-group">
-                    <label>Selling Price (Rs.):</label>
-                    <input type="number" step="0.01" class="form-control p-selling" required>
-                </div>
-                <input type="hidden" class="p-qty" value="1">
-                <button type="submit" class="btn btn-success">Add Used Phone</button>
-            </form>
+        <!-- Tab 2: Stock Inventory -->
+        <div id="tab2" class="section">
+            <h3>2. Branch Stock Inventory</h3>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Brand</th><th>Color</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th></tr>
+                </thead>
+                <tbody id="inventoryTable">
+                    <tr><td colspan="7" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
 
-        <!-- 3. Accessories Layout -->
-        <div id="accessories" class="sub-tab-content">
-            <h3>Add Accessory</h3>
-            <form onsubmit="saveProduct(event, 'Accessory')">
-                <div class="form-group">
-                    <label>Accessory Name:</label>
-                    <input type="text" class="form-control p-name" placeholder="e.g. 20W Fast Charger / Silicon Case" required>
-                </div>
-                <div class="form-group">
-                    <label>Brand:</label>
-                    <input list="sriLankaBrands" class="form-control p-brand" placeholder="e.g. Anker, Apple, Joyroom" required>
-                </div>
-                <div class="form-group">
-                    <label>Color:</label>
-                    <input list="colorList" class="form-control p-color" placeholder="e.g. Black, White" required>
-                </div>
-                <div class="form-group">
-                    <label>Cost Price (Rs.):</label>
-                    <input type="number" step="0.01" class="form-control p-cost" required>
-                </div>
-                <div class="form-group">
-                    <label>Selling Price (Rs.):</label>
-                    <input type="number" step="0.01" class="form-control p-selling" required>
-                </div>
-                <div class="form-group">
-                    <label>Stock Quantity:</label>
-                    <input type="number" class="form-control p-qty" value="1" required>
-                </div>
-                <button type="submit" class="btn btn-success">Add Accessory</button>
-            </form>
-        </div>
-
-        <!-- 4. JBL Layout -->
-        <div id="jblProducts" class="sub-tab-content">
-            <h3>Add JBL Product</h3>
-            <form onsubmit="saveProduct(event, 'JBL')">
-                <div class="form-group">
-                    <label>Brand:</label>
-                    <input type="text" class="form-control p-brand" value="JBL" readonly required>
-                </div>
-                <div class="form-group">
-                    <label>Product Name / Title:</label>
-                    <input type="text" class="form-control p-name" placeholder="e.g. JBL Flip 6 Speaker" required>
-                </div>
-                <div class="form-group">
-                    <label>Model Number:</label>
-                    <input type="text" class="form-control p-model" placeholder="e.g. JBLFLIP6BLK / GO3" required>
-                </div>
-                <div class="form-group">
-                    <label>Cost Price (Rs.):</label>
-                    <input type="number" step="0.01" class="form-control p-cost" required>
-                </div>
-                <div class="form-group">
-                    <label>Selling Price (Rs.):</label>
-                    <input type="number" step="0.01" class="form-control p-selling" required>
-                </div>
-                <div class="form-group">
-                    <label>Stock Quantity:</label>
-                    <input type="number" class="form-control p-qty" value="1" required>
-                </div>
-                <button type="submit" class="btn btn-success">Add JBL Product</button>
-            </form>
+        <!-- Tab 3: Sales History -->
+        <div id="tab3" class="section">
+            <h3>3. Sales History</h3>
+            <table>
+                <thead>
+                    <tr><th>Sale ID</th><th>Total Amount (Rs.)</th><th>Date & Time</th></tr>
+                </thead>
+                <tbody id="salesTable">
+                    <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- TAB 2: Billing / POS -->
-    <div id="billingPos" class="tab-content">
-        <h3>2. Billing & Checkout</h3>
-        <div style="display: flex; gap: 20px;">
-            <div style="flex: 1;">
-                <div class="form-group">
-                    <label>🔍 Type Product ID (e.g. 001) or Name to Auto-Select:</label>
-                    <input type="text" id="posSearchInput" class="form-control" placeholder="Type ID (001) or Name..." oninput="filterAndAutoSelectPos()">
-                </div>
+    <script>
+        let currentShopId = 1;
 
-                <div class="form-group">
-                    <label>Select Product:</label>
-                    <select id="posSelectProduct" class="form-control" onchange="loadProductDetails()"></select>
-                </div>
-                <div class="form-group">
-                    <label>Select Available IMEI:</label>
-                    <select id="posSelectIMEI" class="form-control"></select>
-                </div>
-                <div class="form-group">
-                    <label>Selling Price (Rs.):</label>
-                    <input type="number" id="posSellingPrice" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Discount Amount (Rs.):</label>
-                    <input type="number" id="posDiscount" class="form-control" value="0">
-                </div>
-                <div class="form-group">
-                    <label>Quantity:</label>
-                    <input type="number" id="posQuantity" class="form-control" value="1">
-                </div>
-                <button type="button" class="btn btn-success" onclick="addToBill()">Add to Bill</button>
-            </div>
-
-            <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 5px;">
-                <h4>Bill Details</h4>
-                <div class="form-group">
-                    <label>Customer Name:</label>
-                    <input type="text" id="custName" class="form-control" placeholder="Cash Customer">
-                </div>
-                <div class="form-group">
-                    <label>Customer Phone Number:</label>
-                    <input type="text" id="custPhone" class="form-control" placeholder="07X XXXXXXX">
-                </div>
-
-                <table id="billTable">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Qty</th>
-                            <th>Subtotal</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                <h3 style="margin-top: 15px;">Total Payable: Rs. <span id="grandTotal">0.00</span></h3>
-                <button type="button" class="btn btn-primary" style="width: 100%;" onclick="completeCheckout()">Checkout & Complete Sale</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB 3: Stock Inventory -->
-    <div id="inventory" class="tab-content">
-        <h3>3. Current Stock Inventory</h3>
-        
-        <div class="form-group">
-            <label>🔍 Search Inventory (by Product ID e.g. 001, Name, Brand, Color, or Model Number):</label>
-            <input type="text" id="inventorySearch" class="form-control" placeholder="Type Product ID (001), Model Number, or Brand..." oninput="filterInventory()">
-        </div>
-
-        <table id="inventoryTable">
-            <thead>
-                <tr>
-                    <th>Product ID</th>
-                    <th>Product Name</th>
-                    <th>Brand</th>
-                    <th>Colour</th>
-                    <th>Model No</th>
-                    <th>Category</th>
-                    <th>Stock</th>
-                    <th>Selling Price</th>
-                    <th>IMEI</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <!-- TAB 4: Sales History & Summary Reports -->
-    <div id="salesHistory" class="tab-content">
-        <h3>4. Completed Sales History & Analytics</h3>
-
-        <!-- Sales Analytics Summary Cards -->
-        <div class="summary-cards">
-            <div class="card">
-                <h4>📅 Daily Sales (Today)</h4>
-                <h2>Rs. <span id="dailyTotal">0.00</span></h2>
-            </div>
-            <div class="card green">
-                <h4>🗓️ Monthly Sales (This Month)</h4>
-                <h2>Rs. <span id="monthlyTotal">0.00</span></h2>
-            </div>
-            <div class="card orange">
-                <h4>🔥 Top Selling Items (This Month)</h4>
-                <ul id="topSellingList">
-                    <li>No sales data yet</li>
-                </ul>
-            </div>
-        </div>
-
-        <table id="salesHistoryTable">
-            <thead>
-                <tr>
-                    <th>Invoice ID</th>
-                    <th>Customer Name</th>
-                    <th>Phone</th>
-                    <th>Product Name</th>
-                    <th>Qty</th>
-                    <th>IMEI</th>
-                    <th>Total Price</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-</div>
-
-<script>
-    let billCart = [];
-    let inventoryData = [];
-    let posMasterData = [];
-
-    function switchTab(evt, tabId) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById(tabId).classList.add('active');
-        if (evt && evt.currentTarget) {
-            evt.currentTarget.classList.add('active');
-        }
-
-        if(tabId === 'billingPos') fetchPosInventory();
-        if(tabId === 'inventory') fetchFullInventory();
-        if(tabId === 'salesHistory') {
-            fetchSalesHistory();
-            fetchSalesSummary();
-        }
-    }
-
-    function switchSubTab(evt, subTabId) {
-        document.querySelectorAll('.sub-tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById(subTabId).classList.add('active');
-        if (evt && evt.currentTarget) {
-            evt.currentTarget.classList.add('active');
-        }
-    }
-
-    function saveProduct(e, categoryType) {
-        e.preventDefault();
-        const form = e.target;
-
-        const payload = {
-            name: form.querySelector('.p-name') ? form.querySelector('.p-name').value : '',
-            brand: form.querySelector('.p-brand') ? form.querySelector('.p-brand').value : 'Generic',
-            color: form.querySelector('.p-color') ? form.querySelector('.p-color').value : 'N/A',
-            category: categoryType,
-            model_number: form.querySelector('.p-model') ? form.querySelector('.p-model').value : 'N/A',
-            cost_price: form.querySelector('.p-cost').value,
-            selling_price: form.querySelector('.p-selling').value,
-            stock_quantity: form.querySelector('.p-qty') ? form.querySelector('.p-qty').value : 1,
-            imei_number: form.querySelector('.p-imei') ? form.querySelector('.p-imei').value : ''
-        };
-
-        fetch('/api/products', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message || data.error);
-            if(!data.error) form.reset();
-        })
-        .catch(err => alert("Error: " + err.message));
-    }
-
-    function fetchPosInventory() {
-        fetch('/api/inventory')
-        .then(res => res.json())
-        .then(data => {
-            inventoryData = data;
-            posMasterData = data;
-            renderPosSelectOptions(data);
-        });
-    }
-
-    function renderPosSelectOptions(dataList) {
-        const select = document.getElementById('posSelectProduct');
-        select.innerHTML = '<option value="">-- Select Product --</option>';
-        
-        const uniqueProducts = {};
-        dataList.forEach(item => {
-            if(!uniqueProducts[item.product_id]) {
-                uniqueProducts[item.product_id] = item;
-                const displayId = item.formatted_id || String(item.product_id).padStart(3, '0');
-                select.innerHTML += `<option value="${item.product_id}">[ID: ${displayId}] ${item.name} (${item.brand} - ${item.color}) - Rs. ${item.selling_price} (Stock: ${item.stock_quantity})</option>`;
-            }
-        });
-    }
-
-    function filterAndAutoSelectPos() {
-        const searchTerm = document.getElementById('posSearchInput').value.toLowerCase().trim();
-        const select = document.getElementById('posSelectProduct');
-
-        if(!searchTerm) {
-            renderPosSelectOptions(posMasterData);
-            document.getElementById('posSellingPrice').value = '';
-            document.getElementById('posSelectIMEI').innerHTML = '<option value="">N/A (No IMEI)</option>';
-            return;
-        }
-
-        const filtered = posMasterData.filter(item => {
-            const formattedId = item.formatted_id || String(item.product_id).padStart(3, '0');
-            return formattedId.toLowerCase() === searchTerm ||
-                   item.product_id.toString() === searchTerm ||
-                   (item.name && item.name.toLowerCase().includes(searchTerm)) ||
-                   (item.brand && item.brand.toLowerCase().includes(searchTerm)) ||
-                   (item.model_number && item.model_number.toLowerCase().includes(searchTerm));
-        });
-
-        renderPosSelectOptions(filtered);
-
-        if(filtered.length > 0) {
-            select.value = filtered[0].product_id;
-            loadProductDetails();
-        } else {
-            document.getElementById('posSellingPrice').value = '';
-            document.getElementById('posSelectIMEI').innerHTML = '<option value="">N/A (No IMEI)</option>';
-        }
-    }
-
-    function loadProductDetails() {
-        const prodId = document.getElementById('posSelectProduct').value;
-        const imeiSelect = document.getElementById('posSelectIMEI');
-        imeiSelect.innerHTML = '<option value="">N/A (No IMEI)</option>';
-
-        if(!prodId) {
-            document.getElementById('posSellingPrice').value = '';
-            return;
-        }
-
-        const productItems = inventoryData.filter(i => i.product_id == prodId);
-        if(productItems.length > 0) {
-            document.getElementById('posSellingPrice').value = productItems[0].selling_price;
-            productItems.forEach(item => {
-                if(item.imei_number) {
-                    imeiSelect.innerHTML += `<option value="${item.imei_number}">${item.imei_number}</option>`;
-                }
-            });
-        }
-    }
-
-    function addToBill() {
-        const prodId = document.getElementById('posSelectProduct').value;
-        const prodSelect = document.getElementById('posSelectProduct');
-        if(!prodId || prodSelect.selectedIndex === 0) return alert("Select a product");
-
-        const prodName = prodSelect.options[prodSelect.selectedIndex].text;
-        const price = parseFloat(document.getElementById('posSellingPrice').value);
-        const discount = parseFloat(document.getElementById('posDiscount').value) || 0;
-        const qty = parseInt(document.getElementById('posQuantity').value) || 1;
-        const imei = document.getElementById('posSelectIMEI').value;
-
-        const subtotal = (price - discount) * qty;
-
-        billCart.push({
-            product_id: prodId,
-            product_name: prodName,
-            price: price,
-            discount: discount,
-            quantity: qty,
-            subtotal: subtotal,
-            imei_number: imei
-        });
-
-        renderBillTable();
-    }
-
-    function renderBillTable() {
-        const tbody = document.querySelector('#billTable tbody');
-        tbody.innerHTML = '';
-        let total = 0;
-
-        billCart.forEach((item, index) => {
-            total += item.subtotal;
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.product_name}<br><small>IMEI: ${item.imei_number || 'N/A'}</small></td>
-                    <td>${item.quantity}</td>
-                    <td>Rs. ${item.subtotal.toFixed(2)}</td>
-                    <td><button class="btn btn-danger" onclick="removeFromBill(${index})">Remove</button></td>
-                </tr>
-            `;
-        });
-
-        document.getElementById('grandTotal').innerText = total.toFixed(2);
-    }
-
-    function removeFromBill(index) {
-        billCart.splice(index, 1);
-        renderBillTable();
-    }
-
-    function completeCheckout() {
-        if(billCart.length === 0) return alert("Cart is empty!");
-
-        const payload = {
-            customer_name: document.getElementById('custName').value,
-            customer_phone: document.getElementById('custPhone').value,
-            items: billCart
-        };
-
-        fetch('/api/sales', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message || data.error);
-            if(!data.error) {
-                billCart = [];
-                renderBillTable();
-                document.getElementById('custName').value = '';
-                document.getElementById('custPhone').value = '';
-                fetchPosInventory();
-            }
-        })
-        .catch(err => alert("Checkout error: " + err.message));
-    }
-
-    function fetchFullInventory() {
-        fetch('/api/inventory')
-        .then(res => res.json())
-        .then(data => {
-            inventoryData = data;
-            renderInventoryTable(data);
-        });
-    }
-
-    function renderInventoryTable(data) {
-        const tbody = document.querySelector('#inventoryTable tbody');
-        tbody.innerHTML = '';
-        data.forEach(item => {
-            const displayId = item.formatted_id || String(item.product_id).padStart(3, '0');
-            tbody.innerHTML += `
-                <tr>
-                    <td><strong>${displayId}</strong></td>
-                    <td>${item.name}</td>
-                    <td>${item.brand || 'Generic'}</td>
-                    <td>${item.color || 'N/A'}</td>
-                    <td>${item.model_number || 'N/A'}</td>
-                    <td>${item.category}</td>
-                    <td>${item.stock_quantity}</td>
-                    <td>Rs. ${item.selling_price}</td>
-                    <td>${item.imei_number || 'N/A'}</td>
-                    <td><button class="btn btn-danger" onclick="deleteProduct(${item.product_id})">Delete</button></td>
-                </tr>
-            `;
-        });
-    }
-
-    function filterInventory() {
-        const searchTerm = document.getElementById('inventorySearch').value.toLowerCase().trim();
-        const filtered = inventoryData.filter(item => {
-            const formattedId = item.formatted_id || String(item.product_id).padStart(3, '0');
-            return formattedId.includes(searchTerm) ||
-                   item.product_id.toString() === searchTerm ||
-                   (item.name && item.name.toLowerCase().includes(searchTerm)) ||
-                   (item.brand && item.brand.toLowerCase().includes(searchTerm)) ||
-                   (item.color && item.color.toLowerCase().includes(searchTerm)) ||
-                   (item.model_number && item.model_number.toLowerCase().includes(searchTerm)) ||
-                   (item.imei_number && item.imei_number.toLowerCase().includes(searchTerm));
-        });
-        renderInventoryTable(filtered);
-    }
-
-    function deleteProduct(id) {
-        if(!confirm("Are you sure you want to delete this product?")) return;
-
-        fetch('/api/products/' + id, { method: 'DELETE' })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message || data.error);
-            fetchFullInventory();
-        });
-    }
-
-    function fetchSalesHistory() {
-        fetch('/api/sales')
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.querySelector('#salesHistoryTable tbody');
-            tbody.innerHTML = '';
-            data.forEach(item => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${item.sale_id}</td>
-                        <td>${item.customer_name || 'Cash Customer'}</td>
-                        <td>${item.customer_phone || 'N/A'}</td>
-                        <td>${item.product_name || 'N/A'}</td>
-                        <td>${item.quantity}</td>
-                        <td>${item.imei_number || 'N/A'}</td>
-                        <td>Rs. ${item.total_price}</td>
-                        <td><button class="btn btn-danger" onclick="deleteSale(${item.sale_item_id})">Delete</button></td>
-                    </tr>
-                `;
-            });
-        });
-    }
-
-    function fetchSalesSummary() {
-        fetch('/api/sales/summary')
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('dailyTotal').innerText = parseFloat(data.daily_total).toFixed(2);
-            document.getElementById('monthlyTotal').innerText = parseFloat(data.monthly_total).toFixed(2);
-
-            const topList = document.getElementById('topSellingList');
-            topList.innerHTML = '';
-
-            if (data.most_sold_items && data.most_sold_items.length > 0) {
-                data.most_sold_items.forEach(item => {
-                    topList.innerHTML += `<li><strong>${item.product_name || 'Unknown'}</strong>: ${item.total_sold} units</li>`;
+        async function loadShops() {
+            try {
+                const res = await fetch('/api/shops');
+                const shops = await res.json();
+                const select = document.getElementById('shopSelect');
+                select.innerHTML = '';
+                shops.forEach(shop => {
+                    const opt = document.createElement('option');
+                    opt.value = shop.shop_id;
+                    opt.textContent = shop.shop_name;
+                    select.appendChild(opt);
                 });
-            } else {
-                topList.innerHTML = '<li>No sales recorded this month</li>';
+                if(shops.length > 0) {
+                    currentShopId = shops[0].shop_id;
+                    loadInventory();
+                    loadSales();
+                }
+            } catch (err) {
+                console.error('Error loading shops:', err);
             }
-        });
-    }
+        }
 
-    function deleteSale(saleItemId) {
-        if(!confirm("Are you sure you want to delete this sale record? (Stock will be automatically restored)")) return;
+        function changeShop() {
+            currentShopId = document.getElementById('shopSelect').value;
+            loadInventory();
+            loadSales();
+        }
 
-        fetch('/api/sales/' + saleItemId, { method: 'DELETE' })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message || data.error);
-            fetchSalesHistory();
-            fetchSalesSummary();
-        });
-    }
-</script>
+        function switchTab(tabNum) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.add('inactive'));
+            
+            document.getElementById(`tab${tabNum}`).classList.add('active');
+            event.target.classList.remove('inactive');
+        }
 
+        async function loadInventory() {
+            try {
+                const res = await fetch(`/api/products?shop_id=${currentShopId}`);
+                const products = await res.json();
+                const tbody = document.getElementById('inventoryTable');
+                tbody.innerHTML = '';
+                if(products.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No products found for this branch.</td></tr>`;
+                    return;
+                }
+                products.forEach(p => {
+                    tbody.innerHTML += `<tr>
+                        <td>${p.product_id}</td>
+                        <td>${p.name}</td>
+                        <td>${p.brand || '-'}</td>
+                        <td>${p.color || '-'}</td>
+                        <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
+                        <td>${p.stock}</td>
+                        <td>${p.imei || '-'}</td>
+                    </tr>`;
+                });
+            } catch (err) {
+                console.error('Error loading inventory:', err);
+            }
+        }
+
+        async function loadSales() {
+            try {
+                const res = await fetch(`/api/sales?shop_id=${currentShopId}`);
+                const sales = await res.json();
+                const tbody = document.getElementById('salesTable');
+                tbody.innerHTML = '';
+                if(sales.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No sales recorded for this branch.</td></tr>`;
+                    return;
+                }
+                sales.forEach(s => {
+                    tbody.innerHTML += `<tr>
+                        <td>${s.sale_id}</td>
+                        <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
+                        <td>${new Date(s.created_at).toLocaleString()}</td>
+                    </tr>`;
+                });
+            } catch (err) {
+                console.error('Error loading sales:', err);
+            }
+        }
+
+        async function addProduct(e) {
+            e.preventDefault();
+            const data = {
+                shop_id: currentShopId,
+                name: document.getElementById('pName').value,
+                brand: document.getElementById('pBrand').value,
+                color: document.getElementById('pColor').value,
+                cost_price: document.getElementById('pCost').value,
+                selling_price: document.getElementById('pPrice').value,
+                stock: document.getElementById('pStock').value,
+                imei: document.getElementById('pImei').value
+            };
+
+            try {
+                const res = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if(res.ok) {
+                    alert('Product added successfully!');
+                    document.getElementById('productForm').reset();
+                    loadInventory();
+                } else {
+                    alert('Failed to add product.');
+                }
+            } catch (err) {
+                console.error('Error adding product:', err);
+            }
+        }
+
+        window.onload = loadShops;
+    </script>
 </body>
 </html>

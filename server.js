@@ -24,7 +24,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables with shop_id and Seed 3 Shops
+// Auto Create Tables with shop_id and Seed 3 Branches
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -33,8 +33,8 @@ db.query(`
 `, (err) => {
     if (!err) {
         db.query(`INSERT IGNORE INTO shops (shop_id, shop_name) VALUES 
-            (1, 'SHA Mobile - Main Branch'), 
-            (2, 'SHA Mobile - Branch 2'), 
+            (1, 'SHA Mobile - Main Branch (Kegalle)'), 
+            (2, 'SHA Mobile - Branch 2 (Rambukkana)'), 
             (3, 'SHA Mobile - Branch 3')`);
     }
 });
@@ -44,8 +44,12 @@ db.query(`
         product_id INT AUTO_INCREMENT PRIMARY KEY,
         shop_id INT NOT NULL,
         name VARCHAR(100) NOT NULL,
-        price DECIMAL(10, 2) NOT NULL,
-        stock INT DEFAULT 0,
+        brand VARCHAR(50),
+        color VARCHAR(50),
+        cost_price DECIMAL(10, 2),
+        selling_price DECIMAL(10, 2) NOT NULL,
+        stock INT DEFAULT 1,
+        imei VARCHAR(50),
         FOREIGN KEY (shop_id) REFERENCES shops(shop_id)
     )
 `);
@@ -77,10 +81,10 @@ app.get('/api/products', (req, res) => {
 });
 
 app.post('/api/products', (req, res) => {
-    const { shop_id, name, price, stock } = req.body;
+    const { shop_id, name, brand, color, cost_price, selling_price, stock, imei } = req.body;
     db.query(
-        'INSERT INTO products (shop_id, name, price, stock) VALUES (?, ?, ?, ?)',
-        [shop_id, name, price, stock],
+        'INSERT INTO products (shop_id, name, brand, color, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [shop_id, name, brand, color, cost_price, selling_price, stock || 1, imei],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Product added successfully', product_id: result.insertId });
