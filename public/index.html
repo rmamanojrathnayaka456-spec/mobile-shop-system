@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOBILE POS SYSTEM</title>
-    <!-- JsBarcode & Html5-QRCode Libraries for Barcode Generation & Camera Scanning -->
+    <!-- JsBarcode & Html5-QRCode Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
@@ -47,14 +47,15 @@
         th { background: #007bff; color: white; }
         
         .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .card { background: white; padding: 15px; border-radius: 6px; border: 1px solid #ddd; border-left: 5px solid #007bff; }
+        .card { background: white; padding: 15px; border-radius: 6px; border: 1px solid #ddd; border-left: 5px solid #007bff; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .card.active-card { border-color: #28a745 !important; background: #f0fff4; }
         .card h4 { margin: 0 0 10px 0; color: #555; font-size: 14px; }
         .card p { font-size: 18px; font-weight: bold; color: #007bff; margin: 0; }
         
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: #ffcccc !important; color: #900; font-weight: bold; }
 
-        /* Print Style for Bill & Barcode Sticker */
         @media print {
             body * { visibility: hidden; }
             .printable, .printable * { visibility: visible; }
@@ -216,11 +217,23 @@
 
         <!-- Tab 4: Sales History -->
         <div id="tab4" class="section">
-            <h3>4. Sales History & Analytics</h3>
+            <h3 id="salesHeaderTitle">4. Sales History & Analytics (Showing: All Sales)</h3>
             <div class="analytics-grid">
-                <div class="card"><h4>Daily Sales</h4><p id="dailySalesAmt">Rs. 0.00</p></div>
-                <div class="card"><h4>Monthly Sales</h4><p id="monthlySalesAmt">Rs. 0.00</p></div>
-                <div class="card" style="border-left-color: #28a745;"><h4>Total Transactions</h4><p id="totalTransactions">0</p></div>
+                <div class="card" id="cardDaily" onclick="filterSalesView('daily', this)">
+                    <h4>Daily Sales (Today)</h4>
+                    <p id="dailySalesAmt">Rs. 0.00</p>
+                    <span style="font-size:11px; color:#666;">(Click to view today's sales)</span>
+                </div>
+                <div class="card" id="cardMonthly" onclick="filterSalesView('monthly', this)">
+                    <h4>Monthly Sales (This Month)</h4>
+                    <p id="monthlySalesAmt">Rs. 0.00</p>
+                    <span style="font-size:11px; color:#666;">(Click to view this month's sales)</span>
+                </div>
+                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #28a745;">
+                    <h4>Total Transactions</h4>
+                    <p id="totalTransactions">0</p>
+                    <span style="font-size:11px; color:#666;">(Click to view all sales history)</span>
+                </div>
             </div>
             <table>
                 <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Method</th><th>Total (Rs.)</th><th>Date</th><th>Action</th></tr></thead>
@@ -282,6 +295,8 @@
         let cart = [];
         let allProducts = [];
         let allRepairs = [];
+        let rawSalesData = [];
+        let currentSalesFilter = 'all';
         let currentStockFilter = 'all';
         let html5QrcodeScanner = null;
         let lastSaleData = null;
@@ -728,38 +743,90 @@
             document.getElementById('receiptModal').style.display = 'none';
         }
 
+        // Sales & Auto Daily/Monthly Analytics Filtering
         async function loadSales() {
             try {
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
-                const sales = await res.json();
-                const tbody = document.getElementById('salesTable');
-                tbody.innerHTML = '';
+                rawSalesData = await res.json();
+                
                 let dailyAmt = 0, monthlyAmt = 0;
-                const today = new Date().toDateString();
+                const now = new Date();
+                const todayStr = now.toDateString();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
 
-                if(sales.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No sales recorded.</td></tr>`;
-                } else {
-                    sales.forEach(s => {
-                        const sId = s.id || s.sale_id;
-                        const sDate = new Date(s.created_at);
-                        if(sDate.toDateString() === today) dailyAmt += parseFloat(s.total_amount);
+                rawSalesData.forEach(s => {
+                    const sDate = new Date(s.created_at);
+                    if(sDate.toDateString() === todayStr) {
+                        dailyAmt += parseFloat(s.total_amount);
+                    }
+                    if(sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear) {
                         monthlyAmt += parseFloat(s.total_amount);
-                        tbody.innerHTML += `<tr>
-                            <td><b>#${sId}</b></td>
-                            <td>${s.customer_name}</td>
-                            <td>${s.customer_phone}</td>
-                            <td>${s.payment_method}</td>
-                            <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
-                            <td>${sDate.toLocaleDateString()}</td>
-                            <td><button onclick="deleteSale(${sId})" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
-                        </tr>`;
-                    });
-                }
+                    }
+                });
+
                 document.getElementById('dailySalesAmt').textContent = `Rs. ${dailyAmt.toFixed(2)}`;
                 document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthlyAmt.toFixed(2)}`;
-                document.getElementById('totalTransactions').textContent = sales.length;
+                document.getElementById('totalTransactions').textContent = rawSalesData.length;
+
+                renderSalesTable();
             } catch (err) { console.error(err); }
+        }
+
+        function filterSalesView(type, cardEl) {
+            currentSalesFilter = type;
+            document.querySelectorAll('.analytics-grid .card').forEach(c => c.classList.remove('active-card'));
+            if(cardEl) cardEl.classList.add('active-card');
+            
+            const headerTitle = document.getElementById('salesHeaderTitle');
+            if(type === 'daily') {
+                headerTitle.textContent = "4. Sales History & Analytics (Showing: Today's Sales)";
+            } else if(type === 'monthly') {
+                headerTitle.textContent = "4. Sales History & Analytics (Showing: This Month's Sales)";
+            } else {
+                headerTitle.textContent = "4. Sales History & Analytics (Showing: All Sales)";
+            }
+
+            renderSalesTable();
+        }
+
+        function renderSalesTable() {
+            const tbody = document.getElementById('salesTable');
+            tbody.innerHTML = '';
+            
+            const now = new Date();
+            const todayStr = now.toDateString();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            let displaySales = rawSalesData.filter(s => {
+                const sDate = new Date(s.created_at);
+                if(currentSalesFilter === 'daily') {
+                    return sDate.toDateString() === todayStr;
+                } else if(currentSalesFilter === 'monthly') {
+                    return sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear;
+                }
+                return true; // 'all'
+            });
+
+            if(displaySales.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No sales found for this filter.</td></tr>`;
+                return;
+            }
+
+            displaySales.forEach(s => {
+                const sId = s.id || s.sale_id;
+                const sDate = new Date(s.created_at);
+                tbody.innerHTML += `<tr>
+                    <td><b>#${sId}</b></td>
+                    <td>${s.customer_name}</td>
+                    <td>${s.customer_phone}</td>
+                    <td>${s.payment_method}</td>
+                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
+                    <td>${sDate.toLocaleString()}</td>
+                    <td><button onclick="deleteSale(${sId})" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
+                </tr>`;
+            });
         }
 
         async function deleteSale(id) {

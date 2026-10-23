@@ -175,8 +175,6 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
-    
-    // First insert to get unique increment ID
     db.query(
         'INSERT INTO products (shop_id, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [shop_id, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
@@ -185,7 +183,6 @@ app.post('/api/products', (req, res) => {
             const pId = result.insertId;
             const product_code = pId.toString().padStart(3, '0');
             
-            // Update product code based on unique product ID
             db.query('UPDATE products SET product_code = ? WHERE product_id = ?', [product_code, pId], (err2) => {
                 if (err2) return res.status(500).json({ error: err2.message });
                 res.json({ message: 'Product added successfully', product_id: pId, product_code });
@@ -201,7 +198,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Ensuring sale_id is explicitly mapped to id)
+// Sales APIs
 app.get('/api/sales', (req, res) => {
     db.query('SELECT sale_id AS id, sale_id, shop_id, customer_name, customer_phone, payment_method, discount, total_amount, created_at FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
