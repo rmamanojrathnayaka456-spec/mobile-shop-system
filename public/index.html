@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHA MOBILE POS SYSTEM</title>
+    <title>MOBILE POS SYSTEM</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -45,34 +45,31 @@
         
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: #ffcccc !important; color: #900; font-weight: bold; }
-        
-        @media print {
-            body * { visibility: hidden; }
-            #printableReceipt, #printableReceipt * { visibility: visible; }
-            #printableReceipt { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; }
-        }
     </style>
 </head>
 <body>
 
+    <!-- Login Screen -->
     <div id="loginScreen">
-        <h2>📱 SHA MOBILE POS SYSTEM</h2>
+        <h2>📱 MOBILE POS SYSTEM</h2>
         <form onsubmit="handleLogin(event)">
             <div class="login-group">
                 <label>Username:</label>
-                <input type="text" id="loginUser" placeholder="Enter username (e.g. kegalle)" required>
+                <input type="text" id="loginUser" placeholder="e.g. branch1" required>
             </div>
             <div class="login-group">
                 <label>Password:</label>
-                <input type="password" id="loginPass" placeholder="Enter password" required>
+                <input type="password" id="loginPass" placeholder="e.g. pass123" required>
             </div>
             <button type="submit" style="margin-top: 10px;">Login to System</button>
         </form>
+        <p style="font-size: 11px; color: #666; margin-top: 15px;">Logins: <b>branch1</b> to <b>branch7</b> | Pass: <b>pass123</b></p>
     </div>
 
+    <!-- Main App Container -->
     <div id="appContainer" class="container">
         <header>
-            <h2>📱 SHA MOBILE POS SYSTEM</h2>
+            <h2>📱 MOBILE POS SYSTEM</h2>
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div class="user-badge" id="userDisplay">User: Loading...</div>
                 <button class="logout-btn" onclick="handleLogout()">Logout</button>
@@ -89,14 +86,14 @@
 
         <!-- Tab 1: Add Product -->
         <div id="tab1" class="section active">
-            <h3>1. Add New Product / Phone</h3>
+            <h3 id="categoryTitle">1. Add New Product / Brand New Phone</h3>
             
             <div class="category-buttons">
-                <button type="button" class="cat-btn active" onclick="setCategory('Brand New Phone', this)">Brand New Phones</button>
-                <button type="button" class="cat-btn" onclick="setCategory('Used Phone', this)">Used Phones</button>
-                <button type="button" class="cat-btn" onclick="setCategory('Button Phone', this)">Button / Feature Phones</button>
-                <button type="button" class="cat-btn" onclick="setCategory('Accessory', this)">Accessories</button>
-                <button type="button" class="cat-btn" onclick="setCategory('Karaoke Box', this)">Karaoke Box</button>
+                <button type="button" class="cat-btn active" onclick="setCategory('Brand New Phone', '1. Add New Product / Brand New Phone', this)">Brand New Phones</button>
+                <button type="button" class="cat-btn" onclick="setCategory('Used Phone', '1. Add New Product / Used Phone', this)">Used Phones</button>
+                <button type="button" class="cat-btn" onclick="setCategory('Button Phone', '1. Add New Product / Button Phone', this)">Button / Feature Phones</button>
+                <button type="button" class="cat-btn" onclick="setCategory('Accessory', '1. Add New Product / Accessory', this)">Accessories</button>
+                <button type="button" class="cat-btn" onclick="setCategory('Karaoke Box', '1. Add New Product / Karaoke Box', this)">Karaoke Box</button>
             </div>
 
             <form id="productForm" onsubmit="addProduct(event)">
@@ -106,7 +103,22 @@
                 <input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra, iPhone 15" required>
                 
                 <label>Select Brand:</label>
-                <input type="text" id="pBrand" placeholder="e.g. Samsung, Apple, Nokia">
+                <input type="text" id="pBrand" list="brandOptions" placeholder="Type or select brand (e.g. Samsung, Apple, Nokia)">
+                <datalist id="brandOptions">
+                    <option value="Samsung">
+                    <option value="Apple">
+                    <option value="Xiaomi">
+                    <option value="Redmi">
+                    <option value="Oppo">
+                    <option value="Vivo">
+                    <option value="Realme">
+                    <option value="Nokia">
+                    <option value="Huawei">
+                    <option value="JBL">
+                    <option value="Sony">
+                    <option value="Remax">
+                    <option value="HOCO">
+                </datalist>
                 
                 <label>Type Colour:</label>
                 <input type="text" id="pColor" placeholder="e.g. Midnight Black, Gold">
@@ -134,8 +146,8 @@
             <h3>2. Billing & Checkout</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
-                    <label>🔍 Search ID (e.g. 001) or Product Name / Barcode Scan:</label>
-                    <input type="text" id="billingSearch" placeholder="Type ID, Name or scan barcode..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
+                    <label>🔍 Search Product ID (e.g. 001) or Name / Scan Barcode:</label>
+                    <input type="text" id="billingSearch" placeholder="Type ID, Name or scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
 
                     <select id="billingProductSelect" size="5" onchange="selectBillingProduct()" style="height: 140px; margin-top: 5px;"></select>
 
@@ -154,10 +166,8 @@
                     <h4>Bill Details</h4>
                     <label>Customer Name:</label>
                     <input type="text" id="custName" placeholder="Cash Customer">
-                    
                     <label>Customer Phone:</label>
                     <input type="text" id="custPhone" placeholder="07X XXXXXXX">
-
                     <label>Payment Method:</label>
                     <select id="paymentMethod">
                         <option value="Cash">Cash</option>
@@ -171,8 +181,8 @@
                         <thead><tr><th>Product</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
                         <tbody id="cartTableBody"><tr><td colspan="4" style="text-align:center;">Cart is empty</td></tr></tbody>
                     </table>
-                    <h3 style="margin-top: 15px;">Total Payable: Rs. <span id="cartTotal">0.00</span></h3>
-                    <button type="button" onclick="completeCheckout()" style="background: #28a745;">Checkout & Print Bill</button>
+                    <h3>Total Payable: Rs. <span id="cartTotal">0.00</span></h3>
+                    <button type="button" onclick="completeCheckout()" style="background: #28a745;">Checkout & Complete Sale</button>
                 </div>
             </div>
         </div>
@@ -181,9 +191,6 @@
         <div id="tab3" class="section">
             <h3>3. Current Stock Inventory</h3>
             <input type="text" id="searchStock" placeholder="Search by ID (001), Name, Brand, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
-            <div style="margin-bottom: 10px; font-weight: bold; color: #d9534f;">
-                ⚠️ Out of stock items are highlighted in <span style="background:#ffcccc; padding:2px 5px;">Red</span>.
-            </div>
             <table>
                 <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
                 <tbody id="inventoryTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
@@ -198,69 +205,28 @@
                 <div class="card"><h4>Monthly Sales</h4><p id="monthlySalesAmt">Rs. 0.00</p></div>
                 <div class="card" style="border-left-color: #28a745;"><h4>Total Transactions</h4><p id="totalTransactions">0</p></div>
             </div>
-
-            <div style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;">
-                <h4>📊 Sales Breakdown by Payment Method</h4>
-                <div id="paymentBreakdown" style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px;"></div>
-            </div>
-
             <table>
                 <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Method</th><th>Total (Rs.)</th><th>Date</th><th>Action</th></tr></thead>
                 <tbody id="salesTable"><tr><td colspan="7" style="text-align:center;">Loading...</td></tr></tbody>
             </table>
         </div>
 
-        <!-- Tab 5: Repairs -->
+        <!-- Tab 5: Repair Jobs -->
         <div id="tab5" class="section">
             <h3>5. Repair Jobs Management</h3>
-            <form id="repairForm" onsubmit="addRepair(event)" style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div>
-                        <label>Customer Name:</label>
-                        <input type="text" id="repCustomer" placeholder="Customer Name" required>
-                        <label>Customer Phone:</label>
-                        <input type="text" id="repPhone" placeholder="07X XXXXXXX" required>
-                        <label>Device Model:</label>
-                        <input type="text" id="repDevice" placeholder="e.g. iPhone 11" required>
-                    </div>
-                    <div>
-                        <label>Issue Description:</label>
-                        <textarea id="repIssue" placeholder="Display broken..." rows="3" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" required></textarea>
-                        <label>Advance Cost (Rs.):</label>
-                        <input type="number" id="repAdvance" value="0" step="0.01">
-                        <label>Total Repair Cost (Rs.):</label>
-                        <input type="number" id="repTotalCost" required step="0.01">
-                    </div>
-                </div>
-                <button type="submit" style="margin-top: 15px; background: #28a745;">Add Repair Job</button>
+            <form id="repairForm" onsubmit="addRepair(event)">
+                <input type="text" id="repCustomer" placeholder="Customer Name" required>
+                <input type="text" id="repPhone" placeholder="Customer Phone" required>
+                <input type="text" id="repDevice" placeholder="Device Model (e.g. iPhone 11)" required>
+                <textarea id="repIssue" placeholder="Issue Description" required></textarea>
+                <input type="number" id="repAdvance" placeholder="Advance Cost" value="0">
+                <input type="number" id="repTotalCost" placeholder="Total Repair Cost" required>
+                <button type="submit" style="background:#28a745;">Add Repair Job</button>
             </form>
             <table>
-                <thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
-                <tbody id="repairsTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody>
+                <thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Advance</th><th>Total</th><th>Action</th></tr></thead>
+                <tbody id="repairsTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
             </table>
-        </div>
-    </div>
-
-    <!-- Hidden Printable Receipt -->
-    <div id="printableReceipt" style="display:none;">
-        <div style="text-align:center; font-family: monospace; width: 300px; margin: auto;">
-            <h2>📱 SHA MOBILE SHOP</h2>
-            <p id="receiptBranch">Branch: Main</p>
-            <p>----------------------------------------</p>
-            <p>Date: <span id="receiptDate"></span></p>
-            <p>Customer: <span id="receiptCustomer"></span></p>
-            <p>Phone: <span id="receiptPhone"></span></p>
-            <p>Payment: <span id="receiptPayment"></span></p>
-            <p>----------------------------------------</p>
-            <table style="width:100%; text-align:left; font-size:12px;">
-                <thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th></tr></thead>
-                <tbody id="receiptItems"></tbody>
-            </table>
-            <p>----------------------------------------</p>
-            <h3>Total: Rs. <span id="receiptTotal"></span></h3>
-            <p>Discount: Rs. <span id="receiptDiscount"></span></p>
-            <p>----------------------------------------</p>
-            <p>Thank you come again!</p>
         </div>
     </div>
 
@@ -268,7 +234,6 @@
         let currentUser = null;
         let cart = [];
         let allProducts = [];
-        let lastCompletedSale = null;
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -307,12 +272,12 @@
                 document.getElementById('userDisplay').textContent = `User: ${currentUser.username} | Branch: ${currentUser.shop_name}`;
                 loadInventory();
                 loadSales();
-                loadRepairs();
             }
         }
 
-        function setCategory(cat, btn) {
+        function setCategory(cat, titleText, btn) {
             document.getElementById('pCategory').value = cat;
+            document.getElementById('categoryTitle').textContent = titleText;
             document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
@@ -375,7 +340,6 @@
             const query = document.getElementById('searchStock').value.toLowerCase();
             const filtered = allProducts.filter(p => 
                 (p.product_code && p.product_code.toLowerCase().includes(query)) ||
-                p.product_id.toString().includes(query) ||
                 p.name.toLowerCase().includes(query) || 
                 (p.brand && p.brand.toLowerCase().includes(query)) || 
                 (p.imei && p.imei.toLowerCase().includes(query))
@@ -408,6 +372,8 @@
                     alert(`Product added successfully! Auto ID: #${result.product_code}`);
                     document.getElementById('productForm').reset();
                     loadInventory();
+                } else {
+                    alert('Error adding product');
                 }
             } catch (err) { console.error('Error adding product:', err); }
         }
@@ -426,7 +392,7 @@
             products.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.product_id;
-                opt.textContent = `#${p.product_code} - ${p.name} (${p.category}) - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
+                opt.textContent = `#${p.product_code || p.product_id} - ${p.name} - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
                 if(p.stock <= 0) opt.style.color = 'red';
                 select.appendChild(opt);
             });
@@ -437,9 +403,7 @@
             if(!query) { populateBillingDropdown(allProducts); return; }
             const filtered = allProducts.filter(p => 
                 (p.product_code && p.product_code.toLowerCase().includes(query)) ||
-                p.product_id.toString().includes(query) ||
-                p.name.toLowerCase().includes(query) ||
-                (p.imei && p.imei.toLowerCase().includes(query))
+                p.name.toLowerCase().includes(query)
             );
             populateBillingDropdown(filtered);
             if(filtered.length === 1) {
@@ -465,19 +429,12 @@
 
             cart.push({ product_id: p.product_id, name: `#${p.product_code} ${p.name}`, price, qty, subtotal: price * qty });
             renderCart();
-            document.getElementById('billingSearch').value = '';
-            populateBillingDropdown(allProducts);
         }
 
         function renderCart() {
             const tbody = document.getElementById('cartTableBody');
             tbody.innerHTML = '';
             let total = 0;
-            if(cart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Cart is empty</td></tr>`;
-                document.getElementById('cartTotal').textContent = '0.00';
-                return;
-            }
             cart.forEach((item, index) => {
                 total += item.subtotal;
                 tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>Rs. ${item.subtotal.toFixed(2)}</td><td><button onclick="removeFromCart(${index})" style="background:#dc3545; padding:2px 5px; width:auto;">X</button></td></tr>`;
@@ -496,52 +453,27 @@
             const rawTotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
             const discount = parseFloat(document.getElementById('billingDiscount').value) || 0;
             const total_amount = Math.max(0, rawTotal - discount);
-            const customer_name = document.getElementById('custName').value;
-            const customer_phone = document.getElementById('custPhone').value;
-            const payment_method = document.getElementById('paymentMethod').value;
-
-            const saleData = {
-                shop_id: currentUser.shop_id,
-                customer_name, customer_phone, payment_method, discount, total_amount, items: cart
-            };
 
             try {
                 const res = await fetch('/api/sales', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(saleData)
+                    body: JSON.stringify({
+                        shop_id: currentUser.shop_id,
+                        customer_name: document.getElementById('custName').value,
+                        customer_phone: document.getElementById('custPhone').value,
+                        payment_method: document.getElementById('paymentMethod').value,
+                        discount, total_amount, items: cart
+                    })
                 });
                 if(res.ok) {
-                    alert('Sale completed successfully!');
-                    if(confirm('Do you want to print the receipt?')) {
-                        printReceipt(saleData);
-                    }
+                    alert('Sale completed!');
                     cart = [];
-                    document.getElementById('billingDiscount').value = 0;
-                    document.getElementById('custName').value = '';
-                    document.getElementById('custPhone').value = '';
                     renderCart();
                     loadInventory();
                     loadSales();
                 }
             } catch(err) { console.error(err); }
-        }
-
-        function printReceipt(sale) {
-            document.getElementById('receiptBranch').textContent = `Branch: ${currentUser.shop_name}`;
-            document.getElementById('receiptDate').textContent = new Date().toLocaleString();
-            document.getElementById('receiptCustomer').textContent = sale.customer_name || 'Cash Customer';
-            document.getElementById('receiptPhone').textContent = sale.customer_phone || 'N/A';
-            document.getElementById('receiptPayment').textContent = sale.payment_method;
-            document.getElementById('receiptTotal').textContent = sale.total_amount.toFixed(2);
-            document.getElementById('receiptDiscount').textContent = (sale.discount || 0).toFixed(2);
-            
-            const tbody = document.getElementById('receiptItems');
-            tbody.innerHTML = '';
-            sale.items.forEach(item => {
-                tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>Rs. ${item.subtotal.toFixed(2)}</td></tr>`;
-            });
-            window.print();
         }
 
         async function loadSales() {
@@ -552,53 +484,24 @@
                 tbody.innerHTML = '';
                 let dailyAmt = 0, monthlyAmt = 0;
                 const today = new Date().toDateString();
-                const currentMonth = new Date().getMonth();
-                const currentYear = new Date().getFullYear();
-
-                const paymentStats = { 'Cash': 0, 'Card': 0, 'Bank Transfer': 0, 'Installment': 0, 'Koko': 0 };
 
                 sales.forEach(s => {
                     const sDate = new Date(s.created_at);
-                    totalAmt = parseFloat(s.total_amount);
-                    if(sDate.toDateString() === today) dailyAmt += totalAmt;
-                    if(sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear) monthlyAmt += totalAmt;
-
-                    if(paymentStats[s.payment_method] !== undefined) {
-                        paymentStats[s.payment_method] += totalAmt;
-                    } else {
-                        paymentStats[s.payment_method] = totalAmt;
-                    }
-                });
-
-                document.getElementById('dailySalesAmt').textContent = `Rs. ${dailyAmt.toFixed(2)}`;
-                document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthlyAmt.toFixed(2)}`;
-                document.getElementById('totalTransactions').textContent = sales.length;
-
-                // Render payment breakdown cards
-                const breakdownDiv = document.getElementById('paymentBreakdown');
-                breakdownDiv.innerHTML = '';
-                for(const [method, amount] of Object.entries(paymentStats)) {
-                    breakdownDiv.innerHTML += `<div style="background: #f8f9fa; padding: 10px 15px; border-radius: 5px; border: 1px solid #ddd; flex: 1; min-width: 130px;">
-                        <span style="font-size:12px; color:#666;">${method}</span><br>
-                        <b style="color:#007bff; font-size:16px;">Rs. ${amount.toFixed(2)}</b>
-                    </div>`;
-                }
-
-                if(sales.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No sales recorded.</td></tr>`;
-                    return;
-                }
-                sales.forEach(s => {
+                    if(sDate.toDateString() === today) dailyAmt += parseFloat(s.total_amount);
+                    monthlyAmt += parseFloat(s.total_amount);
                     tbody.innerHTML += `<tr>
                         <td>#${s.sale_id}</td>
                         <td>${s.customer_name}</td>
                         <td>${s.customer_phone}</td>
                         <td>${s.payment_method}</td>
                         <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
-                        <td>${new Date(s.created_at).toLocaleString()}</td>
+                        <td>${sDate.toLocaleDateString()}</td>
                         <td><button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
                     </tr>`;
                 });
+                document.getElementById('dailySalesAmt').textContent = `Rs. ${dailyAmt.toFixed(2)}`;
+                document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthlyAmt.toFixed(2)}`;
+                document.getElementById('totalTransactions').textContent = sales.length;
             } catch (err) { console.error(err); }
         }
 
@@ -607,83 +510,6 @@
             try {
                 const res = await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
                 if(res.ok) loadSales();
-            } catch(err) { console.error(err); }
-        }
-
-        // Repairs Functions
-        async function addRepair(e) {
-            e.preventDefault();
-            const data = {
-                shop_id: currentUser.shop_id,
-                customer_name: document.getElementById('repCustomer').value,
-                customer_phone: document.getElementById('repPhone').value,
-                device_model: document.getElementById('repDevice').value,
-                issue_description: document.getElementById('repIssue').value,
-                advance_cost: document.getElementById('repAdvance').value,
-                total_cost: document.getElementById('repTotalCost').value
-            };
-            try {
-                const res = await fetch('/api/repairs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                if(res.ok) {
-                    alert('Repair job added successfully!');
-                    document.getElementById('repairForm').reset();
-                    loadRepairs();
-                }
-            } catch(err) { console.error(err); }
-        }
-
-        async function loadRepairs() {
-            try {
-                const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
-                const repairs = await res.json();
-                const tbody = document.getElementById('repairsTable');
-                tbody.innerHTML = '';
-                if(repairs.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No repairs found.</td></tr>`;
-                    return;
-                }
-                repairs.forEach(r => {
-                    tbody.innerHTML += `<tr>
-                        <td>#${r.repair_id}</td>
-                        <td>${r.customer_name}</td>
-                        <td>${r.customer_phone}</td>
-                        <td>${r.device_model}</td>
-                        <td>${r.issue_description}</td>
-                        <td>Rs. ${parseFloat(r.advance_cost).toFixed(2)}</td>
-                        <td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td>
-                        <td>
-                            <select onchange="updateRepairStatus(${r.repair_id}, this.value)">
-                                <option value="Pending" ${r.status==='Pending'?'selected':''}>Pending</option>
-                                <option value="In Progress" ${r.status==='In Progress'?'selected':''}>In Progress</option>
-                                <option value="Completed" ${r.status==='Completed'?'selected':''}>Completed</option>
-                                <option value="Delivered" ${r.status==='Delivered'?'selected':''}>Delivered</option>
-                            </select>
-                        </td>
-                        <td><button onclick="deleteRepair(${r.repair_id})" style="background:#dc3545; padding:3px; width:auto;">Delete</button></td>
-                    </tr>`;
-                });
-            } catch(err) { console.error(err); }
-        }
-
-        async function updateRepairStatus(id, status) {
-            try {
-                await fetch(`/api/repairs/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shop_id: currentUser.shop_id, status })
-                });
-            } catch(err) { console.error(err); }
-        }
-
-        async function deleteRepair(id) {
-            if(!confirm('Delete repair job?')) return;
-            try {
-                const res = await fetch(`/api/repairs/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-                if(res.ok) loadRepairs();
             } catch(err) { console.error(err); }
         }
 

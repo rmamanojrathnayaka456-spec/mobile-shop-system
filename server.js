@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Seed Default Shops & Users
+// Auto Create Tables & Seed 7 Default Shops & Users
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -32,9 +32,13 @@ db.query(`
 `, (err) => {
     if (!err) {
         db.query(`INSERT IGNORE INTO shops (shop_id, shop_name, status) VALUES 
-            (1, 'SHA Mobile - Main Branch (Kegalle)', 'ACTIVE'), 
-            (2, 'SHA Mobile - Branch 2 (Rambukkana)', 'ACTIVE'), 
-            (3, 'SHA Mobile - Branch 3', 'ACTIVE')`, () => {
+            (1, 'Branch 1 - Kegalle', 'ACTIVE'), 
+            (2, 'Branch 2 - Rambukkana', 'ACTIVE'), 
+            (3, 'Branch 3 - Polgahawela', 'ACTIVE'),
+            (4, 'Branch 4 - Mawanella', 'ACTIVE'),
+            (5, 'Branch 5 - Kandy', 'ACTIVE'),
+            (6, 'Branch 6 - Kurunegala', 'ACTIVE'),
+            (7, 'Branch 7 - Colombo', 'ACTIVE')`, () => {
                 db.query(`
                     CREATE TABLE IF NOT EXISTS users (
                         user_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -46,9 +50,13 @@ db.query(`
                 `, (err2) => {
                     if(!err2) {
                         db.query(`INSERT IGNORE INTO users (username, password, shop_id) VALUES 
-                            ('kegalle', 'kegalle123', 1),
-                            ('rambukkana', 'rambukkana123', 2),
-                            ('branch3', 'branch123', 3)`);
+                            ('branch1', 'pass123', 1),
+                            ('branch2', 'pass123', 2),
+                            ('branch3', 'pass123', 3),
+                            ('branch4', 'pass123', 4),
+                            ('branch5', 'pass123', 5),
+                            ('branch6', 'pass123', 6),
+                            ('branch7', 'pass123', 7)`);
                     }
                 });
             });
@@ -102,7 +110,7 @@ db.query(`
     )
 `);
 
-// Login API with Remote Lock Check
+// Login API
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     db.query(`
@@ -112,18 +120,14 @@ app.post('/api/login', (req, res) => {
         WHERE u.username = ? AND u.password = ?
     `, [username, password], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
-        if (results.length === 0) {
-            return res.status(401).json({ error: 'Invalid username or password' });
-        }
+        if (results.length === 0) return res.status(401).json({ error: 'Invalid username or password' });
         const user = results[0];
-        if (user.status !== 'ACTIVE') {
-            return res.status(403).json({ error: 'Account locked due to pending payment. Please contact administrator.' });
-        }
+        if (user.status !== 'ACTIVE') return res.status(403).json({ error: 'Account locked due to pending payment.' });
         res.json({ success: true, user });
     });
 });
 
-// Products APIs with Auto Product ID (001, 002...)
+// Products APIs
 app.get('/api/products', (req, res) => {
     const shopId = req.query.shop_id;
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [shopId], (err, results) => {
@@ -134,15 +138,12 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
-    
     db.query('SELECT COUNT(*) as cnt FROM products WHERE shop_id = ?', [shop_id], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
-        const nextNum = (result[0].cnt + 1).toString().padStart(3, '0');
-        const product_code = `${nextNum}`;
-
+        const product_code = (result[0].cnt + 1).toString().padStart(3, '0');
         db.query(
             'INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock || 1, imei],
+            [shop_id, product_code, name, brand, color, category, cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
             (err2, insertResult) => {
                 if (err2) return res.status(500).json({ error: err2.message });
                 res.json({ message: 'Product added successfully', product_id: insertResult.insertId, product_code });
@@ -173,7 +174,6 @@ app.post('/api/sales', (req, res) => {
         [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', discount || 0, total_amount],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
-            
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, shop_id]);
@@ -187,11 +187,11 @@ app.post('/api/sales', (req, res) => {
 app.delete('/api/sales/:id', (req, res) => {
     db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Sale removed successfully' });
+        res.json({ message: 'Sale removed' });
     });
 });
 
-// Repairs APIs
+// Repair APIs
 app.get('/api/repairs', (req, res) => {
     db.query('SELECT * FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -209,20 +209,6 @@ app.post('/api/repairs', (req, res) => {
             res.json({ message: 'Repair added successfully', repair_id: result.insertId });
         }
     );
-});
-
-app.put('/api/repairs/:id', (req, res) => {
-    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.body.shop_id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Status updated' });
-    });
-});
-
-app.delete('/api/repairs/:id', (req, res) => {
-    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Repair deleted' });
-    });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
