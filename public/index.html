@@ -294,8 +294,11 @@
         }
 
         function setCategory(cat, titleText, btn) {
+            // Clear form inputs when switching category tabs
+            document.getElementById('productForm').reset();
             document.getElementById('pCategory').value = cat;
             document.getElementById('categoryTitle').textContent = titleText;
+            
             document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
@@ -479,7 +482,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         shop_id: currentUser.shop_id,
-                        customer_name: document.getElementById('custName0') || document.getElementById('custName').value,
+                        customer_name: document.getElementById('custName').value,
                         customer_phone: document.getElementById('custPhone').value,
                         payment_method: document.getElementById('paymentMethod').value,
                         discount, total_amount, items: cart

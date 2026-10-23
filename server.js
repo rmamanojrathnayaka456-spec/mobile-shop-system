@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Add Missing Columns Safely
+// Auto Create Tables & Seed 7 Default Shops & Users
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -63,7 +63,7 @@ db.query(`
     }
 });
 
-// Create products table and safely add columns if missing
+// Auto Create Products Table and Safely Add Missing Columns (including shop_id)
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -76,10 +76,10 @@ db.query(`
         cost_price DECIMAL(10, 2),
         selling_price DECIMAL(10, 2) NOT NULL,
         stock INT DEFAULT 1,
-        imei VARCHAR(50),
-        FOREIGN KEY (shop_id) REFERENCES shops(shop_id)
+        imei VARCHAR(50)
     )
 `, () => {
+    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS shop_id INT NOT NULL");
     db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS product_code VARCHAR(10)");
     db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR(50)");
     db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS color VARCHAR(50)");
@@ -97,10 +97,11 @@ db.query(`
         payment_method VARCHAR(50),
         discount DECIMAL(10, 2) DEFAULT 0,
         total_amount DECIMAL(10, 2) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (shop_id) REFERENCES shops(shop_id)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`);
+`, () => {
+    db.query("ALTER TABLE sales ADD COLUMN IF NOT EXISTS shop_id INT NOT NULL");
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -113,10 +114,11 @@ db.query(`
         advance_cost DECIMAL(10, 2) DEFAULT 0,
         total_cost DECIMAL(10, 2) NOT NULL,
         status VARCHAR(50) DEFAULT 'Pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (shop_id) REFERENCES shops(shop_id)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`);
+`, () => {
+    db.query("ALTER TABLE repairs ADD COLUMN IF NOT EXISTS shop_id INT NOT NULL");
+});
 
 // Login API
 app.post('/api/login', (req, res) => {
