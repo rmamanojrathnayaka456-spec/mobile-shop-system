@@ -255,8 +255,8 @@
 
         async function handleLogin(e) {
             e.preventDefault();
-            const username = document.getElementById('loginUser').value;
-            const password = document.getElementById('loginPass').value;
+            const username = document.getElementById('loginUser').value.trim();
+            const password = document.getElementById('loginPass').value.trim();
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
@@ -271,7 +271,7 @@
                 } else {
                     alert(data.error || 'Login failed!');
                 }
-            } catch (err) { console.error('Login error:', err); }
+            } catch (err) { console.error('Login error:', err); alert('Server connection error!'); }
         }
 
         function handleLogout() {
@@ -520,7 +520,7 @@
                         <td><button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
                     </tr>`;
                 });
-                document.getElementById('dailySalesAmt').textContent = `Rs. ${daily` + `s.toFixed(2)}`;
+                document.getElementById('dailySalesAmt').textContent = `Rs. ${dailyAmt.toFixed(2)}`;
                 document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthlyAmt.toFixed(2)}`;
                 document.getElementById('totalTransactions').textContent = sales.length;
             } catch (err) { console.error(err); }
