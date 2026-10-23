@@ -117,7 +117,7 @@ app.post('/api/login', (req, res) => {
         }
         const user = results[0];
         if (user.status !== 'ACTIVE') {
-            return res.status(403).json({ error: 'Account suspended due to pending payment. Please contact administrator.' });
+            return res.status(403).json({ error: 'Account locked due to pending payment. Please contact administrator.' });
         }
         res.json({ success: true, user });
     });
@@ -135,8 +135,7 @@ app.get('/api/products', (req, res) => {
 app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
     
-    // Get next ID for formatting code like 001, 002
-    db.query('SELECT COUNT(*) as cnt FROM products WHERE shop_id = ?', [shopId], (err, result) => {
+    db.query('SELECT COUNT(*) as cnt FROM products WHERE shop_id = ?', [shop_id], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         const nextNum = (result[0].cnt + 1).toString().padStart(3, '0');
         const product_code = `${nextNum}`;
@@ -153,18 +152,15 @@ app.post('/api/products', (req, res) => {
 });
 
 app.delete('/api/products/:id', (req, res) => {
-    const productId = req.params.id;
-    const shopId = req.query.shop_id;
-    db.query('DELETE FROM products WHERE product_id = ? AND shop_id = ?', [productId, shopId], (err, result) => {
+    db.query('DELETE FROM products WHERE product_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Product deleted successfully' });
     });
 });
 
-// Sales APIs & Stock Reduction
+// Sales APIs
 app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id;
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
@@ -178,31 +174,26 @@ app.post('/api/sales', (req, res) => {
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             
-            // Deduct stock for items
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, shop_id]);
                 });
             }
-
             res.json({ message: 'Sale recorded successfully', sale_id: result.insertId });
         }
     );
 });
 
 app.delete('/api/sales/:id', (req, res) => {
-    const saleId = req.params.id;
-    const shopId = req.query.shop_id;
-    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err, result) => {
+    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Sale removed successfully' });
     });
 });
 
-// Repair APIs
+// Repairs APIs
 app.get('/api/repairs', (req, res) => {
-    const shopId = req.query.shop_id;
-    db.query('SELECT * FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
@@ -215,29 +206,23 @@ app.post('/api/repairs', (req, res) => {
         [shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost || 0, total_cost],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Repair job added successfully', repair_id: result.insertId });
+            res.json({ message: 'Repair added successfully', repair_id: result.insertId });
         }
     );
 });
 
 app.put('/api/repairs/:id', (req, res) => {
-    const repairId = req.params.id;
-    const { status, shop_id } = req.body;
-    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [status, repairId, shop_id], (err, result) => {
+    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.body.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Repair status updated successfully' });
+        res.json({ message: 'Status updated' });
     });
 });
 
 app.delete('/api/repairs/:id', (req, res) => {
-    const repairId = req.params.id;
-    const shopId = req.query.shop_id;
-    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [repairId, shopId], (err, result) => {
+    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Repair job deleted successfully' });
+        res.json({ message: 'Repair deleted' });
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
