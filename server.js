@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Robustly Seed 7 Branches and Users
+// Auto Create Shops & Users Tables and Seed 7 Branches
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -70,7 +70,7 @@ db.query(`
     }
 });
 
-// Safe Table Creation & Column Migration for Products, Sales, Repairs
+// Safe Table Creation & Individual Column Auto-Migration
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -81,18 +81,26 @@ db.query(`
         color VARCHAR(50),
         category VARCHAR(50),
         cost_price DECIMAL(10, 2),
-        selling_price DECIMAL(10, 2) NOT NULL,
+        selling_price DECIMAL(10, 2) NOT NULL DEFAULT 0,
         stock INT DEFAULT 1,
         imei VARCHAR(50)
     )
 `, () => {
-    db.query("ALTER TABLE products ADD COLUMN shop_id INT NOT NULL", (err) => {});
-    db.query("ALTER TABLE products ADD COLUMN product_code VARCHAR(10)", (err) => {});
-    db.query("ALTER TABLE products ADD COLUMN brand VARCHAR(50)", (err) => {});
-    db.query("ALTER TABLE products ADD COLUMN color VARCHAR(50)", (err) => {});
-    db.query("ALTER TABLE products ADD COLUMN category VARCHAR(50)", (err) => {});
-    db.query("ALTER TABLE products ADD COLUMN cost_price DECIMAL(10,2)", (err) => {});
-    db.query("ALTER TABLE products ADD COLUMN imei VARCHAR(50)", (err) => {});
+    const productColumns = [
+        "ALTER TABLE products ADD COLUMN shop_id INT NOT NULL",
+        "ALTER TABLE products ADD COLUMN product_code VARCHAR(10)",
+        "ALTER TABLE products ADD COLUMN brand VARCHAR(50)",
+        "ALTER TABLE products ADD COLUMN color VARCHAR(50)",
+        "ALTER TABLE products ADD COLUMN category VARCHAR(50)",
+        "ALTER TABLE products ADD COLUMN cost_price DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE products ADD COLUMN selling_price DECIMAL(10,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE products ADD COLUMN stock INT DEFAULT 1",
+        "ALTER TABLE products ADD COLUMN imei VARCHAR(50)"
+    ];
+
+    productColumns.forEach(sql => {
+        db.query(sql, () => {}); // Catch and ignore duplicate column errors
+    });
 });
 
 db.query(`
@@ -107,7 +115,7 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
-    db.query("ALTER TABLE sales ADD COLUMN shop_id INT NOT NULL", (err) => {});
+    db.query("ALTER TABLE sales ADD COLUMN shop_id INT NOT NULL", () => {});
 });
 
 db.query(`
@@ -124,7 +132,7 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
-    db.query("ALTER TABLE repairs ADD COLUMN shop_id INT NOT NULL", (err) => {});
+    db.query("ALTER TABLE repairs ADD COLUMN shop_id INT NOT NULL", () => {});
 });
 
 // Login API
