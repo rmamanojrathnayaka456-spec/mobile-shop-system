@@ -70,7 +70,7 @@ db.query(`
     }
 });
 
-// Safe Table Creation & Individual Column Auto-Migration
+// Safe Table Creation & Individual Column Auto-Migration for Products
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -100,6 +100,7 @@ db.query(`
     productColumns.forEach(sql => { db.query(sql, () => {}); });
 });
 
+// Safe Table Creation & Individual Column Auto-Migration for Sales
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -112,9 +113,18 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
-    db.query("ALTER TABLE sales ADD COLUMN shop_id INT NOT NULL", () => {});
+    const salesColumns = [
+        "ALTER TABLE sales ADD COLUMN shop_id INT NOT NULL",
+        "ALTER TABLE sales ADD COLUMN customer_name VARCHAR(100)",
+        "ALTER TABLE sales ADD COLUMN customer_phone VARCHAR(20)",
+        "ALTER TABLE sales ADD COLUMN payment_method VARCHAR(50)",
+        "ALTER TABLE sales ADD COLUMN discount DECIMAL(10, 2) DEFAULT 0",
+        "ALTER TABLE sales ADD COLUMN total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0"
+    ];
+    salesColumns.forEach(sql => { db.query(sql, () => {}); });
 });
 
+// Safe Table Creation & Individual Column Auto-Migration for Repairs
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
         repair_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -129,7 +139,17 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
-    db.query("ALTER TABLE repairs ADD COLUMN shop_id INT NOT NULL", () => {});
+    const repairColumns = [
+        "ALTER TABLE repairs ADD COLUMN shop_id INT NOT NULL",
+        "ALTER TABLE repairs ADD COLUMN customer_name VARCHAR(100)",
+        "ALTER TABLE repairs ADD COLUMN customer_phone VARCHAR(20)",
+        "ALTER TABLE repairs ADD COLUMN device_model VARCHAR(100)",
+        "ALTER TABLE repairs ADD COLUMN issue_description TEXT",
+        "ALTER TABLE repairs ADD COLUMN advance_cost DECIMAL(10, 2) DEFAULT 0",
+        "ALTER TABLE repairs ADD COLUMN total_cost DECIMAL(10, 2) NOT NULL DEFAULT 0",
+        "ALTER TABLE repairs ADD COLUMN status VARCHAR(50) DEFAULT 'Pending'"
+    ];
+    repairColumns.forEach(sql => { db.query(sql, () => {}); });
 });
 
 // Login API
