@@ -22,28 +22,28 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Shops & Users Tables and Seed 7 Branches
+// Auto Create Shops & Users Tables and Seed 7 Branches with status column migration
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
         shop_name VARCHAR(100) NOT NULL,
         status VARCHAR(20) DEFAULT 'ACTIVE'
     )
-`, (err) => {
-    if (!err) {
-        const defaultShops = [
-            [1, 'Branch 1 - Kegalle', 'ACTIVE'], 
-            [2, 'Branch 2 - Rambukkana', 'ACTIVE'], 
-            [3, 'Branch 3 - Polgahawela', 'ACTIVE'],
-            [4, 'Branch 4 - Mawanella', 'ACTIVE'],
-            [5, 'Branch 5 - Kandy', 'ACTIVE'],
-            [6, 'Branch 6 - Kurunegala', 'ACTIVE'],
-            [7, 'Branch 7 - Colombo', 'ACTIVE']
-        ];
-        defaultShops.forEach(shop => {
-            db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE shop_name = VALUES(shop_name)`, shop);
-        });
-    }
+`, () => {
+    db.query("ALTER TABLE shops ADD COLUMN status VARCHAR(20) DEFAULT 'ACTIVE'", () => {});
+    
+    const defaultShops = [
+        [1, 'Branch 1 - Kegalle', 'ACTIVE'], 
+        [2, 'Branch 2 - Rambukkana', 'ACTIVE'], 
+        [3, 'Branch 3 - Polgahawela', 'ACTIVE'],
+        [4, 'Branch 4 - Mawanella', 'ACTIVE'],
+        [5, 'Branch 5 - Kandy', 'ACTIVE'],
+        [6, 'Branch 6 - Kurunegala', 'ACTIVE'],
+        [7, 'Branch 7 - Colombo', 'ACTIVE']
+    ];
+    defaultShops.forEach(shop => {
+        db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE shop_name = VALUES(shop_name)`, shop);
+    });
 });
 
 db.query(`
@@ -53,24 +53,22 @@ db.query(`
         password VARCHAR(50) NOT NULL,
         shop_id INT NOT NULL
     )
-`, (err) => {
-    if (!err) {
-        const defaultUsers = [
-            ['branch1', 'pass123', 1],
-            ['branch2', 'pass123', 2],
-            ['branch3', 'pass123', 3],
-            ['branch4', 'pass123', 4],
-            ['branch5', 'pass123', 5],
-            ['branch6', 'pass123', 6],
-            ['branch7', 'pass123', 7]
-        ];
-        defaultUsers.forEach(user => {
-            db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password), shop_id = VALUES(shop_id)`, user);
-        });
-    }
+`, () => {
+    const defaultUsers = [
+        ['branch1', 'pass123', 1],
+        ['branch2', 'pass123', 2],
+        ['branch3', 'pass123', 3],
+        ['branch4', 'pass123', 4],
+        ['branch5', 'pass123', 5],
+        ['branch6', 'pass123', 6],
+        ['branch7', 'pass123', 7]
+    ];
+    defaultUsers.forEach(user => {
+        db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password), shop_id = VALUES(shop_id)`, user);
+    });
 });
 
-// Safe Table Creation & Individual Column Auto-Migration for Products
+// Safe Table Creation & Column Migrations
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -100,7 +98,6 @@ db.query(`
     productColumns.forEach(sql => { db.query(sql, () => {}); });
 });
 
-// Safe Table Creation & Individual Column Auto-Migration for Sales
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -124,7 +121,6 @@ db.query(`
     salesColumns.forEach(sql => { db.query(sql, () => {}); });
 });
 
-// Safe Table Creation & Individual Column Auto-Migration for Repairs
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
         repair_id INT AUTO_INCREMENT PRIMARY KEY,
