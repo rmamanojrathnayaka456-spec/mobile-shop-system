@@ -97,10 +97,7 @@ db.query(`
         "ALTER TABLE products ADD COLUMN stock INT DEFAULT 1",
         "ALTER TABLE products ADD COLUMN imei VARCHAR(50)"
     ];
-
-    productColumns.forEach(sql => {
-        db.query(sql, () => {}); // Catch and ignore duplicate column errors
-    });
+    productColumns.forEach(sql => { db.query(sql, () => {}); });
 });
 
 db.query(`
@@ -234,6 +231,20 @@ app.post('/api/repairs', (req, res) => {
             res.json({ message: 'Repair added successfully', repair_id: result.insertId });
         }
     );
+});
+
+app.put('/api/repairs/:id', (req, res) => {
+    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.body.shop_id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Status updated' });
+    });
+});
+
+app.delete('/api/repairs/:id', (req, res) => {
+    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Repair deleted' });
+    });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
