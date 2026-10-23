@@ -175,18 +175,23 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
-    db.query('SELECT COUNT(*) as cnt FROM products WHERE shop_id = ?', [shop_id], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        const product_code = (result[0].cnt + 1).toString().padStart(3, '0');
-        db.query(
-            'INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [shop_id, product_code, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
-            (err2, insertResult) => {
+    
+    // First insert to get unique increment ID
+    db.query(
+        'INSERT INTO products (shop_id, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [shop_id, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
+        (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            const pId = result.insertId;
+            const product_code = pId.toString().padStart(3, '0');
+            
+            // Update product code based on unique product ID
+            db.query('UPDATE products SET product_code = ? WHERE product_id = ?', [product_code, pId], (err2) => {
                 if (err2) return res.status(500).json({ error: err2.message });
-                res.json({ message: 'Product added successfully', product_id: insertResult.insertId, product_code });
-            }
-        );
-    });
+                res.json({ message: 'Product added successfully', product_id: pId, product_code });
+            });
+        }
+    );
 });
 
 app.delete('/api/products/:id', (req, res) => {
@@ -196,9 +201,9 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs
+// Sales APIs (Ensuring sale_id is explicitly mapped to id)
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
+    db.query('SELECT sale_id AS id, sale_id, shop_id, customer_name, customer_phone, payment_method, discount, total_amount, created_at FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
@@ -226,13 +231,13 @@ app.post('/api/sales', (req, res) => {
 app.delete('/api/sales/:id', (req, res) => {
     db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Sale removed' });
+        res.json({ message: 'Sale removed successfully' });
     });
 });
 
 // Repair APIs
 app.get('/api/repairs', (req, res) => {
-    db.query('SELECT * FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });

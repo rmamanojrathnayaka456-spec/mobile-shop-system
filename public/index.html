@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MOBILE POS SYSTEM</title>
+    <!-- JsBarcode & Html5-QRCode Libraries for Barcode Generation & Camera Scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
     <style>
         body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -50,11 +54,12 @@
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: #ffcccc !important; color: #900; font-weight: bold; }
 
+        /* Print Style for Bill & Barcode Sticker */
         @media print {
             body * { visibility: hidden; }
-            #receiptModal, #receiptModal * { visibility: visible; }
-            #receiptModal { position: absolute; left: 0; top: 0; width: 100%; background: white !important; }
-            #printHideBtn { display: none !important; }
+            .printable, .printable * { visibility: visible; }
+            .printable { position: absolute; left: 0; top: 0; width: 100%; }
+            #printHideBtn, #barcodeHideBtn { display: none !important; }
         }
     </style>
 </head>
@@ -139,7 +144,7 @@
                     <input type="text" id="pImei" placeholder="Enter 15-digit IMEI">
                 </div>
                 
-                <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product to System</button>
+                <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product & Print Barcode</button>
             </form>
         </div>
 
@@ -148,8 +153,14 @@
             <h3>2. Billing & Checkout</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
-                    <label>🔍 Search Product ID, Name, IMEI or Repair Job ID (e.g. 1):</label>
-                    <input type="text" id="billingSearch" placeholder="Type ID, Name, IMEI or Repair ID..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                        <label>🔍 Search ID, Name, IMEI or Repair Job ID:</label>
+                        <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">📷 Scan Camera Barcode</button>
+                    </div>
+                    
+                    <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
+
+                    <input type="text" id="billingSearch" placeholder="Type ID (001), Name, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
 
                     <select id="billingProductSelect" size="5" onchange="selectBillingProduct()" style="height: 140px; margin-top: 5px;"></select>
 
@@ -236,9 +247,24 @@
         </div>
     </div>
 
-    <!-- Bill Receipt Modal / Auto Message Popup Container -->
+    <!-- Barcode Sticker Modal -->
+    <div id="barcodeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div class="printable" style="background:white; padding:25px; border-radius:8px; width:320px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+            <h4 id="bcShopName" style="margin:0 0 5px 0;">MOBILE POS</h4>
+            <div id="bcProdName" style="font-weight:bold; font-size:14px;">Product Name</div>
+            <svg id="barcodeCanvas"></svg>
+            <div id="bcPrice" style="font-weight:bold; font-size:16px; margin-top:5px;">Rs. 0.00</div>
+            
+            <div id="barcodeHideBtn" style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="window.print()" style="background:#28a745; flex:1;">🖨️ Print Sticker</button>
+                <button onclick="closeBarcodeModal()" style="background:#6c757d; flex:1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bill Receipt Modal Container -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:white; padding:30px; border-radius:8px; width:450px; max-width:90%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+        <div class="printable" style="background:white; padding:30px; border-radius:8px; width:450px; max-width:90%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="color:#28a745; margin-top:0;">✅ Sale Completed Successfully!</h3>
             <p>Generated Auto WhatsApp / Bill Message for Customer:</p>
             <textarea id="autoReceiptText" rows="10" style="width:100%; font-family:monospace; font-size:13px; padding:10px;" readonly></textarea>
@@ -257,6 +283,7 @@
         let allProducts = [];
         let allRepairs = [];
         let currentStockFilter = 'all';
+        let html5QrcodeScanner = null;
         let lastSaleData = null;
 
         async function handleLogin(e) {
@@ -400,23 +427,6 @@
             const brandVal = document.getElementById('pBrand').value.trim();
             const colorVal = document.getElementById('pColor').value.trim();
 
-            if(brandVal) {
-                const bList = document.getElementById('brandList');
-                if(![...bList.options].some(o => o.value.toLowerCase() === brandVal.toLowerCase())) {
-                    const opt = document.createElement('option');
-                    opt.value = brandVal;
-                    bList.appendChild(opt);
-                }
-            }
-            if(colorVal) {
-                const cList = document.getElementById('colorList');
-                if(![...cList.options].some(o => o.value.toLowerCase() === colorVal.toLowerCase())) {
-                    const opt = document.createElement('option');
-                    opt.value = colorVal;
-                    cList.appendChild(opt);
-                }
-            }
-
             const data = {
                 shop_id: currentUser.shop_id,
                 name: document.getElementById('pName').value,
@@ -437,13 +447,25 @@
                 });
                 const result = await res.json();
                 if(res.ok) {
-                    alert(`Product added successfully! Auto ID: #${result.product_code}`);
+                    showBarcodeModal(currentUser.shop_name, data.name, result.product_code, data.selling_price);
                     document.getElementById('productForm').reset();
                     loadInventory();
                 } else {
                     alert('Error adding product: ' + (result.error || 'Unknown error'));
                 }
             } catch (err) { console.error('Error adding product:', err); }
+        }
+
+        function showBarcodeModal(shop, pName, pCode, price) {
+            document.getElementById('bcShopName').textContent = shop;
+            document.getElementById('bcProdName').textContent = pName;
+            document.getElementById('bcPrice').textContent = `Rs. ${parseFloat(price).toFixed(2)}`;
+            JsBarcode("#barcodeCanvas", pCode, { format: "CODE128", width: 2, height: 50, displayValue: true });
+            document.getElementById('barcodeModal').style.display = 'flex';
+        }
+
+        function closeBarcodeModal() {
+            document.getElementById('barcodeModal').style.display = 'none';
         }
 
         async function deleteProduct(id) {
@@ -458,7 +480,6 @@
             const select = document.getElementById('billingProductSelect');
             select.innerHTML = '';
             
-            // Add Products
             products.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = 'prod_' + p.product_id;
@@ -467,7 +488,6 @@
                 select.appendChild(opt);
             });
 
-            // Add Repairs
             repairs.forEach(r => {
                 const balanceDue = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
                 const opt = document.createElement('option');
@@ -490,8 +510,9 @@
                     return;
                 }
                 allRepairs.forEach(r => {
+                    const rId = r.id || r.repair_id;
                     tbody.innerHTML += `<tr>
-                        <td><b>#${r.repair_id}</b></td>
+                        <td><b>#${rId}</b></td>
                         <td>${r.customer_name}</td>
                         <td>${r.customer_phone}</td>
                         <td>${r.device_model}</td>
@@ -499,14 +520,14 @@
                         <td>Rs. ${parseFloat(r.advance_cost || 0).toFixed(2)}</td>
                         <td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td>
                         <td>
-                            <select onchange="updateRepairStatus(${r.repair_id}, this.value)">
+                            <select onchange="updateRepairStatus(${rId}, this.value)">
                                 <option value="Pending" ${r.status==='Pending'?'selected':''}>Pending</option>
                                 <option value="In Progress" ${r.status==='In Progress'?'selected':''}>In Progress</option>
                                 <option value="Completed" ${r.status==='Completed'?'selected':''}>Completed</option>
                                 <option value="Delivered" ${r.status==='Delivered'?'selected':''}>Delivered</option>
                             </select>
                         </td>
-                        <td><button onclick="deleteRepair(${r.repair_id})" style="background:#dc3545; padding:3px; width:auto;">Delete</button></td>
+                        <td><button onclick="deleteRepair(${rId})" style="background:#dc3545; padding:3px; width:auto;">Delete</button></td>
                     </tr>`;
                 });
             } catch(err) { console.error(err); }
@@ -519,24 +540,44 @@
                 return; 
             }
             const filteredProds = allProducts.filter(p => 
+                (p.product_code && p.product_code.toLowerCase() === query) ||
                 (p.product_code && p.product_code.toLowerCase().includes(query)) ||
                 p.name.toLowerCase().includes(query) ||
                 (p.imei && p.imei.toLowerCase().includes(query))
             );
-            const filteredReps = allRepairs.filter(r => 
-                r.repair_id.toString().includes(query) ||
-                r.customer_name.toLowerCase().includes(query) ||
-                r.customer_phone.includes(query) ||
-                r.device_model.toLowerCase().includes(query)
-            );
+            const filteredReps = allRepairs.filter(r => {
+                const rId = (r.id || r.repair_id).toString();
+                return rId === query || rId.includes(query) ||
+                    r.customer_name.toLowerCase().includes(query) ||
+                    r.customer_phone.includes(query) ||
+                    r.device_model.toLowerCase().includes(query);
+            });
+            
             populateBillingDropdown(filteredProds, filteredReps);
             
             if(filteredProds.length === 1 && filteredReps.length === 0) {
                 document.getElementById('billingProductSelect').value = 'prod_' + filteredProds[0].product_id;
                 selectBillingProduct();
             } else if(filteredReps.length === 1 && filteredProds.length === 0) {
-                document.getElementById('billingProductSelect').value = 'rep_' + filteredReps[0].repair_id;
+                document.getElementById('billingProductSelect').value = 'rep_' + (filteredReps[0].id || filteredReps[0].repair_id);
                 selectBillingProduct();
+            }
+        }
+
+        function toggleCameraScanner() {
+            const qrDiv = document.getElementById('qr-reader');
+            if(qrDiv.style.display === 'none') {
+                qrDiv.style.display = 'block';
+                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+                html5QrcodeScanner.render((decodedText) => {
+                    document.getElementById('billingSearch').value = decodedText;
+                    handleBillingSearch();
+                    html5QrcodeScanner.clear();
+                    qrDiv.style.display = 'none';
+                });
+            } else {
+                if(html5QrcodeScanner) html5QrcodeScanner.clear();
+                qrDiv.style.display = 'none';
             }
         }
 
@@ -549,7 +590,7 @@
                 if(p) document.getElementById('billingPrice').value = p.selling_price;
             } else if(val.startsWith('rep_')) {
                 const id = val.replace('rep_', '');
-                const r = allRepairs.find(item => item.repair_id == id);
+                const r = allRepairs.find(item => (item.id || item.repair_id) == id);
                 if(r) {
                     const balanceDue = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
                     document.getElementById('billingPrice').value = balanceDue;
@@ -574,9 +615,10 @@
                 cart.push({ type: 'product', product_id: p.product_id, name: `#${p.product_code} ${p.name}`, price, qty, subtotal: price * qty });
             } else if(val.startsWith('rep_')) {
                 const id = val.replace('rep_', '');
-                const r = allRepairs.find(item => item.repair_id == id);
+                const r = allRepairs.find(item => (item.id || item.repair_id) == id);
                 if(!r) return;
-                cart.push({ type: 'repair', repair_id: r.repair_id, name: `Repair Job #${r.repair_id} (${r.device_model})`, price, qty: 1, subtotal: price });
+                const rId = r.id || r.repair_id;
+                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, price, qty: 1, subtotal: price });
             }
 
             renderCart();
@@ -699,17 +741,18 @@
                     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No sales recorded.</td></tr>`;
                 } else {
                     sales.forEach(s => {
+                        const sId = s.id || s.sale_id;
                         const sDate = new Date(s.created_at);
                         if(sDate.toDateString() === today) dailyAmt += parseFloat(s.total_amount);
                         monthlyAmt += parseFloat(s.total_amount);
                         tbody.innerHTML += `<tr>
-                            <td>#${s.sale_id}</td>
+                            <td><b>#${sId}</b></td>
                             <td>${s.customer_name}</td>
                             <td>${s.customer_phone}</td>
                             <td>${s.payment_method}</td>
                             <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
                             <td>${sDate.toLocaleDateString()}</td>
-                            <td><button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
+                            <td><button onclick="deleteSale(${sId})" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
                         </tr>`;
                     });
                 }
@@ -723,7 +766,11 @@
             if(!confirm('Delete this sale record?')) return;
             try {
                 const res = await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-                if(res.ok) loadSales();
+                if(res.ok) {
+                    loadSales();
+                } else {
+                    alert('Failed to delete sale');
+                }
             } catch(err) { console.error(err); }
         }
 
@@ -769,7 +816,11 @@
             if(!confirm('Delete repair job?')) return;
             try {
                 const res = await fetch(`/api/repairs/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-                if(res.ok) loadRepairs();
+                if(res.ok) {
+                    loadRepairs();
+                } else {
+                    alert('Failed to delete repair job');
+                }
             } catch(err) { console.error(err); }
         }
 
