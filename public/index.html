@@ -79,10 +79,10 @@
         </header>
 
         <div class="tabs">
-            <button class="tab-btn" onclick="switchTab(1)">1. Add Product</button>
-            <button class="tab-btn inactive" onclick="switchTab(2)">2. Billing / POS</button>
-            <button class="tab-btn inactive" onclick="switchTab(3)">3. Stock Inventory</button>
-            <button class="tab-btn inactive" onclick="switchTab(4)">4. Sales History</button>
+            <button class="tab-btn" onclick="switchTab(1, event)">1. Add Product</button>
+            <button class="tab-btn inactive" onclick="switchTab(2, event)">2. Billing / POS</button>
+            <button class="tab-btn inactive" onclick="switchTab(3, event)">3. Stock Inventory</button>
+            <button class="tab-btn inactive" onclick="switchTab(4, event)">4. Sales History</button>
         </div>
 
         <!-- Tab 1: Add Product -->
@@ -92,6 +92,7 @@
             <div class="category-buttons">
                 <button type="button" class="cat-btn active" onclick="setCategory('Brand New Phone', this)">Brand New Phones</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Used Phone', this)">Used Phones</button>
+                <button type="button" class="cat-btn" onclick="setCategory('Button Phone', this)">Button / Feature Phones</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Accessory', this)">Accessories</button>
                 <button type="button" class="cat-btn" onclick="setCategory('JBL', this)">JBL</button>
             </div>
@@ -99,14 +100,75 @@
             <form id="productForm" onsubmit="addProduct(event)">
                 <input type="hidden" id="pCategory" value="Brand New Phone">
                 
-                <label>Product / Model Name:</label>
-                <input type="text" id="pName" placeholder="e.g. iPhone 13 Pro / Fast Charger" required>
+                <label>Product / Model Name (Type or select):</label>
+                <input type="text" id="pName" list="modelList" placeholder="e.g. Galaxy S24 Ultra, iPhone 15, Nokia 105, Fast Charger" required>
+                <datalist id="modelList">
+                    <!-- Apple -->
+                    <option value="iPhone 15 Pro Max"><option value="iPhone 15 Pro"><option value="iPhone 15"><option value="iPhone 14 Pro Max"><option value="iPhone 13"><option value="iPhone 11"><option value="iPhone X">
+                    <!-- Samsung Galaxy -->
+                    <option value="Samsung Galaxy S24 Ultra"><option value="Samsung Galaxy S24"><option value="Samsung Galaxy A55"><option value="Samsung Galaxy A35"><option value="Samsung Galaxy A15"><option value="Samsung Galaxy A05s"><option value="Samsung Galaxy M02"><option value="Samsung Galaxy Z Fold 5"><option value="Samsung Galaxy Z Flip 5">
+                    <!-- Xiaomi / Redmi / Poco -->
+                    <option value="Xiaomi 14 Ultra"><option value="Redmi Note 13 Pro"><option value="Redmi 13C"><option value="Poco X6 Pro"><option value="Poco C65">
+                    <!-- Oppo & Vivo & Realme -->
+                    <option value="Oppo Reno 11 Pro"><option value="Oppo A78"><option value="Vivo V30"><option value="Vivo Y27"><option value="Realme C67"><option value="Realme 12 Pro+">
+                    <!-- Nokia & Button / Feature Phones -->
+                    <option value="Nokia 105 (2023)"><option value="Nokia 110 4G"><option value="Nokia 3310"><option value="Nokia 2660 Flip"><option value="Nokia 106"><option value="ITEL It2163"><option value="Dialog Dialog Bly K1">
+                    <!-- Others -->
+                    <option value="Google Pixel 8 Pro"><option value="OnePlus 12"><option value="Huawei Pura 70"><option value="JBL Charge 5"><option value="JBL Flip 6"><option value="JBL Boombox 3"><option value="AirPods Pro"><option value="Type-C Fast Charger">
+                </datalist>
                 
                 <label>Select Phone Brand:</label>
-                <input type="text" id="pBrand" placeholder="e.g. Apple, Samsung, Xiaomi">
+                <input type="text" id="pBrand" list="brandList" placeholder="Type or select brand (e.g. Samsung, Apple, Nokia, Xiaomi)">
+                <datalist id="brandList">
+                    <option value="Samsung">
+                    <option value="Apple">
+                    <option value="Xiaomi">
+                    <option value="Redmi">
+                    <option value="Oppo">
+                    <option value="Vivo">
+                    <option value="Realme">
+                    <option value="Nokia">
+                    <option value="Huawei">
+                    <option value="OnePlus">
+                    <option value="Google">
+                    <option value="Tecno">
+                    <option value="Infinix">
+                    <option value="Itel">
+                    <option value="Motorola">
+                    <option value="Sony">
+                    <option value="JBL">
+                    <option value="Remax">
+                    <option value="HOCO">
+                </datalist>
                 
-                <label>Type Colour:</label>
-                <input type="text" id="pColor" placeholder="e.g. Midnight Black, Gold">
+                <label>Type Colour (Type or select any colour in the world):</label>
+                <input type="text" id="pColor" list="colorList" placeholder="e.g. Midnight Black, Titanium Gray, Alpine Green, Gold">
+                <datalist id="colorList">
+                    <option value="Midnight Black">
+                    <option value="Phantom Black">
+                    <option value="Space Gray">
+                    <option value="Silver">
+                    <option value="Gold">
+                    <option value="Rose Gold">
+                    <option value="Alpine Green">
+                    <option value="Sierra Blue">
+                    <option value="Glacier Blue">
+                    <option value="Pearl White">
+                    <option value="Ceramic White">
+                    <option value="Mint Green">
+                    <option value="Lavender Purple">
+                    <option value="Violet">
+                    <option value="Titanium Gray">
+                    <option value="Titanium Black">
+                    <option value="Titanium Natural">
+                    <option value="Ocean Blue">
+                    <option value="Graphite">
+                    <option value="Deep Purple">
+                    <option value="Cosmic Gray">
+                    <option value="Sunset Orange">
+                    <option value="Matte Red">
+                    <option value="Royal Blue">
+                </datalist>
                 
                 <label>Cost Price (Rs.):</label>
                 <input type="number" id="pCost" placeholder="0.00" step="0.01">
@@ -256,12 +318,14 @@
             btn.classList.add('active');
         }
 
-        function switchTab(tabNum) {
+        function switchTab(tabNum, event) {
             document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.add('inactive'));
             
             document.getElementById(`tab${tabNum}`).classList.add('active');
-            event.target.classList.remove('inactive');
+            if(event && event.target) {
+                event.target.classList.remove('inactive');
+            }
 
             if(tabNum === 2) populateBillingDropdown();
         }
