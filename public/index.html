@@ -56,6 +56,16 @@
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: #ffcccc !important; color: #900; font-weight: bold; }
 
+        .sticker-card {
+            background: white;
+            padding: 15px;
+            border: 1px dashed #333;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 10px;
+            page-break-inside: avoid;
+        }
+
         @media print {
             body * { visibility: hidden; }
             .printable, .printable * { visibility: visible; }
@@ -236,7 +246,7 @@
                 </div>
             </div>
             <table>
-                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Method</th><th>Total (Rs.)</th><th>Date</th><th>Action</th></tr></thead>
+                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
                 <tbody id="salesTable"><tr><td colspan="7" style="text-align:center;">Loading...</td></tr></tbody>
             </table>
         </div>
@@ -260,16 +270,19 @@
         </div>
     </div>
 
-    <!-- Barcode Sticker Modal -->
+    <!-- Barcode Sticker Modal with Quantity Selector -->
     <div id="barcodeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:white; padding:25px; border-radius:8px; width:320px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-            <h4 id="bcShopName" style="margin:0 0 5px 0;">MOBILE POS</h4>
-            <div id="bcProdName" style="font-weight:bold; font-size:14px;">Product Name</div>
-            <svg id="barcodeCanvas"></svg>
-            <div id="bcPrice" style="font-weight:bold; font-size:16px; margin-top:5px;">Rs. 0.00</div>
+        <div class="printable" style="background:white; padding:25px; border-radius:8px; width:340px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.2); max-height:90vh; overflow-y:auto;">
             
-            <div id="barcodeHideBtn" style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="window.print()" style="background:#28a745; flex:1;">🖨️ Print Sticker</button>
+            <div id="barcodeHideBtn">
+                <label style="font-weight:bold; display:block; margin-bottom:5px;">Print Quantity / Copies:</label>
+                <input type="number" id="bcPrintQty" value="1" min="1" oninput="renderBarcodeStickers()" style="width:100px; text-align:center; font-weight:bold; margin-bottom:15px; border:2px solid #28a745;">
+            </div>
+
+            <div id="stickersContainer"></div>
+            
+            <div id="barcodeHideBtnControls" style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="window.print()" style="background:#28a745; flex:1;">🖨️ Print Sticker(s)</button>
                 <button onclick="closeBarcodeModal()" style="background:#6c757d; flex:1;">Close</button>
             </div>
         </div>
@@ -300,6 +313,7 @@
         let currentStockFilter = 'all';
         let html5QrcodeScanner = null;
         let lastSaleData = null;
+        let currentBarcodeData = null;
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -375,6 +389,8 @@
             if(tabNum === 2) {
                 loadInventory();
                 loadRepairs();
+            } else if(tabNum === 4) {
+                loadSales();
             }
         }
 
@@ -441,6 +457,7 @@
             e.preventDefault();
             const brandVal = document.getElementById('pBrand').value.trim();
             const colorVal = document.getElementById('pColor').value.trim();
+            const stockQty = parseInt(document.getElementById('pStock').value) || 1;
 
             const data = {
                 shop_id: currentUser.shop_id,
@@ -450,7 +467,7 @@
                 category: document.getElementById('pCategory').value,
                 cost_price: document.getElementById('pCost').value,
                 selling_price: document.getElementById('pPrice').value,
-                stock: document.getElementById('pStock').value,
+                stock: stockQty,
                 imei: document.getElementById('pImei').value
             };
 
@@ -462,7 +479,14 @@
                 });
                 const result = await res.json();
                 if(res.ok) {
-                    showBarcodeModal(currentUser.shop_name, data.name, result.product_code, data.selling_price);
+                    currentBarcodeData = {
+                        shop: currentUser.shop_name,
+                        name: data.name,
+                        code: result.product_code,
+                        price: data.selling_price
+                    };
+                    document.getElementById('bcPrintQty').value = stockQty;
+                    showBarcodeModal();
                     document.getElementById('productForm').reset();
                     loadInventory();
                 } else {
@@ -471,12 +495,28 @@
             } catch (err) { console.error('Error adding product:', err); }
         }
 
-        function showBarcodeModal(shop, pName, pCode, price) {
-            document.getElementById('bcShopName').textContent = shop;
-            document.getElementById('bcProdName').textContent = pName;
-            document.getElementById('bcPrice').textContent = `Rs. ${parseFloat(price).toFixed(2)}`;
-            JsBarcode("#barcodeCanvas", pCode, { format: "CODE128", width: 2, height: 50, displayValue: true });
+        function showBarcodeModal() {
+            renderBarcodeStickers();
             document.getElementById('barcodeModal').style.display = 'flex';
+        }
+
+        function renderBarcodeStickers() {
+            const container = document.getElementById('stickersContainer');
+            container.innerHTML = '';
+            const qty = parseInt(document.getElementById('bcPrintQty').value) || 1;
+
+            for(let i = 0; i < qty; i++) {
+                const card = document.createElement('div');
+                card.className = 'sticker-card';
+                card.innerHTML = `
+                    <h4 style="margin:0 0 3px 0;">${currentBarcodeData.shop}</h4>
+                    <div style="font-weight:bold; font-size:13px;">${currentBarcodeData.name}</div>
+                    <svg id="bcSvg_${i}"></svg>
+                    <div style="font-weight:bold; font-size:15px; margin-top:3px;">Rs. ${parseFloat(currentBarcodeData.price).toFixed(2)}</div>
+                `;
+                container.appendChild(card);
+                JsBarcode(`#bcSvg_${i}`, currentBarcodeData.code, { format: "CODE128", width: 2, height: 45, displayValue: true });
+            }
         }
 
         function closeBarcodeModal() {
@@ -743,24 +783,35 @@
             document.getElementById('receiptModal').style.display = 'none';
         }
 
-        // Sales & Auto Daily/Monthly Analytics Filtering
+        // Robust Local Date Parsing & Sales History Filtering
         async function loadSales() {
             try {
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
                 rawSalesData = await res.json();
                 
                 let dailyAmt = 0, monthlyAmt = 0;
+                
                 const now = new Date();
-                const todayStr = now.toDateString();
-                const currentMonth = now.getMonth();
-                const currentYear = now.getFullYear();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                
+                const todayYMD = `${year}-${month}-${day}`;
+                const thisYM = `${year}-${month}`;
 
                 rawSalesData.forEach(s => {
-                    const sDate = new Date(s.created_at);
-                    if(sDate.toDateString() === todayStr) {
+                    const d = new Date(s.created_at);
+                    const sY = d.getFullYear();
+                    const sM = String(d.getMonth() + 1).padStart(2, '0');
+                    const sD = String(d.getDate()).padStart(2, '0');
+
+                    const sYMD = `${sY}-${sM}-${sD}`;
+                    const sYM = `${sY}-${sM}`;
+
+                    if(sYMD === todayYMD) {
                         dailyAmt += parseFloat(s.total_amount);
                     }
-                    if(sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear) {
+                    if(sYM === thisYM) {
                         monthlyAmt += parseFloat(s.total_amount);
                     }
                 });
@@ -795,16 +846,26 @@
             tbody.innerHTML = '';
             
             const now = new Date();
-            const todayStr = now.toDateString();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            
+            const todayYMD = `${year}-${month}-${day}`;
+            const thisYM = `${year}-${month}`;
 
             let displaySales = rawSalesData.filter(s => {
-                const sDate = new Date(s.created_at);
+                const d = new Date(s.created_at);
+                const sY = d.getFullYear();
+                const sM = String(d.getMonth() + 1).padStart(2, '0');
+                const sD = String(d.getDate()).padStart(2, '0');
+
+                const sYMD = `${sY}-${sM}-${sD}`;
+                const sYM = `${sY}-${sM}`;
+
                 if(currentSalesFilter === 'daily') {
-                    return sDate.toDateString() === todayStr;
+                    return sYMD === todayYMD;
                 } else if(currentSalesFilter === 'monthly') {
-                    return sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear;
+                    return sYM === thisYM;
                 }
                 return true; // 'all'
             });
