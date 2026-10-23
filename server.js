@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Seed 7 Default Shops & Users
+// Auto Create Tables & Add Missing Columns Safely
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -63,6 +63,7 @@ db.query(`
     }
 });
 
+// Create products table and safely add columns if missing
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -78,7 +79,14 @@ db.query(`
         imei VARCHAR(50),
         FOREIGN KEY (shop_id) REFERENCES shops(shop_id)
     )
-`);
+`, () => {
+    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS product_code VARCHAR(10)");
+    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR(50)");
+    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS color VARCHAR(50)");
+    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS category VARCHAR(50)");
+    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price DECIMAL(10,2)");
+    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS imei VARCHAR(50)");
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
@@ -143,7 +151,7 @@ app.post('/api/products', (req, res) => {
         const product_code = (result[0].cnt + 1).toString().padStart(3, '0');
         db.query(
             'INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [shop_id, product_code, name, brand, color, category, cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
+            [shop_id, product_code, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
             (err2, insertResult) => {
                 if (err2) return res.status(500).json({ error: err2.message });
                 res.json({ message: 'Product added successfully', product_id: insertResult.insertId, product_code });

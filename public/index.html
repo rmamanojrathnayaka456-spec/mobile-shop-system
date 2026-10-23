@@ -120,8 +120,26 @@
                     <option value="HOCO">
                 </datalist>
                 
-                <label>Type Colour:</label>
-                <input type="text" id="pColor" placeholder="e.g. Midnight Black, Gold">
+                <label>Select Colour:</label>
+                <select id="pColor" required>
+                    <option value="">-- Select Colour --</option>
+                    <option value="Midnight Black">Midnight Black</option>
+                    <option value="Phantom Black">Phantom Black</option>
+                    <option value="Space Gray">Space Gray</option>
+                    <option value="Silver">Silver</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Rose Gold">Rose Gold</option>
+                    <option value="Alpine Green">Alpine Green</option>
+                    <option value="Sierra Blue">Sierra Blue</option>
+                    <option value="Pearl White">Pearl White</option>
+                    <option value="Graphite">Graphite</option>
+                    <option value="Deep Purple">Deep Purple</option>
+                    <option value="Titanium Gray">Titanium Gray</option>
+                    <option value="Titanium Black">Titanium Black</option>
+                    <option value="Blue">Blue</option>
+                    <option value="Red">Red</option>
+                    <option value="Other">Other</option>
+                </select>
                 
                 <label>Cost Price (Rs.):</label>
                 <input type="number" id="pCost" placeholder="0.00" step="0.01">
@@ -192,8 +210,8 @@
             <h3>3. Current Stock Inventory</h3>
             <input type="text" id="searchStock" placeholder="Search by ID (001), Name, Brand, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
             <table>
-                <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
-                <tbody id="inventoryTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
+                <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
+                <tbody id="inventoryTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody>
             </table>
         </div>
 
@@ -318,7 +336,7 @@
             const tbody = document.getElementById('inventoryTable');
             tbody.innerHTML = '';
             if(products.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No products found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No products found.</td></tr>`;
                 return;
             }
             products.forEach(p => {
@@ -328,6 +346,7 @@
                     <td>${p.name}</td>
                     <td>${p.brand || '-'}</td>
                     <td>${p.category || '-'}</td>
+                    <td>${p.color || '-'}</td>
                     <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
                     <td>${p.stock} ${isOut ? '(OUT OF STOCK)' : ''}</td>
                     <td>${p.imei || '-'}</td>
@@ -373,7 +392,7 @@
                     document.getElementById('productForm').reset();
                     loadInventory();
                 } else {
-                    alert('Error adding product');
+                    alert('Error adding product: ' + (result.error || 'Unknown error'));
                 }
             } catch (err) { console.error('Error adding product:', err); }
         }
@@ -392,7 +411,7 @@
             products.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.product_id;
-                opt.textContent = `#${p.product_code || p.product_id} - ${p.name} - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
+                opt.textContent = `#${p.product_code || p.product_id} - ${p.name} (${p.category}) - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
                 if(p.stock <= 0) opt.style.color = 'red';
                 select.appendChild(opt);
             });
@@ -460,7 +479,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         shop_id: currentUser.shop_id,
-                        customer_name: document.getElementById('custName').value,
+                        customer_name: document.getElementById('custName0') || document.getElementById('custName').value,
                         customer_phone: document.getElementById('custPhone').value,
                         payment_method: document.getElementById('paymentMethod').value,
                         discount, total_amount, items: cart
