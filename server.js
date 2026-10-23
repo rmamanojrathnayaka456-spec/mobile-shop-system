@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Seed 7 Default Shops & Users
+// Auto Create Shops & Users Tables and Seed 7 Branches
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -63,7 +63,7 @@ db.query(`
     }
 });
 
-// Auto Create Products Table and Safely Add Missing Columns (including shop_id)
+// Safe Table Creation & Column Migration (Error-safe)
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -79,13 +79,13 @@ db.query(`
         imei VARCHAR(50)
     )
 `, () => {
-    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS shop_id INT NOT NULL");
-    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS product_code VARCHAR(10)");
-    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR(50)");
-    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS color VARCHAR(50)");
-    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS category VARCHAR(50)");
-    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price DECIMAL(10,2)");
-    db.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS imei VARCHAR(50)");
+    db.query("ALTER TABLE products ADD COLUMN shop_id INT NOT NULL", (err) => {});
+    db.query("ALTER TABLE products ADD COLUMN product_code VARCHAR(10)", (err) => {});
+    db.query("ALTER TABLE products ADD COLUMN brand VARCHAR(50)", (err) => {});
+    db.query("ALTER TABLE products ADD COLUMN color VARCHAR(50)", (err) => {});
+    db.query("ALTER TABLE products ADD COLUMN category VARCHAR(50)", (err) => {});
+    db.query("ALTER TABLE products ADD COLUMN cost_price DECIMAL(10,2)", (err) => {});
+    db.query("ALTER TABLE products ADD COLUMN imei VARCHAR(50)", (err) => {});
 });
 
 db.query(`
@@ -100,7 +100,7 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
-    db.query("ALTER TABLE sales ADD COLUMN IF NOT EXISTS shop_id INT NOT NULL");
+    db.query("ALTER TABLE sales ADD COLUMN shop_id INT NOT NULL", (err) => {});
 });
 
 db.query(`
@@ -117,7 +117,7 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
-    db.query("ALTER TABLE repairs ADD COLUMN IF NOT EXISTS shop_id INT NOT NULL");
+    db.query("ALTER TABLE repairs ADD COLUMN shop_id INT NOT NULL", (err) => {});
 });
 
 // Login API

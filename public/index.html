@@ -294,7 +294,6 @@
         }
 
         function setCategory(cat, titleText, btn) {
-            // Clear form inputs when switching category tabs
             document.getElementById('productForm').reset();
             document.getElementById('pCategory').value = cat;
             document.getElementById('categoryTitle').textContent = titleText;
@@ -521,7 +520,7 @@
                         <td><button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
                     </tr>`;
                 });
-                document.getElementById('dailySalesAmt').textContent = `Rs. ${dailyAmt.toFixed(2)}`;
+                document.getElementById('dailySalesAmt').textContent = `Rs. ${daily` + `s.toFixed(2)}`;
                 document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthlyAmt.toFixed(2)}`;
                 document.getElementById('totalTransactions').textContent = sales.length;
             } catch (err) { console.error(err); }
