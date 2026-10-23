@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Shops & Users Tables and Seed 7 Branches with status column migration
+// Auto Create Shops & Users Tables and Seed 7 Branches
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,7 +31,6 @@ db.query(`
     )
 `, () => {
     db.query("ALTER TABLE shops ADD COLUMN status VARCHAR(20) DEFAULT 'ACTIVE'", () => {});
-    
     const defaultShops = [
         [1, 'Branch 1 - Kegalle', 'ACTIVE'], 
         [2, 'Branch 2 - Rambukkana', 'ACTIVE'], 
@@ -68,7 +67,7 @@ db.query(`
     });
 });
 
-// Safe Table Creation & Column Migrations
+// Safe Table Creation & Migrations
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
         product_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -214,7 +213,9 @@ app.post('/api/sales', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
-                    db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, shop_id]);
+                    if (item.product_id) {
+                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, shop_id]);
+                    }
                 });
             }
             res.json({ message: 'Sale recorded successfully', sale_id: result.insertId });
@@ -259,7 +260,7 @@ app.put('/api/repairs/:id', (req, res) => {
 app.delete('/api/repairs/:id', (req, res) => {
     db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Repair deleted' });
+        res.json({ message: 'Repair deleted successfully' });
     });
 });
 
