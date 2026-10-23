@@ -104,6 +104,7 @@ db.query(`
         customer_name VARCHAR(100),
         customer_phone VARCHAR(20),
         payment_method VARCHAR(50),
+        sale_type VARCHAR(20) DEFAULT 'Product',
         discount DECIMAL(10, 2) DEFAULT 0,
         total_amount DECIMAL(10, 2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -114,6 +115,7 @@ db.query(`
         "ALTER TABLE sales ADD COLUMN customer_name VARCHAR(100)",
         "ALTER TABLE sales ADD COLUMN customer_phone VARCHAR(20)",
         "ALTER TABLE sales ADD COLUMN payment_method VARCHAR(50)",
+        "ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'",
         "ALTER TABLE sales ADD COLUMN discount DECIMAL(10, 2) DEFAULT 0",
         "ALTER TABLE sales ADD COLUMN total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0"
     ];
@@ -200,7 +202,7 @@ app.delete('/api/products/:id', (req, res) => {
 
 // Sales APIs
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT sale_id AS id, sale_id, shop_id, customer_name, customer_phone, payment_method, discount, total_amount, created_at FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
+    db.query('SELECT sale_id AS id, sale_id, shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, created_at FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
@@ -208,15 +210,32 @@ app.get('/api/sales', (req, res) => {
 
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
+    
+    // Check if cart contains repair items
+    let containsRepair = false;
+    let containsProduct = false;
+    if (items && Array.isArray(items)) {
+        items.forEach(item => {
+            if (item.type === 'repair') containsRepair = true;
+            if (item.type === 'product') containsProduct = true;
+        });
+    }
+    
+    let sale_type = 'Product';
+    if (containsRepair && containsProduct) sale_type = 'Mixed';
+    else if (containsRepair) sale_type = 'Repair';
+
     db.query(
-        'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, discount, total_amount) VALUES (?, ?, ?, ?, ?, ?)',
-        [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', discount || 0, total_amount],
+        'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
-                    if (item.product_id) {
+                    if (item.type === 'product' && item.product_id) {
                         db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, shop_id]);
+                    } else if (item.type === 'repair' && item.repair_id) {
+                        db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ? AND shop_id = ?', [item.repair_id, shop_id]);
                     }
                 });
             }
