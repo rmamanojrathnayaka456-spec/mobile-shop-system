@@ -82,7 +82,6 @@ db.query(`
     )
 `);
 
-// Sales Table Auto-Migration & Primary Key Fix
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -96,13 +95,6 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
-    db.query("SHOW COLUMNS FROM sales LIKE 'sale_id'", (err, results) => {
-        if (!err && results && results.length === 0) {
-            db.query("ALTER TABLE sales ADD COLUMN sale_id INT AUTO_INCREMENT PRIMARY KEY FIRST", (alterErr) => {
-                if (alterErr) console.log("Alter sales table notice:", alterErr.message);
-            });
-        }
-    });
     db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'", () => {});
     db.query("ALTER TABLE sales ADD COLUMN discount DECIMAL(10, 2) DEFAULT 0", () => {});
 });
@@ -176,17 +168,19 @@ app.get('/api/sales', (req, res) => {
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
-        if (err) {
-            console.error('SQL Error /api/sales:', err);
-            return res.status(500).json({ error: err.message });
-        }
+        if (err) return res.status(500).json({ error: err.message });
+        
         const formatted = (results || []).map((row, index) => {
-            const realId = row.sale_id || row.id || (index + 1);
+            const realId = row.sale_id || (index + 1);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
+            
+            const pad = (n) => String(n).padStart(2, '0');
+            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
+
             return {
                 ...row,
                 sale_id: realId,
-                id: realId,
+                delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
@@ -233,20 +227,13 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Robust Delete API
+// Foolproof Timestamp-based Delete API
 app.delete('/api/sales/:id', (req, res) => {
-    const saleId = req.params.id;
+    const deleteKey = decodeURIComponent(req.params.id);
     const shopId = req.query.shop_id;
     
-    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err, result) => {
-        if (err) {
-            // Fallback delete matching shop_id if sale_id column fails
-            db.query('DELETE FROM sales WHERE shop_id = ? LIMIT 1', [shopId], (err2) => {
-                if (err2) return res.status(500).json({ error: err2.message });
-                res.json({ message: 'Removed' });
-            });
-            return;
-        }
+    db.query('DELETE FROM sales WHERE created_at = ? AND shop_id = ? LIMIT 1', [deleteKey, shopId], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
     });
 });

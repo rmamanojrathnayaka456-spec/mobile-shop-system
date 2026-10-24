@@ -766,7 +766,8 @@
             }
 
             displaySales.forEach((s) => {
-                const sId = s.sale_id || s.id;
+                const sId = s.sale_id;
+                const deleteKey = encodeURIComponent(s.delete_key || s.created_at);
                 let badgeClass = 'badge-prod';
                 let stype = s.sale_type || 'Product';
                 if(stype === 'Repair') badgeClass = 'badge-rep';
@@ -780,17 +781,16 @@
                     <td>${s.payment_method}</td>
                     <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
                     <td>${s.formatted_date || s.created_at}</td>
-                    <td><button onclick="deleteSale('${sId}')" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
+                    <td><button onclick="deleteSale('${deleteKey}')" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
                 </tr>`;
             });
         }
 
-        async function deleteSale(id) {
+        async function deleteSale(deleteKey) {
             if(!confirm('Delete sale record?')) return;
             try {
-                const res = await fetch(`/api/sales/${encodeURIComponent(id)}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/sales/${deleteKey}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
                 if(res.ok) {
-                    // Instantly reload sales and analytics to make it vanish immediately
                     loadSales();
                 } else {
                     alert('Failed to delete sale.');
