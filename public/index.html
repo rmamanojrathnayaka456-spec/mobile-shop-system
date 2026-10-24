@@ -8,48 +8,75 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        :root {
+            --bg-color: #f4f6f9;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+            --section-bg: #fafafa;
+            --border-color: #ddd;
+            --input-bg: #ffffff;
+            --input-text: #333333;
+            --table-header-bg: #007bff;
+            --table-header-color: #ffffff;
+            --card-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --section-bg: #252525;
+            --border-color: #444;
+            --input-bg: #2d2d2d;
+            --input-text: #ffffff;
+            --table-header-bg: #0056b3;
+            --table-header-color: #ffffff;
+            --card-bg: #2a2a2a;
+        }
+
+        body { font-family: Arial, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: background 0.3s, color 0.3s; }
+        .container { max-width: 1100px; margin: auto; background: var(--container-bg); padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: background 0.3s; }
         
-        #loginScreen { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); text-align: center; }
+        #loginScreen { max-width: 400px; margin: 80px auto; background: var(--container-bg); color: var(--text-color); padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); text-align: center; }
         #loginScreen h2 { color: #007bff; margin-bottom: 20px; }
         .login-group { margin-bottom: 15px; text-align: left; }
         .login-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .login-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .login-group input { width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-text); border-radius: 4px; box-sizing: border-box; }
         
         #appContainer { display: none; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .user-badge { background: #e8f4fd; padding: 8px 15px; border-radius: 6px; border: 1px solid #b8daff; font-weight: bold; color: #007bff; font-size: 16px; }
         
-        select, input, textarea, button { padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
-        select { background: #fff; font-weight: bold; cursor: pointer; }
+        select, input, textarea, button { padding: 10px; margin: 5px 0; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-text); border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        select { background: var(--input-bg); font-weight: bold; cursor: pointer; }
         button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background: #0056b3; }
         
-        .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; flex-wrap: wrap; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; }
         .tab-btn { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; }
         .tab-btn.inactive { background: #e0e0e0; color: #333; }
+        [data-theme="dark"] .tab-btn.inactive { background: #333; color: #ccc; }
         
         .category-buttons { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-        .cat-btn { padding: 8px 15px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 20px; cursor: pointer; font-weight: bold; width: auto; color: #333; }
+        .cat-btn { padding: 8px 15px; background: var(--section-bg); border: 1px solid var(--border-color); border-radius: 20px; cursor: pointer; font-weight: bold; width: auto; color: var(--text-color); }
         .cat-btn.active { background: #007bff; color: white; border-color: #007bff; }
 
         .sub-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
         .sub-tab-btn { padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; }
         .sub-tab-btn.active { background: #28a745; }
 
-        .section { display: none; background: #fafafa; padding: 20px; border-radius: 6px; border: 1px solid #eee; }
+        .section { display: none; background: var(--section-bg); padding: 20px; border-radius: 6px; border: 1px solid var(--border-color); }
         .section.active { display: block; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background: #007bff; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: var(--container-bg); }
+        th, td { border: 1px solid var(--border-color); padding: 10px; text-align: left; }
+        th { background: var(--table-header-bg); color: var(--table-header-color); }
         
         .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .card { background: white; padding: 15px; border-radius: 6px; border: 1px solid #ddd; border-left: 5px solid #007bff; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .card.active-card { border-color: #28a745 !important; background: #f0fff4; }
-        .card h4 { margin: 0 0 10px 0; color: #555; font-size: 14px; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); border-left: 5px solid #007bff; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .card.active-card { border-color: #28a745 !important; background: rgba(40, 167, 69, 0.1); }
+        .card h4 { margin: 0 0 10px 0; color: var(--text-color); font-size: 14px; opacity: 0.8; }
         .card p { font-size: 18px; font-weight: bold; color: #007bff; margin: 0; }
         
         .badge-prod { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
@@ -57,12 +84,13 @@
         .badge-mix { background: #ffc107; color: black; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
 
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
-        .out-of-stock { background-color: #ffcccc !important; color: #900; font-weight: bold; }
-        .sticker-card { background: white; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; page-break-inside: avoid; }
+        .out-of-stock { background-color: rgba(255, 0, 0, 0.15) !important; color: #d9534f; font-weight: bold; }
+        .low-stock-badge { background: #ff9800; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; }
+        .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; page-break-inside: avoid; }
 
-        /* Perfect receipt preview box styling */
         #receiptBoxContainer {
             background: #fff;
+            color: #333;
             border: 1px solid #ccc;
             border-radius: 6px;
             padding: 15px;
@@ -82,7 +110,7 @@
         }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
     <div id="loginScreen">
         <h2>MOBILE SHOP SYSTEM</h2>
@@ -110,7 +138,8 @@
     <div id="appContainer" class="container">
         <header>
             <h2>MOBILE SHOP SYSTEM</h2>
-            <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <button type="button" onclick="toggleTheme()" style="width: auto; padding: 6px 12px; background: #6c757d; font-size: 12px;" id="themeToggleBtn">🌙 Dark Mode</button>
                 <div class="user-badge" id="userDisplay">SHAMOBILE</div>
                 <button class="logout-btn" onclick="handleLogout()">Logout</button>
             </div>
@@ -120,7 +149,7 @@
             <button class="tab-btn" onclick="switchTab(1, this)">1. Add Product</button>
             <button class="tab-btn inactive" onclick="switchTab(2, this)">2. Billing / POS</button>
             <button class="tab-btn inactive" onclick="switchTab(3, this)">3. Stock Inventory</button>
-            <button class="tab-btn inactive" onclick="switchTab(4, this)">4. Sales History</button>
+            <button class="tab-btn inactive" onclick="switchTab(4, this)">4. Sales History & Profit</button>
             <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repair Jobs</button>
         </div>
 
@@ -173,13 +202,13 @@
                     <select id="billingProductSelect" size="5" onchange="selectBillingProduct()" style="height: 140px; margin-top: 5px;"></select>
                     
                     <label>Original Price (Rs.):</label>
-                    <input type="number" id="originalPrice" style="background:#e9ecef; font-weight:bold;" disabled>
+                    <input type="number" id="originalPrice" style="font-weight:bold;" disabled>
 
                     <label>Selling / Custom Price (Rs.):</label>
                     <input type="number" id="billingPrice" step="0.01" oninput="calculateAutoDiscount()">
 
                     <label>Discount Amount (Rs.):</label>
-                    <input type="number" id="billingDiscountDisplay" value="0.00" style="background:#e9ecef; font-weight:bold; color:#dc3545;" disabled>
+                    <input type="number" id="billingDiscountDisplay" value="0.00" style="font-weight:bold; color:#dc3545;" disabled>
 
                     <label>Quantity:</label>
                     <input type="number" id="billingQty" value="1" min="1">
@@ -211,7 +240,10 @@
 
         <!-- Tab 3 -->
         <div id="tab3" class="section">
-            <h3>3. Stock Inventory Management</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                <h3>3. Stock Inventory Management</h3>
+                <div id="lowStockWarningBanner" style="display:none; background: #ff9800; color: white; padding: 5px 12px; border-radius: 4px; font-weight: bold; font-size: 13px;">⚠️ Low Stock Items Detected!</div>
+            </div>
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" onclick="switchStockSubTab('all', this)">All Stock</button>
                 <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">Out of Stock</button>
@@ -223,29 +255,29 @@
             </table>
         </div>
 
-        <!-- Tab 4: Sales History -->
+        <!-- Tab 4: Sales History & Profit -->
         <div id="tab4" class="section">
             <h3 id="salesHeaderTitle">4. Sales History & Analytics (Showing: All Sales)</h3>
             <div class="analytics-grid">
                 <div class="card" id="cardDaily" onclick="filterSalesView('daily', this)">
                     <h4>Daily Sales (Today)</h4>
                     <p id="dailySalesAmt">Rs. 0.00</p>
-                    <span style="font-size:11px; color:#666;">(Click to view today's sales)</span>
+                    <span style="font-size:11px; opacity: 0.7;">(Click to view today's sales)</span>
                 </div>
                 <div class="card" id="cardMonthly" onclick="filterSalesView('monthly', this)">
                     <h4>Monthly Sales (This Month)</h4>
                     <p id="monthlySalesAmt">Rs. 0.00</p>
-                    <span style="font-size:11px; color:#666;">(Click to view this month's sales)</span>
+                    <span style="font-size:11px; opacity: 0.7;">(Click to view this month's sales)</span>
                 </div>
-                <div class="card" id="cardRepair" onclick="filterSalesView('repair', this)" style="border-left-color: #17a2b8;">
-                    <h4>Repair Income (Total)</h4>
-                    <p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p>
-                    <span style="font-size:11px; color:#666;">(Click to view repair sales only)</span>
+                <div class="card" id="cardProfit" onclick="filterSalesView('profit', this)" style="border-left-color: #28a745;">
+                    <h4>Total Profit (Estimated)</h4>
+                    <p id="totalProfitAmt" style="color: #28a745;">Rs. 0.00</p>
+                    <span style="font-size:11px; opacity: 0.7;">(Click to view profit analytics)</span>
                 </div>
-                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #28a745;">
+                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #007bff;">
                     <h4>Total Transactions</h4>
                     <p id="totalTransactions">0</p>
-                    <span style="font-size:11px; color:#666;">(Click to view all sales history)</span>
+                    <span style="font-size:11px; opacity: 0.7;">(Click to view all sales history)</span>
                 </div>
             </div>
             <table>
@@ -257,7 +289,7 @@
         <!-- Tab 5: Repair Jobs -->
         <div id="tab5" class="section">
             <h3>5. Repair Jobs Management</h3>
-            <form id="repairForm" onsubmit="addRepair(event)" style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;">
+            <form id="repairForm" onsubmit="addRepair(event)" style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px;">
                 <input type="text" id="repCustomer" placeholder="Customer Name" required>
                 <input type="text" id="repPhone" placeholder="Customer Phone" required>
                 <input type="text" id="repDevice" placeholder="Device Model (e.g. iPhone 11)" required>
@@ -278,7 +310,7 @@
 
     <!-- Barcode Modal -->
     <div id="barcodeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:white; padding:25px; border-radius:8px; width:340px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.2); max-height:90vh; overflow-y:auto;">
+        <div class="printable" style="background:white; color:#333; padding:25px; border-radius:8px; width:340px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.2); max-height:90vh; overflow-y:auto;">
             <div id="barcodeHideBtn">
                 <label style="font-weight:bold; display:block; margin-bottom:5px;">Print Quantity / Copies:</label>
                 <input type="number" id="bcPrintQty" value="1" min="1" oninput="renderBarcodeStickers()" style="width:100px; text-align:center; font-weight:bold; margin-bottom:15px; border:2px solid #28a745;">
@@ -293,10 +325,9 @@
 
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:white; padding:30px; border-radius:8px; width:450px; max-width:90%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+        <div class="printable" style="background:white; color:#333; padding:30px; border-radius:8px; width:450px; max-width:90%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="color:#28a745; margin-top:0; text-align:center;">Sale Completed Successfully!</h3>
             
-            <!-- Centered Receipt Preview Box -->
             <div id="receiptBoxContainer"></div>
 
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
@@ -364,6 +395,23 @@
                 loadSales();
                 loadRepairs();
             }
+            const savedTheme = localStorage.getItem('pos_theme') || 'light';
+            setTheme(savedTheme);
+        }
+
+        function toggleTheme() {
+            const current = document.body.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            setTheme(next);
+        }
+
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('pos_theme', theme);
+            const btn = document.getElementById('themeToggleBtn');
+            if(btn) {
+                btn.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+            }
         }
 
         function setCategory(cat, titleText, btn) {
@@ -412,7 +460,21 @@
                 const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
                 allProducts = await res.json();
                 renderInventory(allProducts);
+                checkLowStockAlert(allProducts);
             } catch (err) { console.error(err); }
+        }
+
+        function checkLowStockAlert(products) {
+            const lowStockItems = products.filter(p => p.stock > 0 && p.stock <= 2);
+            const banner = document.getElementById('lowStockWarningBanner');
+            if(banner) {
+                if(lowStockItems.length > 0) {
+                    banner.style.display = 'block';
+                    banner.textContent = `⚠️ Low Stock Alert: ${lowStockItems.length} item(s) running low (<=2 left)!`;
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
         }
 
         function switchStockSubTab(type, btn) {
@@ -433,18 +495,30 @@
             }
             filtered.forEach(p => {
                 const isOut = p.stock <= 0;
+                const isLow = p.stock > 0 && p.stock <= 2;
                 tbody.innerHTML += `<tr class="${isOut ? 'out-of-stock' : ''}">
                     <td><b>#${p.product_code || p.product_id}</b></td>
-                    <td>${p.name}</td>
+                    <td>${p.name} ${isLow ? '<span class="low-stock-badge">LOW STOCK</span>' : ''}</td>
                     <td>${p.brand || '-'}</td>
                     <td>${p.category || '-'}</td>
                     <td>${p.color || '-'}</td>
                     <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
                     <td>${p.stock} ${isOut ? '(OUT OF STOCK)' : ''}</td>
                     <td>${p.imei || '-'}</td>
-                    <td><button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:5px; width:auto;">Delete</button></td>
+                    <td>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <button onclick="printExistingBarcode('${p.name}', '${p.product_code || p.product_id}', ${p.selling_price})" style="background:#17a2b8; padding:5px; width:auto; font-size:11px;">Barcode</button>
+                            <button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:5px; width:auto; font-size:11px;">Delete</button>
+                        </div>
+                    </td>
                 </tr>`;
             });
+        }
+
+        function printExistingBarcode(name, code, price) {
+            currentBarcodeData = { shop: currentUser.shop_name, name: name, code: code, price: price };
+            document.getElementById('bcPrintQty').value = 1;
+            showBarcodeModal();
         }
 
         function filterStock() {
@@ -665,12 +739,13 @@
             if(val.startsWith('prod_')) {
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
                 if(!p || p.stock < qty) return alert('Out of stock!');
-                cart.push({ type: 'product', product_id: p.product_id, name: p.name, originalPrice: selectedOriginalPrice, price, qty, discount: discount * qty, subtotal: price * qty });
+                const costPrice = parseFloat(p.cost_price || 0);
+                cart.push({ type: 'product', product_id: p.product_id, name: p.name, originalPrice: selectedOriginalPrice, costPrice: costPrice, price, qty, discount: discount * qty, subtotal: price * qty });
             } else if(val.startsWith('rep_')) {
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(!r) return;
                 const rId = r.id || r.repair_id;
-                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, originalPrice: selectedOriginalPrice, price, qty: 1, discount: discount, subtotal: price });
+                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, originalPrice: selectedOriginalPrice, costPrice: 0, price, qty: 1, discount: discount, subtotal: price });
             }
             renderCart();
             clearBillingFields();
@@ -761,7 +836,6 @@
             
             rawReceiptPlaintext = msg;
 
-            // Render HTML with larger Shop Name & Contact, perfectly centered
             let htmlMsg = `<div style="font-weight:bold; font-size:18px;">${sale.branch.toUpperCase()}</div>`;
             if (sale.branch_phone) {
                 htmlMsg += `<div style="font-weight:bold; font-size:15px; margin-bottom:5px;">Contact: ${sale.branch_phone}</div>`;
@@ -816,7 +890,7 @@
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
                 rawSalesData = await res.json();
                 
-                let dailyAmt = 0, monthlyAmt = 0, repairAmt = 0;
+                let dailyAmt = 0, monthlyAmt = 0, totalProfit = 0;
                 
                 const now = new Date();
                 const y = now.getFullYear();
@@ -836,14 +910,23 @@
                     if(sMonthOnly === thisMonthStr) {
                         monthlyAmt += parseFloat(s.total_amount || 0);
                     }
-                    if(s.sale_type === 'Repair' || s.sale_type === 'Mixed') {
-                        repairAmt += parseFloat(s.total_amount || 0);
+
+                    // Calculate profit if items have cost price
+                    if(s.items && Array.isArray(s.items)) {
+                        s.items.forEach(item => {
+                            const sellPrice = parseFloat(item.price || item.subtotal || 0);
+                            const costPrice = parseFloat(item.cost_price || 0);
+                            const qty = parseInt(item.qty || 1);
+                            if(costPrice > 0) {
+                                totalProfit += (sellPrice - costPrice) * qty;
+                            }
+                        });
                     }
                 });
 
                 document.getElementById('dailySalesAmt').textContent = `Rs. ${dailyAmt.toFixed(2)}`;
                 document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthlyAmt.toFixed(2)}`;
-                document.getElementById('repairSalesAmt').textContent = `Rs. ${repairAmt.toFixed(2)}`;
+                document.getElementById('totalProfitAmt').textContent = `Rs. ${totalProfit.toFixed(2)}`;
                 document.getElementById('totalTransactions').textContent = rawSalesData.length;
 
                 renderSalesTable();
@@ -858,7 +941,7 @@
             const headerTitle = document.getElementById('salesHeaderTitle');
             if(type === 'daily') headerTitle.textContent = "4. Sales History & Analytics (Showing: Today's Sales)";
             else if(type === 'monthly') headerTitle.textContent = "4. Sales History & Analytics (Showing: This Month's Sales)";
-            else if(type === 'repair') headerTitle.textContent = "4. Sales History & Analytics (Showing: Repair Sales Only)";
+            else if(type === 'profit') headerTitle.textContent = "4. Sales History & Analytics (Showing: Profit Analytics View)";
             else headerTitle.textContent = "4. Sales History & Analytics (Showing: All Sales)";
 
             renderSalesTable();
@@ -882,7 +965,7 @@
 
                 if(currentSalesFilter === 'daily') return sDateOnly === todayStr;
                 if(currentSalesFilter === 'monthly') return sMonthOnly === thisMonthStr;
-                if(currentSalesFilter === 'repair') return s.sale_type === 'Repair' || s.sale_type === 'Mixed';
+                if(currentSalesFilter === 'profit') return true; // Show all to inspect profits
                 return true;
             });
 
@@ -937,7 +1020,7 @@
             };
             await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             alert('Repair added!');
-            document.getElementById('repairForm').reset();
+            document.getElementById('repairForm'].reset();
             loadRepairs();
         }
 
