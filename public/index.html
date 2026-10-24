@@ -325,16 +325,17 @@
                         <option value="Dead Phone / Power Issue">
                     </datalist>
 
-                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
-                    <select id="repWarranty">
-                        <option value="No Warranty">No Warranty</option>
-                        <option value="1 Week">1 Week</option>
-                        <option value="2 Weeks">2 Weeks</option>
-                        <option value="1 Month">1 Month</option>
-                        <option value="3 Months">3 Months</option>
-                        <option value="6 Months">6 Months</option>
-                        <option value="1 Year">1 Year</option>
-                    </select>
+                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period (Select or Type):</label>
+                    <input type="text" id="repWarranty" list="warrantyList" placeholder="e.g. 1 Month, No Warranty" value="No Warranty" required>
+                    <datalist id="warrantyList">
+                        <option value="No Warranty">
+                        <option value="1 Week">
+                        <option value="2 Weeks">
+                        <option value="1 Month">
+                        <option value="3 Months">
+                        <option value="6 Months">
+                        <option value="1 Year">
+                    </datalist>
 
                     <input type="number" id="repAdvance" placeholder="Advance Cost (e.g. 1000)" value="0" step="0.01">
                     <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" required>
@@ -353,8 +354,12 @@
             <div id="repBillingSubSection" style="display:none;">
                 <div style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 6px;">
                     <h4>Repair Checkout & Receipt Generation</h4>
+                    
+                    <label>Search Repair Job by ID (#8), Name, Phone, or Device:</label>
+                    <input type="text" id="repBillingSearch" placeholder="Type Job ID (#8), Name, Phone..." oninput="filterRepairBillingDropdown()" style="border: 2px solid #007bff; margin-bottom: 8px;">
+
                     <label>Select Repair Job:</label>
-                    <select id="repBillingSelect" onchange="selectRepairForBilling()" style="border: 2px solid #007bff; font-weight:bold;">
+                    <select id="repBillingSelect" size="5" onchange="selectRepairForBilling()" style="border: 2px solid #007bff; font-weight:bold; height: 130px;">
                         <option value="">-- Select Repair Job --</option>
                     </select>
 
@@ -548,6 +553,7 @@
             } else {
                 document.getElementById('repListSubSection').style.display = 'none';
                 document.getElementById('repBillingSubSection').style.display = 'block';
+                document.getElementById('repBillingSearch').value = '';
                 populateRepairBillingDropdown();
             }
         }
@@ -797,17 +803,38 @@
             renderRepairsTable(filtered);
         }
 
-        function populateRepairBillingDropdown() {
+        function populateRepairBillingDropdown(filterQuery = '') {
             const select = document.getElementById('repBillingSelect');
-            select.innerHTML = '<option value="">-- Select Repair Job --</option>';
-            allRepairs.forEach(r => {
+            select.innerHTML = '';
+            
+            const query = filterQuery.toLowerCase().trim();
+            const filtered = allRepairs.filter(r => {
+                const rId = (r.id || r.repair_id).toString();
+                if(!query) return true;
+                return rId === query || rId.includes(query) ||
+                    (r.customer_name && r.customer_name.toLowerCase().includes(query)) ||
+                    (r.customer_phone && r.customer_phone.includes(query)) ||
+                    (r.device_model && r.device_model.toLowerCase().includes(query));
+            });
+
+            if(filtered.length === 0) {
+                select.innerHTML = '<option value="">-- No matching repair jobs found --</option>';
+                return;
+            }
+
+            filtered.forEach(r => {
                 const rId = r.id || r.repair_id;
                 const balanceDue = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
                 const opt = document.createElement('option');
                 opt.value = rId;
-                opt.textContent = `Job #${rId} - ${r.customer_name} (${r.device_model}) - Due: Rs. ${balanceDue.toFixed(2)} [${r.status}]`;
+                opt.textContent = `Job #${rId} - ${r.customer_name} (${r.device_model}) [Warranty: ${r.warranty_period || 'No Warranty'}] - Due: Rs. ${balanceDue.toFixed(2)} [${r.status}]`;
                 select.appendChild(opt);
             });
+        }
+
+        function filterRepairBillingDropdown() {
+            const query = document.getElementById('repBillingSearch').value;
+            populateRepairBillingDropdown(query);
         }
 
         function selectRepairForBilling() {
@@ -863,7 +890,6 @@
             const change = Math.max(0, paid - balance);
             const payment_method = document.getElementById('repBillPaymentMethod').value;
 
-            // Create sale record on backend
             const saleData = {
                 shop_id: currentUser.shop_id,
                 customer_name: selectedBillingRepair.customer_name,
@@ -890,7 +916,6 @@
                     body: JSON.stringify(saleData)
                 });
                 if(res.ok) {
-                    // Update repair status to Delivered
                     await fetch(`/api/repairs/${rId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -1286,6 +1311,7 @@
             await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             alert('Repair added successfully!');
             document.getElementById('repairForm').reset();
+            document.getElementById('repWarranty').value = 'No Warranty';
             loadRepairs();
         }
 
