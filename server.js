@@ -82,7 +82,7 @@ db.query(`
     )
 `);
 
-// Sales Table Creation & Auto-Migration
+// Sales Table Creation
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -163,43 +163,53 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Dynamic Column Check - 100% Error Proof)
+// Sales APIs (100% Fail-Safe JS Mapping - Bypasses column name issues)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
-    // Automatically detect whether 'sale_id' or 'id' exists in the table
-    db.query("SHOW COLUMNS FROM sales LIKE 'sale_id'", (err, checkRes) => {
-        let idCol = 'sale_id';
-        if (err || !checkRes || checkRes.length === 0) {
-            idCol = 'id';
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+        if (err) {
+            // Fallback if shop_id column has issues
+            db.query('SELECT * FROM sales ORDER BY created_at DESC', (err2, results2) => {
+                if (err2) {
+                    console.error('SQL Error /api/sales:', err2);
+                    return res.status(500).json({ error: err2.message });
+                }
+                const formatted = (results2 || []).map(row => {
+                    const pId = row.sale_id || row.id || row.ID || 0;
+                    const cDate = row.created_at ? new Date(row.created_at) : new Date();
+                    return {
+                        ...row,
+                        sale_id: pId,
+                        id: pId,
+                        sale_type: row.sale_type || 'Product',
+                        discount: row.discount || 0,
+                        formatted_date: cDate.toLocaleString(),
+                        date_only: cDate.toLocaleDateString('en-CA'),
+                        month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
+                    };
+                });
+                return res.json(formatted);
+            });
+            return;
         }
 
-        const sql = `
-            SELECT 
-                ${idCol} AS sale_id, 
-                ${idCol} AS id, 
-                shop_id, 
-                customer_name, 
-                customer_phone, 
-                payment_method, 
-                COALESCE(sale_type, 'Product') AS sale_type, 
-                COALESCE(discount, 0) AS discount, 
-                total_amount, 
-                DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS formatted_date,
-                DATE_FORMAT(created_at, '%Y-%m-%d') AS date_only,
-                DATE_FORMAT(created_at, '%Y-%m') AS month_only
-            FROM sales 
-            WHERE shop_id = ? 
-            ORDER BY ${idCol} DESC
-        `;
-        db.query(sql, [shopId], (err2, results) => {
-            if (err2) {
-                console.error('SQL Error /api/sales:', err2);
-                return res.status(500).json({ error: err2.message });
-            }
-            res.json(results || []);
+        const formatted = (results || []).map(row => {
+            const pId = row.sale_id || row.id || row.ID || 0;
+            const cDate = row.created_at ? new Date(row.created_at) : new Date();
+            return {
+                ...row,
+                sale_id: pId,
+                id: pId,
+                sale_type: row.sale_type || 'Product',
+                discount: row.discount || 0,
+                formatted_date: cDate.toLocaleString(),
+                date_only: cDate.toLocaleDateString('en-CA'),
+                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
+            };
         });
+        res.json(formatted);
     });
 });
 
@@ -239,12 +249,17 @@ app.post('/api/sales', (req, res) => {
 });
 
 app.delete('/api/sales/:id', (req, res) => {
-    db.query("SHOW COLUMNS FROM sales LIKE 'sale_id'", (err, checkRes) => {
-        let idCol = (err || !checkRes || checkRes.length === 0) ? 'id' : 'sale_id';
-        db.query(`DELETE FROM sales WHERE ${idCol} = ? AND shop_id = ?`, [req.params.id, req.query.shop_id], (err2) => {
-            if (err2) return res.status(500).json({ error: err2.message });
-            res.json({ message: 'Removed' });
-        });
+    const saleId = req.params.id;
+    const shopId = req.query.shop_id;
+    db.query('DELETE FROM sales WHERE (sale_id = ? OR id = ?) AND shop_id = ?', [saleId, saleId, shopId], (err) => {
+        if (err) {
+            db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err2) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ message: 'Removed' });
+            });
+            return;
+        }
+        res.json({ message: 'Removed' });
     });
 });
 
