@@ -96,6 +96,7 @@ db.query(`
     )
 `, () => {
     db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'", () => {});
+    db.query("ALTER TABLE sales ADD COLUMN discount DECIMAL(10, 2) DEFAULT 0", () => {});
 });
 
 db.query(`
@@ -134,7 +135,7 @@ app.post('/api/login', (req, res) => {
 app.get('/api/products', (req, res) => {
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
+        res.json(results || []);
     });
 });
 
@@ -161,8 +162,11 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Direct DATE String Formatting from MySQL)
+// Sales APIs (Safely Formatted)
 app.get('/api/sales', (req, res) => {
+    const shopId = req.query.shop_id;
+    if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
+
     const sql = `
         SELECT 
             sale_id AS id, 
@@ -174,16 +178,19 @@ app.get('/api/sales', (req, res) => {
             COALESCE(sale_type, 'Product') AS sale_type, 
             discount, 
             total_amount, 
-            DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS formatted_date,
-            DATE_FORMAT(created_at, '%Y-%m-%d') AS date_only,
-            DATE_FORMAT(created_at, '%Y-%m') AS month_only
+            COALESCE(DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'), NOW()) AS formatted_date,
+            COALESCE(DATE_FORMAT(created_at, '%Y-%m-%d'), CURDATE()) AS date_only,
+            COALESCE(DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(NOW(), '%Y-%m')) AS month_only
         FROM sales 
         WHERE shop_id = ? 
         ORDER BY sale_id DESC
     `;
-    db.query(sql, [req.query.shop_id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
+    db.query(sql, [shopId], (err, results) => {
+        if (err) {
+            console.error('SQL Error /api/sales:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(results || []);
     });
 });
 
@@ -233,7 +240,7 @@ app.delete('/api/sales/:id', (req, res) => {
 app.get('/api/repairs', (req, res) => {
     db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
+        res.json(results || []);
     });
 });
 

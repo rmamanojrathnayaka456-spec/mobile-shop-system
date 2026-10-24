@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOBILE POS SYSTEM v2.0</title>
+    <title>MOBILE POS SYSTEM</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
@@ -195,7 +195,7 @@
             </table>
         </div>
 
-        <!-- Tab 4: Sales History (NEW 4-Card Analytics) -->
+        <!-- Tab 4: Sales History -->
         <div id="tab4" class="section">
             <h3 id="salesHeaderTitle">4. Sales History & Analytics (Showing: All Sales)</h3>
             <div class="analytics-grid">
@@ -659,15 +659,20 @@
 
         function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
 
-        // Perfect Local Date Strings from Server Side Columns
+        // Safely Loaded Sales with Robust Error Handling
         async function loadSales() {
             try {
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
-                rawSalesData = await res.json();
+                const data = await res.json();
+                
+                if(!res.ok) {
+                    throw new Error(data.error || 'Failed to fetch sales');
+                }
+
+                rawSalesData = Array.isArray(data) ? data : [];
                 
                 let dailyAmt = 0, monthlyAmt = 0, repairAmt = 0;
                 
-                // Get local today date string
                 const now = new Date();
                 const y = now.getFullYear();
                 const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -681,13 +686,13 @@
                     const sMonthOnly = s.month_only || (s.formatted_date ? s.formatted_date.substring(0, 7) : '');
 
                     if(sDateOnly === todayStr) {
-                        dailyAmt += parseFloat(s.total_amount);
+                        dailyAmt += parseFloat(s.total_amount || 0);
                     }
                     if(sMonthOnly === thisMonthStr) {
-                        monthlyAmt += parseFloat(s.total_amount);
+                        monthlyAmt += parseFloat(s.total_amount || 0);
                     }
                     if(s.sale_type === 'Repair' || s.sale_type === 'Mixed') {
-                        repairAmt += parseFloat(s.total_amount);
+                        repairAmt += parseFloat(s.total_amount || 0);
                     }
                 });
 
@@ -697,7 +702,10 @@
                 document.getElementById('totalTransactions').textContent = rawSalesData.length;
 
                 renderSalesTable();
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.error('Load sales error:', err);
+                document.getElementById('salesTable').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">Error loading sales: ${err.message}</td></tr>`;
+            }
         }
 
         function filterSalesView(type, cardEl) {
