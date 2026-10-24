@@ -305,9 +305,21 @@
                 <input type="text" id="repCustomer" placeholder="Customer Name" required>
                 <input type="text" id="repPhone" placeholder="Customer Phone" required>
                 <input type="text" id="repDevice" placeholder="Device Model (e.g. iPhone 11)" required>
-                <textarea id="repIssue" placeholder="Issue Description" required></textarea>
-                <input type="number" id="repAdvance" placeholder="Advance Cost" value="0">
-                <input type="number" id="repTotalCost" placeholder="Total Repair Cost" required>
+                
+                <input type="text" id="repIssue" list="commonIssues" placeholder="Issue Description (Select or Type e.g. Display Replacement)" required>
+                <datalist id="commonIssues">
+                    <option value="Display / Screen Replacement">
+                    <option value="Battery Replacement">
+                    <option value="Charging Port / Flex Issue">
+                    <option value="Speaker / Mic Issue">
+                    <option value="Camera Issue">
+                    <option value="Back Cover / Glass Damage">
+                    <option value="Software / Flashing Issue">
+                    <option value="Dead Phone / Power Issue">
+                </datalist>
+
+                <input type="number" id="repAdvance" placeholder="Advance Cost (e.g. 1000)" value="0" step="0.01">
+                <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" required>
                 <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job</button>
             </form>
 
