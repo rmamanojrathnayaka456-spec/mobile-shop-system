@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOBILE POS SYSTEM</title>
+    <title>MOBILE SHOP SYSTEM</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
@@ -19,7 +19,7 @@
         
         #appContainer { display: none; }
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .user-badge { background: #e8f4fd; padding: 8px 15px; border-radius: 6px; border: 1px solid #b8daff; font-weight: bold; color: #007bff; }
+        .user-badge { background: #e8f4fd; padding: 8px 15px; border-radius: 6px; border: 1px solid #b8daff; font-weight: bold; color: #007bff; font-size: 16px; }
         
         select, input, textarea, button { padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
         select { background: #fff; font-weight: bold; cursor: pointer; }
@@ -71,15 +71,19 @@
 <body>
 
     <div id="loginScreen">
-        <h2>📱 MOBILE POS SYSTEM</h2>
+        <h2>📱 MOBILE SHOP SYSTEM</h2>
         <form onsubmit="handleLogin(event)">
             <div class="login-group">
+                <label>Shop Name / User Display Name:</label>
+                <input type="text" id="loginShopName" placeholder="e.g. SHA MOBILE" required>
+            </div>
+            <div class="login-group">
                 <label>Username:</label>
-                <input type="text" id="loginUser" placeholder="e.g. branch1" required>
+                <input type="text" id="loginUser" placeholder="e.g. system01" required>
             </div>
             <div class="login-group">
                 <label>Password:</label>
-                <input type="password" id="loginPass" placeholder="e.g. pass123" required>
+                <input type="password" id="loginPass" placeholder="e.g. system321" required>
             </div>
             <button type="submit" style="margin-top: 10px;">Login to System</button>
         </form>
@@ -87,9 +91,9 @@
 
     <div id="appContainer" class="container">
         <header>
-            <h2>📱 MOBILE POS SYSTEM</h2>
+            <h2>📱 MOBILE SHOP SYSTEM</h2>
             <div style="display: flex; align-items: center; gap: 15px;">
-                <div class="user-badge" id="userDisplay">User: Loading...</div>
+                <div class="user-badge" id="userDisplay">SHA MOBILE</div>
                 <button class="logout-btn" onclick="handleLogout()">Logout</button>
             </div>
         </header>
@@ -293,11 +297,13 @@
             e.preventDefault();
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value.trim();
+            const custom_shop_name = document.getElementById('loginShopName').value.trim();
+
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username, password, custom_shop_name })
                 });
                 const data = await res.json();
                 if(res.ok && data.success) {
@@ -323,7 +329,7 @@
                 currentUser = JSON.parse(saved);
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
-                document.getElementById('userDisplay').textContent = `User: ${currentUser.username} | Branch: ${currentUser.shop_name}`;
+                document.getElementById('userDisplay').textContent = currentUser.shop_name;
                 loadInventory();
                 loadSales();
                 loadRepairs();

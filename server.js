@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Shops & Users
+// Auto Create Shops & System Accounts (system01 to system10)
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -30,18 +30,11 @@ db.query(`
         status VARCHAR(20) DEFAULT 'ACTIVE'
     )
 `, () => {
-    const defaultShops = [
-        [1, 'Branch 1 - Kegalle', 'ACTIVE'], 
-        [2, 'Branch 2 - Rambukkana', 'ACTIVE'], 
-        [3, 'Branch 3 - Polgahawela', 'ACTIVE'],
-        [4, 'Branch 4 - Mawanella', 'ACTIVE'],
-        [5, 'Branch 5 - Kandy', 'ACTIVE'],
-        [6, 'Branch 6 - Kurunegala', 'ACTIVE'],
-        [7, 'Branch 7 - Colombo', 'ACTIVE']
-    ];
-    defaultShops.forEach(shop => {
-        db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE shop_name = VALUES(shop_name)`, shop);
-    });
+    for (let i = 1; i <= 10; i++) {
+        const sId = i;
+        const sName = `Shop ${i}`;
+        db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [sId, sName]);
+    }
 });
 
 db.query(`
@@ -52,18 +45,10 @@ db.query(`
         shop_id INT NOT NULL
     )
 `, () => {
-    const defaultUsers = [
-        ['branch1', 'pass123', 1],
-        ['branch2', 'pass123', 2],
-        ['branch3', 'pass123', 3],
-        ['branch4', 'pass123', 4],
-        ['branch5', 'pass123', 5],
-        ['branch6', 'pass123', 6],
-        ['branch7', 'pass123', 7]
-    ];
-    defaultUsers.forEach(user => {
-        db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password), shop_id = VALUES(shop_id)`, user);
-    });
+    for (let i = 1; i <= 10; i++) {
+        const uName = `system${i.toString().padStart(2, '0')}`;
+        db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, 'system321', ?) ON DUPLICATE KEY UPDATE password='system321'`, [uName, i]);
+    }
 });
 
 db.query(`
@@ -94,10 +79,7 @@ db.query(`
         total_amount DECIMAL(10, 2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`, () => {
-    db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'", () => {});
-    db.query("ALTER TABLE sales ADD COLUMN discount DECIMAL(10, 2) DEFAULT 0", () => {});
-});
+`);
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -114,9 +96,9 @@ db.query(`
     )
 `);
 
-// Login API
+// Login API with Subscription Check & Custom Shop Name Update
 app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, custom_shop_name } = req.body;
     db.query(`
         SELECT u.*, s.shop_name, s.status 
         FROM users u 
@@ -125,9 +107,29 @@ app.post('/api/login', (req, res) => {
     `, [username, password], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         if (results.length === 0) return res.status(401).json({ error: 'Invalid username or password' });
+        
         const user = results[0];
-        if (user.status !== 'ACTIVE') return res.status(403).json({ error: 'Account locked.' });
-        res.json({ success: true, user });
+        
+        // Subscription Lock Guard
+        if (user.status !== 'ACTIVE') {
+            return res.status(403).json({ error: 'Account Locked. Please contact administrator to renew subscription.' });
+        }
+
+        // Update custom shop name if typed
+        const finalShopName = custom_shop_name && custom_shop_name.trim() !== '' ? custom_shop_name.trim() : user.shop_name;
+        db.query('UPDATE shops SET shop_name = ? WHERE shop_id = ?', [finalShopName, user.shop_id], () => {
+            user.shop_name = finalShopName;
+            res.json({ success: true, user });
+        });
+    });
+});
+
+// Admin Route to Lock / Unlock Shops
+app.post('/api/admin/toggle-lock', (req, res) => {
+    const { shop_id, status } = req.body; // status: 'ACTIVE' or 'LOCKED'
+    db.query('UPDATE shops SET status = ? WHERE shop_id = ?', [status, shop_id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: `Shop #${shop_id} status updated to ${status}` });
     });
 });
 
@@ -227,12 +229,11 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Foolproof Timestamp-based Delete API
 app.delete('/api/sales/:id', (req, res) => {
     const deleteKey = decodeURIComponent(req.params.id);
     const shopId = req.query.shop_id;
     
-    db.query('DELETE FROM sales WHERE created_at = ? AND shop_id = ? LIMIT 1', [deleteKey, shopId], (err, result) => {
+    db.query('DELETE FROM sales WHERE created_at = ? AND shop_id = ? LIMIT 1', [deleteKey, shopId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
     });
