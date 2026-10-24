@@ -765,16 +765,15 @@
                 return;
             }
 
-            displaySales.forEach((s, index) => {
-                const sId = s.sale_id || s.id || s.display_id || (index + 1);
-                const displayId = s.display_id || s.sale_id || s.id || (index + 1);
+            displaySales.forEach((s) => {
+                const sId = s.sale_id || s.id;
                 let badgeClass = 'badge-prod';
                 let stype = s.sale_type || 'Product';
                 if(stype === 'Repair') badgeClass = 'badge-rep';
                 else if(stype === 'Mixed') badgeClass = 'badge-mix';
 
                 tbody.innerHTML += `<tr>
-                    <td><b>#${displayId}</b></td>
+                    <td><b>#${sId}</b></td>
                     <td>${s.customer_name}</td>
                     <td>${s.customer_phone}</td>
                     <td><span class="${badgeClass}">${stype}</span></td>
@@ -791,6 +790,7 @@
             try {
                 const res = await fetch(`/api/sales/${encodeURIComponent(id)}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
                 if(res.ok) {
+                    // Instantly reload sales and analytics to make it vanish immediately
                     loadSales();
                 } else {
                     alert('Failed to delete sale.');
