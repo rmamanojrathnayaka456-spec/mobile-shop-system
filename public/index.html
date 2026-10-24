@@ -665,12 +665,12 @@
             if(val.startsWith('prod_')) {
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
                 if(!p || p.stock < qty) return alert('Out of stock!');
-                cart.push({ type: 'product', product_id: p.product_id, name: p.name, price, qty, discount: discount * qty, subtotal: price * qty });
+                cart.push({ type: 'product', product_id: p.product_id, name: p.name, originalPrice: selectedOriginalPrice, price, qty, discount: discount * qty, subtotal: price * qty });
             } else if(val.startsWith('rep_')) {
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(!r) return;
                 const rId = r.id || r.repair_id;
-                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, price, qty: 1, discount: discount, subtotal: price });
+                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, originalPrice: selectedOriginalPrice, price, qty: 1, discount: discount, subtotal: price });
             }
             renderCart();
             clearBillingFields();
@@ -743,7 +743,11 @@
             msg += `--------------------------------\n`;
             msg += `PURCHASED ITEMS:\n`;
             sale.items.forEach(item => { 
-                msg += `- ${item.name} (Qty: ${item.qty})\n  Subtotal: Rs. ${item.subtotal.toFixed(2)}\n`; 
+                msg += `- ${item.name} (Qty: ${item.qty})\n`;
+                if (item.originalPrice && item.originalPrice !== item.price) {
+                    msg += `  Original Price: Rs. ${(item.originalPrice * item.qty).toFixed(2)}\n`;
+                }
+                msg += `  Subtotal      : Rs. ${item.subtotal.toFixed(2)}\n`; 
             });
             msg += `--------------------------------\n`;
             if (sale.total_discount > 0) {
@@ -771,7 +775,11 @@
             htmlMsg += `--------------------------------<br>`;
             htmlMsg += `PURCHASED ITEMS:<br>`;
             sale.items.forEach(item => {
-                htmlMsg += `- ${item.name} (Qty: ${item.qty})<br>&nbsp;&nbsp;Subtotal: Rs. ${item.subtotal.toFixed(2)}<br>`;
+                htmlMsg += `- ${item.name} (Qty: ${item.qty})<br>`;
+                if (item.originalPrice && item.originalPrice !== item.price) {
+                    htmlMsg += `&nbsp;&nbsp;Original Price: Rs. ${(item.originalPrice * item.qty).toFixed(2)}<br>`;
+                }
+                htmlMsg += `&nbsp;&nbsp;Subtotal      : Rs. ${item.subtotal.toFixed(2)}<br>`;
             });
             htmlMsg += `--------------------------------<br>`;
             if (sale.total_discount > 0) {
