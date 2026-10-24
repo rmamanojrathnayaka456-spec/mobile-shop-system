@@ -116,6 +116,14 @@
         <h2>MOBILE SHOP SYSTEM</h2>
         <form onsubmit="handleLogin(event)">
             <div class="login-group">
+                <label>Shop Name:</label>
+                <input type="text" id="loginShopName" placeholder="e.g. SHA MOBILE" required>
+            </div>
+            <div class="login-group">
+                <label>Shop Contact Number:</label>
+                <input type="text" id="loginShopPhone" placeholder="e.g. 0756017464" required>
+            </div>
+            <div class="login-group">
                 <label>Username:</label>
                 <input type="text" id="loginUser" placeholder="e.g. branch1" required>
             </div>
@@ -349,12 +357,14 @@
             e.preventDefault();
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value.trim();
+            const custom_shop_name = document.getElementById('loginShopName').value.trim();
+            const shop_phone = document.getElementById('loginShopPhone').value.trim();
 
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username, password, custom_shop_name, shop_phone })
                 });
                 const data = await res.json();
                 if(res.ok && data.success) {
