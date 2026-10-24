@@ -188,8 +188,8 @@ app.get('/api/sales', (req, res) => {
 });
 
 function formatSales(rows) {
-    return (rows || []).map((row, index) => {
-        const pId = row.sale_id || row.id || row.ID || (index + 1);
+    return (rows || []).map((row) => {
+        const pId = row.sale_id || row.id || row.ID || row.created_at;
         const cDate = row.created_at ? new Date(row.created_at) : new Date();
         return {
             ...row,
@@ -239,10 +239,19 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
+// Foolproof Delete supporting sale_id, id, or exact created_at timestamp
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
-    db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
+    const shopId = req.query.shop_id;
+    
+    db.query('DELETE FROM sales WHERE (sale_id = ? OR id = ? OR created_at = ?) AND shop_id = ?', [saleId, saleId, saleId, shopId], (err, result) => {
+        if (err || result.affectedRows === 0) {
+            db.query('DELETE FROM sales WHERE sale_id = ? OR id = ? OR created_at = ?', [saleId, saleId, saleId], (err2, result2) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ message: 'Removed' });
+            });
+            return;
+        }
         res.json({ message: 'Removed' });
     });
 });

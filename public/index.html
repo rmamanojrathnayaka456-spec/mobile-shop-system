@@ -226,7 +226,7 @@
             </table>
         </div>
 
-        <!-- Tab 5: Repair Jobs with Search Bar -->
+        <!-- Tab 5: Repair Jobs -->
         <div id="tab5" class="section">
             <h3>5. Repair Jobs Management</h3>
             <form id="repairForm" onsubmit="addRepair(event)" style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;">
@@ -766,21 +766,22 @@
             }
 
             displaySales.forEach(s => {
-                const sId = s.id || s.sale_id;
+                const sId = s.sale_id || s.id || s.created_at;
                 let badgeClass = 'badge-prod';
                 let stype = s.sale_type || 'Product';
                 if(stype === 'Repair') badgeClass = 'badge-rep';
                 else if(stype === 'Mixed') badgeClass = 'badge-mix';
 
+                // Notice the quotes around '${sId}' so strings or numbers pass safely to deleteSale
                 tbody.innerHTML += `<tr>
-                    <td><b>#${sId}</b></td>
+                    <td><b>#${s.sale_id || s.id}</b></td>
                     <td>${s.customer_name}</td>
                     <td>${s.customer_phone}</td>
                     <td><span class="${badgeClass}">${stype}</span></td>
                     <td>${s.payment_method}</td>
                     <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
                     <td>${s.formatted_date || s.created_at}</td>
-                    <td><button onclick="deleteSale(${sId})" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
+                    <td><button onclick="deleteSale('${sId}')" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
                 </tr>`;
             });
         }
@@ -788,13 +789,13 @@
         async function deleteSale(id) {
             if(!confirm('Delete sale record?')) return;
             try {
-                const res = await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/sales/${encodeURIComponent(id)}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
                 if(res.ok) {
                     loadSales();
                 } else {
                     alert('Failed to delete sale.');
                 }
-            } catch(err) { console.error(err); }
+            } catch(err) { console.error(err); alert('Network error deleting sale.'); }
         }
 
         async function addRepair(e) {
