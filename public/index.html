@@ -231,6 +231,13 @@
                         <option value="Installment">Installment</option>
                         <option value="Koko">Koko Payment</option>
                     </select>
+
+                    <label>Amount Paid / Cash Tendered (Rs.):</label>
+                    <input type="number" id="amountPaid" placeholder="0.00" step="0.01" oninput="calculateChangeDue()" style="border: 2px solid #28a745; font-weight: bold;">
+
+                    <label>Balance / Change Due (Rs.):</label>
+                    <input type="number" id="changeDue" value="0.00" style="font-weight:bold; color:#28a745; background:#e8f4fd;" disabled>
+
                     <table>
                         <thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
                         <tbody id="cartTableBody"><tr><td colspan="4" style="text-align:center;">Cart is empty</td></tr></tbody>
@@ -737,6 +744,13 @@
             document.getElementById('billingDiscountDisplay').value = discount.toFixed(2);
         }
 
+        function calculateChangeDue() {
+            const totalPayable = cart.reduce((sum, item) => sum + item.subtotal, 0);
+            const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+            const changeDue = Math.max(0, amountPaid - totalPayable);
+            document.getElementById('changeDue').value = changeDue.toFixed(2);
+        }
+
         function addToCart() {
             const val = document.getElementById('billingProductSelect').value;
             const price = parseFloat(document.getElementById('billingPrice').value);
@@ -773,6 +787,7 @@
                 });
             }
             document.getElementById('cartTotal').textContent = total.toFixed(2);
+            calculateChangeDue();
         }
 
         function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
@@ -781,11 +796,13 @@
             if(cart.length === 0) return alert('Cart is empty!');
             const total_amount = cart.reduce((sum, item) => sum + item.subtotal, 0);
             const total_discount = cart.reduce((sum, item) => sum + (item.discount || 0), 0);
+            const amount_paid = parseFloat(document.getElementById('amountPaid').value) || total_amount;
+            const change_due = Math.max(0, amount_paid - total_amount);
             const customer_name = document.getElementById('custName').value.trim() || 'Cash Customer';
             const customer_phone = document.getElementById('custPhone').value.trim() || 'N/A';
             const payment_method = document.getElementById('paymentMethod').value;
 
-            lastSaleData = { customer_name, customer_phone, payment_method, total_amount, total_discount, items: [...cart], branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone };
+            lastSaleData = { customer_name, customer_phone, payment_method, total_amount, total_discount, amount_paid, change_due, items: [...cart], branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone };
 
             try {
                 const res = await fetch('/api/sales', {
@@ -798,6 +815,8 @@
                     cart = [];
                     document.getElementById('custName').value = '';
                     document.getElementById('custPhone').value = '';
+                    document.getElementById('amountPaid').value = '';
+                    document.getElementById('changeDue').value = '0.00';
                     renderCart();
                     loadInventory();
                     loadSales();
@@ -830,13 +849,15 @@
                 if (item.originalPrice && item.originalPrice !== item.price) {
                     msg += `  Original Price: Rs. ${(item.originalPrice * item.qty).toFixed(2)}\n`;
                 }
-                msg += `  Subtotal      : Rs. ${item.subtotal.toFixed(2)}\n`; 
+                msg += `  Total         : Rs. ${item.subtotal.toFixed(2)}\n`; 
             });
             msg += `--------------------------------\n`;
             if (sale.total_discount > 0) {
                 msg += `TOTAL DISCOUNT: Rs. ${sale.total_discount.toFixed(2)}\n`;
             }
             msg += `TOTAL PAYABLE : Rs. ${sale.total_amount.toFixed(2)}\n`;
+            msg += `AMOUNT PAID   : Rs. ${(sale.amount_paid || sale.total_amount).toFixed(2)}\n`;
+            msg += `CHANGE DUE    : Rs. ${(sale.change_due || 0).toFixed(2)}\n`;
             msg += `Payment Method: ${sale.payment_method}\n`;
             msg += `================================\n`;
             msg += `   Thank you for your business!   \n`;
@@ -861,13 +882,15 @@
                 if (item.originalPrice && item.originalPrice !== item.price) {
                     htmlMsg += `&nbsp;&nbsp;Original Price: Rs. ${(item.originalPrice * item.qty).toFixed(2)}<br>`;
                 }
-                htmlMsg += `&nbsp;&nbsp;Subtotal      : Rs. ${item.subtotal.toFixed(2)}<br>`;
+                htmlMsg += `&nbsp;&nbsp;Total         : Rs. ${item.subtotal.toFixed(2)}<br>`;
             });
             htmlMsg += `--------------------------------<br>`;
             if (sale.total_discount > 0) {
                 htmlMsg += `TOTAL DISCOUNT: Rs. ${sale.total_discount.toFixed(2)}<br>`;
             }
             htmlMsg += `TOTAL PAYABLE : Rs. ${sale.total_amount.toFixed(2)}<br>`;
+            htmlMsg += `AMOUNT PAID   : Rs. ${(sale.amount_paid || sale.total_amount).toFixed(2)}<br>`;
+            htmlMsg += `CHANGE DUE    : Rs. ${(sale.change_due || 0).toFixed(2)}<br>`;
             htmlMsg += `Payment Method: ${sale.payment_method}<br>`;
             htmlMsg += `================================<br>`;
             htmlMsg += `Thank you for your business!<br>`;
