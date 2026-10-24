@@ -556,6 +556,7 @@
             }
 
             if(tabNum === 2) { loadInventory(); loadRepairs(); }
+            else if(tabNum === 3) { loadInventory(); }
             else if(tabNum === 4) { loadSales(); }
             else if(tabNum === 5) { loadRepairs(); }
         }
@@ -593,6 +594,7 @@
             try {
                 const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
                 allProducts = await res.json();
+                renderInventory(allProducts); // RESTORED RENDER CALL
                 checkLowStockAlert(allProducts);
             } catch (err) { console.error(err); }
         }
@@ -628,6 +630,7 @@
 
         function renderInventory(products) {
             const tbody = document.getElementById('inventoryTable');
+            if(!tbody) return;
             tbody.innerHTML = '';
             
             let filtered = products;
@@ -855,7 +858,6 @@
             container.style.display = 'block';
         }
 
-        // Close custom dropdown when clicking outside
         document.addEventListener('click', function(e) {
             const dropdown = document.getElementById('customDropdownList');
             const searchInput = document.getElementById('billingSearch');
@@ -926,6 +928,7 @@
 
         function populateRepairBillingDropdown(filterQuery = '') {
             const select = document.getElementById('repBillingSelect');
+            if(!select) return;
             select.innerHTML = '';
             
             const query = filterQuery.toLowerCase().trim();
@@ -1016,6 +1019,7 @@
             const payment_method = document.getElementById('repBillPaymentMethod').value;
             const parsed = parseRepairIssue(selectedBillingRepair.issue_description);
 
+            // Added sale_type: 'Repair' so it appears correctly in Sales History & Analytics
             const saleData = {
                 shop_id: currentUser.shop_id,
                 customer_name: selectedBillingRepair.customer_name,
@@ -1023,6 +1027,7 @@
                 payment_method: payment_method,
                 discount: 0,
                 total_amount: balance,
+                sale_type: 'Repair',
                 items: [{
                     type: 'repair',
                     repair_id: rId,
@@ -1434,6 +1439,7 @@
 
         function renderSalesTable() {
             const tbody = document.getElementById('salesTable');
+            if(!tbody) return;
             tbody.innerHTML = '';
             
             const now = new Date();
