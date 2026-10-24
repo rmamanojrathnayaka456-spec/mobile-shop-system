@@ -85,6 +85,7 @@ db.query(`
 // Sales Table Auto-Migration & Primary Key Fix
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
+        sale_id INT AUTO_INCREMENT PRIMARY KEY,
         shop_id INT NOT NULL,
         customer_name VARCHAR(100),
         customer_phone VARCHAR(20),
@@ -97,8 +98,8 @@ db.query(`
 `, () => {
     db.query("DESCRIBE sales", (err, cols) => {
         if (!err && cols) {
-            const hasId = cols.some(c => c.Field === 'sale_id' || c.Field === 'id');
-            if (!hasId) {
+            const hasPK = cols.some(c => c.Key === 'PRI');
+            if (!hasPK) {
                 db.query("ALTER TABLE sales ADD COLUMN sale_id INT AUTO_INCREMENT PRIMARY KEY FIRST", () => {});
             }
         }
@@ -188,13 +189,14 @@ app.get('/api/sales', (req, res) => {
 });
 
 function formatSales(rows) {
-    return (rows || []).map((row) => {
-        const pId = row.sale_id || row.id || row.ID || row.created_at;
+    return (rows || []).map((row, index) => {
+        const pId = row.sale_id || row.id || row.ID || (index + 1);
         const cDate = row.created_at ? new Date(row.created_at) : new Date();
         return {
             ...row,
             sale_id: pId,
             id: pId,
+            display_id: pId,
             sale_type: row.sale_type || 'Product',
             discount: row.discount || 0,
             formatted_date: cDate.toLocaleString(),
@@ -239,14 +241,14 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Foolproof Delete supporting sale_id, id, or exact created_at timestamp
+// Foolproof Delete API
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
     const shopId = req.query.shop_id;
     
-    db.query('DELETE FROM sales WHERE (sale_id = ? OR id = ? OR created_at = ?) AND shop_id = ?', [saleId, saleId, saleId, shopId], (err, result) => {
-        if (err || result.affectedRows === 0) {
-            db.query('DELETE FROM sales WHERE sale_id = ? OR id = ? OR created_at = ?', [saleId, saleId, saleId], (err2, result2) => {
+    db.query('DELETE FROM sales WHERE (sale_id = ? OR id = ?) AND shop_id = ?', [saleId, saleId, shopId], (err, result) => {
+        if (err || (result && result.affectedRows === 0)) {
+            db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err2, result2) => {
                 if (err2) return res.status(500).json({ error: err2.message });
                 res.json({ message: 'Removed' });
             });

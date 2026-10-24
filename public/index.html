@@ -765,9 +765,9 @@
                 return;
             }
 
-            displaySales.forEach(s => {
-                const sId = s.id; // composite deletion token
-                const displayId = s.display_id;
+            displaySales.forEach((s, index) => {
+                const sId = s.sale_id || s.id || s.display_id || (index + 1);
+                const displayId = s.display_id || s.sale_id || s.id || (index + 1);
                 let badgeClass = 'badge-prod';
                 let stype = s.sale_type || 'Product';
                 if(stype === 'Repair') badgeClass = 'badge-rep';
