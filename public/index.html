@@ -116,20 +116,12 @@
         <h2>MOBILE SHOP SYSTEM</h2>
         <form onsubmit="handleLogin(event)">
             <div class="login-group">
-                <label>Shop Name:</label>
-                <input type="text" id="loginShopName" placeholder="e.g. SHAMOBILE" required>
-            </div>
-            <div class="login-group">
-                <label>Shop Contact Number:</label>
-                <input type="text" id="loginShopPhone" placeholder="e.g. 0771234567" required>
-            </div>
-            <div class="login-group">
                 <label>Username:</label>
-                <input type="text" id="loginUser" placeholder="e.g. system01" required>
+                <input type="text" id="loginUser" placeholder="e.g. branch1" required>
             </div>
             <div class="login-group">
                 <label>Password:</label>
-                <input type="password" id="loginPass" placeholder="e.g. sysKey@01" required>
+                <input type="password" id="loginPass" placeholder="e.g. password" required>
             </div>
             <button type="submit" style="margin-top: 10px;">Login to System</button>
         </form>
@@ -140,7 +132,7 @@
             <h2>MOBILE SHOP SYSTEM</h2>
             <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <button type="button" onclick="toggleTheme()" style="width: auto; padding: 6px 12px; background: #6c757d; font-size: 12px;" id="themeToggleBtn">🌙 Dark Mode</button>
-                <div class="user-badge" id="userDisplay">SHAMOBILE</div>
+                <div class="user-badge" id="userDisplay">SHA MOBILE</div>
                 <button class="logout-btn" onclick="handleLogout()">Logout</button>
             </div>
         </header>
@@ -357,14 +349,12 @@
             e.preventDefault();
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value.trim();
-            const custom_shop_name = document.getElementById('loginShopName').value.trim();
-            const shop_phone = document.getElementById('loginShopPhone').value.trim();
 
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password, custom_shop_name, shop_phone })
+                    body: JSON.stringify({ username, password })
                 });
                 const data = await res.json();
                 if(res.ok && data.success) {
@@ -390,7 +380,7 @@
                 currentUser = JSON.parse(saved);
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
-                document.getElementById('userDisplay').textContent = currentUser.shop_name;
+                document.getElementById('userDisplay').textContent = currentUser.shop_name || "SHA MOBILE";
                 loadInventory();
                 loadSales();
                 loadRepairs();
@@ -516,7 +506,7 @@
         }
 
         function printExistingBarcode(name, code, price) {
-            currentBarcodeData = { shop: currentUser.shop_name, name: name, code: code, price: price };
+            currentBarcodeData = { shop: currentUser.shop_name || "SHA MOBILE", name: name, code: code, price: price };
             document.getElementById('bcPrintQty').value = 1;
             showBarcodeModal();
         }
@@ -556,7 +546,7 @@
                 });
                 const result = await res.json();
                 if(res.ok) {
-                    currentBarcodeData = { shop: currentUser.shop_name, name: data.name, code: result.product_code, price: data.selling_price };
+                    currentBarcodeData = { shop: currentUser.shop_name || "SHA MOBILE", name: data.name, code: result.product_code, price: data.selling_price };
                     document.getElementById('bcPrintQty').value = stockQty;
                     showBarcodeModal();
                     document.getElementById('productForm').reset();
@@ -616,7 +606,6 @@
             });
         }
 
-        // Repairs Functions & Search
         async function loadRepairs() {
             try {
                 const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
@@ -777,7 +766,7 @@
             const customer_phone = document.getElementById('custPhone').value.trim() || 'N/A';
             const payment_method = document.getElementById('paymentMethod').value;
 
-            lastSaleData = { customer_name, customer_phone, payment_method, total_amount, total_discount, items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
+            lastSaleData = { customer_name, customer_phone, payment_method, total_amount, total_discount, items: [...cart], branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone };
 
             try {
                 const res = await fetch('/api/sales', {
@@ -911,7 +900,6 @@
                         monthlyAmt += parseFloat(s.total_amount || 0);
                     }
 
-                    // Calculate profit if items have cost price
                     if(s.items && Array.isArray(s.items)) {
                         s.items.forEach(item => {
                             const sellPrice = parseFloat(item.price || item.subtotal || 0);
@@ -965,7 +953,7 @@
 
                 if(currentSalesFilter === 'daily') return sDateOnly === todayStr;
                 if(currentSalesFilter === 'monthly') return sMonthOnly === thisMonthStr;
-                if(currentSalesFilter === 'profit') return true; // Show all to inspect profits
+                if(currentSalesFilter === 'profit') return true;
                 return true;
             });
 
@@ -1020,7 +1008,7 @@
             };
             await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             alert('Repair added!');
-            document.getElementById('repairForm'].reset();
+            document.getElementById('repairForm').reset();
             loadRepairs();
         }
 
