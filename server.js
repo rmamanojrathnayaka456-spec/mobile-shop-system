@@ -82,7 +82,7 @@ db.query(`
     )
 `);
 
-// Sales Table Creation
+// Sales Table Creation & Auto Migration for sale_id
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -96,6 +96,17 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
+    db.query("DESCRIBE sales", (err, cols) => {
+        if (!err && cols) {
+            const hasSaleId = cols.some(c => c.Field === 'sale_id');
+            const hasId = cols.some(c => c.Field === 'id');
+            if (!hasSaleId && hasId) {
+                db.query("ALTER TABLE sales CHANGE COLUMN id sale_id INT AUTO_INCREMENT PRIMARY KEY", () => {});
+            } else if (!hasSaleId && !hasId) {
+                db.query("ALTER TABLE sales ADD COLUMN sale_id INT AUTO_INCREMENT PRIMARY KEY FIRST", () => {});
+            }
+        }
+    });
     db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'", () => {});
     db.query("ALTER TABLE sales ADD COLUMN discount DECIMAL(10, 2) DEFAULT 0", () => {});
 });
@@ -163,55 +174,39 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (100% Fail-Safe JS Mapping - Bypasses column name issues)
+// Sales APIs (Robust JS Mapping for Sale ID)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
         if (err) {
-            // Fallback if shop_id column has issues
             db.query('SELECT * FROM sales ORDER BY created_at DESC', (err2, results2) => {
-                if (err2) {
-                    console.error('SQL Error /api/sales:', err2);
-                    return res.status(500).json({ error: err2.message });
-                }
-                const formatted = (results2 || []).map(row => {
-                    const pId = row.sale_id || row.id || row.ID || 0;
-                    const cDate = row.created_at ? new Date(row.created_at) : new Date();
-                    return {
-                        ...row,
-                        sale_id: pId,
-                        id: pId,
-                        sale_type: row.sale_type || 'Product',
-                        discount: row.discount || 0,
-                        formatted_date: cDate.toLocaleString(),
-                        date_only: cDate.toLocaleDateString('en-CA'),
-                        month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
-                    };
-                });
-                return res.json(formatted);
+                if (err2) return res.status(500).json({ error: err2.message });
+                return res.json(formatSales(results2));
             });
             return;
         }
-
-        const formatted = (results || []).map(row => {
-            const pId = row.sale_id || row.id || row.ID || 0;
-            const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            return {
-                ...row,
-                sale_id: pId,
-                id: pId,
-                sale_type: row.sale_type || 'Product',
-                discount: row.discount || 0,
-                formatted_date: cDate.toLocaleString(),
-                date_only: cDate.toLocaleDateString('en-CA'),
-                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
-            };
-        });
-        res.json(formatted);
+        res.json(formatSales(results));
     });
 });
+
+function formatSales(rows) {
+    return (rows || []).map(row => {
+        const pId = row.sale_id || row.id || row.ID || 0;
+        const cDate = row.created_at ? new Date(row.created_at) : new Date();
+        return {
+            ...row,
+            sale_id: pId,
+            id: pId,
+            sale_type: row.sale_type || 'Product',
+            discount: row.discount || 0,
+            formatted_date: cDate.toLocaleString(),
+            date_only: cDate.toLocaleDateString('en-CA'),
+            month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
+        };
+    });
+}
 
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;

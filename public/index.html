@@ -226,7 +226,7 @@
             </table>
         </div>
 
-        <!-- Tab 5 -->
+        <!-- Tab 5: Repair Jobs with Search Bar -->
         <div id="tab5" class="section">
             <h3>5. Repair Jobs Management</h3>
             <form id="repairForm" onsubmit="addRepair(event)" style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;">
@@ -238,6 +238,9 @@
                 <input type="number" id="repTotalCost" placeholder="Total Repair Cost" required>
                 <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job</button>
             </form>
+
+            <input type="text" id="searchRepair" placeholder="🔍 Search Repair by Job ID (#1), Customer Name, Phone, Device..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #007bff;">
+
             <table>
                 <thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody id="repairsTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody>
@@ -352,6 +355,7 @@
 
             if(tabNum === 2) { loadInventory(); loadRepairs(); }
             else if(tabNum === 4) { loadSales(); }
+            else if(tabNum === 5) { loadRepairs(); }
         }
 
         async function loadInventory() {
@@ -489,39 +493,61 @@
             });
         }
 
+        // Repairs Functions & Search
         async function loadRepairs() {
             try {
                 const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
                 allRepairs = await res.json();
-                const tbody = document.getElementById('repairsTable');
-                if(!tbody) return;
-                tbody.innerHTML = '';
-                if(allRepairs.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No repairs found.</td></tr>`;
-                    return;
-                }
-                allRepairs.forEach(r => {
-                    const rId = r.id || r.repair_id;
-                    tbody.innerHTML += `<tr>
-                        <td><b>#${rId}</b></td>
-                        <td>${r.customer_name}</td>
-                        <td>${r.customer_phone}</td>
-                        <td>${r.device_model}</td>
-                        <td>${r.issue_description}</td>
-                        <td>Rs. ${parseFloat(r.advance_cost || 0).toFixed(2)}</td>
-                        <td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td>
-                        <td>
-                            <select onchange="updateRepairStatus(${rId}, this.value)">
-                                <option value="Pending" ${r.status==='Pending'?'selected':''}>Pending</option>
-                                <option value="In Progress" ${r.status==='In Progress'?'selected':''}>In Progress</option>
-                                <option value="Completed" ${r.status==='Completed'?'selected':''}>Completed</option>
-                                <option value="Delivered" ${r.status==='Delivered'?'selected':''}>Delivered</option>
-                            </select>
-                        </td>
-                        <td><button onclick="deleteRepair(${rId})" style="background:#dc3545; padding:3px; width:auto;">Delete</button></td>
-                    </tr>`;
-                });
+                renderRepairsTable(allRepairs);
             } catch(err) { console.error(err); }
+        }
+
+        function renderRepairsTable(repairs) {
+            const tbody = document.getElementById('repairsTable');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if(repairs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No repair jobs found.</td></tr>`;
+                return;
+            }
+            repairs.forEach(r => {
+                const rId = r.id || r.repair_id;
+                tbody.innerHTML += `<tr>
+                    <td><b>#${rId}</b></td>
+                    <td>${r.customer_name}</td>
+                    <td>${r.customer_phone}</td>
+                    <td>${r.device_model}</td>
+                    <td>${r.issue_description}</td>
+                    <td>Rs. ${parseFloat(r.advance_cost || 0).toFixed(2)}</td>
+                    <td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td>
+                    <td>
+                        <select onchange="updateRepairStatus(${rId}, this.value)">
+                            <option value="Pending" ${r.status==='Pending'?'selected':''}>Pending</option>
+                            <option value="In Progress" ${r.status==='In Progress'?'selected':''}>In Progress</option>
+                            <option value="Completed" ${r.status==='Completed'?'selected':''}>Completed</option>
+                            <option value="Delivered" ${r.status==='Delivered'?'selected':''}>Delivered</option>
+                        </select>
+                    </td>
+                    <td><button onclick="deleteRepair(${rId})" style="background:#dc3545; padding:3px; width:auto;">Delete</button></td>
+                </tr>`;
+            });
+        }
+
+        function filterRepairs() {
+            const query = document.getElementById('searchRepair').value.toLowerCase().trim();
+            if(!query) {
+                renderRepairsTable(allRepairs);
+                return;
+            }
+            const filtered = allRepairs.filter(r => {
+                const rId = (r.id || r.repair_id).toString();
+                return rId === query || rId.includes(query) ||
+                    (r.customer_name && r.customer_name.toLowerCase().includes(query)) ||
+                    (r.customer_phone && r.customer_phone.includes(query)) ||
+                    (r.device_model && r.device_model.toLowerCase().includes(query)) ||
+                    (r.issue_description && r.issue_description.toLowerCase().includes(query));
+            });
+            renderRepairsTable(filtered);
         }
 
         function handleBillingSearch() {
@@ -659,17 +685,10 @@
 
         function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
 
-        // Safely Loaded Sales with Robust Error Handling
         async function loadSales() {
             try {
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
-                const data = await res.json();
-                
-                if(!res.ok) {
-                    throw new Error(data.error || 'Failed to fetch sales');
-                }
-
-                rawSalesData = Array.isArray(data) ? data : [];
+                rawSalesData = await res.json();
                 
                 let dailyAmt = 0, monthlyAmt = 0, repairAmt = 0;
                 
@@ -702,10 +721,7 @@
                 document.getElementById('totalTransactions').textContent = rawSalesData.length;
 
                 renderSalesTable();
-            } catch (err) { 
-                console.error('Load sales error:', err);
-                document.getElementById('salesTable').innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">Error loading sales: ${err.message}</td></tr>`;
-            }
+            } catch (err) { console.error(err); }
         }
 
         function filterSalesView(type, cardEl) {
@@ -771,8 +787,14 @@
 
         async function deleteSale(id) {
             if(!confirm('Delete sale record?')) return;
-            await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-            loadSales();
+            try {
+                const res = await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+                if(res.ok) {
+                    loadSales();
+                } else {
+                    alert('Failed to delete sale.');
+                }
+            } catch(err) { console.error(err); }
         }
 
         async function addRepair(e) {
