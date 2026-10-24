@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Shops & System Accounts (system01 to system10)
+// Auto Create Shops & System Accounts with Unique Passwords
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,9 +31,7 @@ db.query(`
     )
 `, () => {
     for (let i = 1; i <= 10; i++) {
-        const sId = i;
-        const sName = `Shop ${i}`;
-        db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [sId, sName]);
+        db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [i, `Shop ${i}`]);
     }
 });
 
@@ -45,10 +43,21 @@ db.query(`
         shop_id INT NOT NULL
     )
 `, () => {
-    for (let i = 1; i <= 10; i++) {
-        const uName = `system${i.toString().padStart(2, '0')}`;
-        db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, 'system321', ?) ON DUPLICATE KEY UPDATE password='system321'`, [uName, i]);
-    }
+    const defaultUsers = [
+        ['system01', 'sysKey@01', 1],
+        ['system02', 'mobPass@02', 2],
+        ['system03', 'shopPin@03', 3],
+        ['system04', 'posCode@04', 4],
+        ['system05', 'storeKey@05', 5],
+        ['system06', 'branch@06', 6],
+        ['system07', 'login@07', 7],
+        ['system08', 'access@08', 8],
+        ['system09', 'secure@09', 9],
+        ['system10', 'admin@10', 10]
+    ];
+    defaultUsers.forEach(user => {
+        db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password)`, user);
+    });
 });
 
 db.query(`
@@ -110,12 +119,10 @@ app.post('/api/login', (req, res) => {
         
         const user = results[0];
         
-        // Subscription Lock Guard
         if (user.status !== 'ACTIVE') {
             return res.status(403).json({ error: 'Account Locked. Please contact administrator to renew subscription.' });
         }
 
-        // Update custom shop name if typed
         const finalShopName = custom_shop_name && custom_shop_name.trim() !== '' ? custom_shop_name.trim() : user.shop_name;
         db.query('UPDATE shops SET shop_name = ? WHERE shop_id = ?', [finalShopName, user.shop_id], () => {
             user.shop_name = finalShopName;
@@ -126,7 +133,7 @@ app.post('/api/login', (req, res) => {
 
 // Admin Route to Lock / Unlock Shops
 app.post('/api/admin/toggle-lock', (req, res) => {
-    const { shop_id, status } = req.body; // status: 'ACTIVE' or 'LOCKED'
+    const { shop_id, status } = req.body;
     db.query('UPDATE shops SET status = ? WHERE shop_id = ?', [status, shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: `Shop #${shop_id} status updated to ${status}` });
