@@ -325,17 +325,16 @@
                         <option value="Dead Phone / Power Issue">
                     </datalist>
 
-                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period (Select or Type):</label>
-                    <input type="text" id="repWarranty" list="warrantyList" placeholder="e.g. 1 Month, No Warranty" value="No Warranty" required>
-                    <datalist id="warrantyList">
-                        <option value="No Warranty">
-                        <option value="1 Week">
-                        <option value="2 Weeks">
-                        <option value="1 Month">
-                        <option value="3 Months">
-                        <option value="6 Months">
-                        <option value="1 Year">
-                    </datalist>
+                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
+                    <select id="repWarranty" style="font-weight: bold;">
+                        <option value="No Warranty">No Warranty</option>
+                        <option value="1 Week">1 Week</option>
+                        <option value="2 Weeks">2 Weeks</option>
+                        <option value="1 Month">1 Month</option>
+                        <option value="3 Months">3 Months</option>
+                        <option value="6 Months">6 Months</option>
+                        <option value="1 Year">1 Year</option>
+                    </select>
 
                     <input type="number" id="repAdvance" placeholder="Advance Cost (e.g. 1000)" value="0" step="0.01">
                     <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" required>
