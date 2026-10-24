@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOBILE POS SYSTEM</title>
-    <!-- JsBarcode & Html5-QRCode Libraries -->
+    <title>MOBILE POS SYSTEM v2.0</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
@@ -53,13 +52,12 @@
         .card h4 { margin: 0 0 10px 0; color: #555; font-size: 14px; }
         .card p { font-size: 18px; font-weight: bold; color: #007bff; margin: 0; }
         
-        .badge-product { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .badge-repair { background: #17a2b8; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .badge-mixed { background: #ffc107; color: black; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-prod { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-rep { background: #17a2b8; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-mix { background: #ffc107; color: black; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
 
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: #ffcccc !important; color: #900; font-weight: bold; }
-
         .sticker-card { background: white; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; page-break-inside: avoid; }
 
         @media print {
@@ -72,7 +70,6 @@
 </head>
 <body>
 
-    <!-- Login Screen -->
     <div id="loginScreen">
         <h2>📱 MOBILE POS SYSTEM</h2>
         <form onsubmit="handleLogin(event)">
@@ -86,10 +83,8 @@
             </div>
             <button type="submit" style="margin-top: 10px;">Login to System</button>
         </form>
-        <p style="font-size: 11px; color: #666; margin-top: 15px;">Logins: <b>branch1</b> to <b>branch7</b> | Pass: <b>pass123</b></p>
     </div>
 
-    <!-- Main App Container -->
     <div id="appContainer" class="container">
         <header>
             <h2>📱 MOBILE POS SYSTEM</h2>
@@ -107,10 +102,9 @@
             <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repair Jobs</button>
         </div>
 
-        <!-- Tab 1: Add Product -->
+        <!-- Tab 1 -->
         <div id="tab1" class="section active">
             <h3 id="categoryTitle">1. Add New Product / Brand New Phone</h3>
-            
             <div class="category-buttons">
                 <button type="button" class="cat-btn active" onclick="setCategory('Brand New Phone', '1. Add New Product / Brand New Phone', this)">Brand New Phones</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Used Phone', '1. Add New Product / Used Phone', this)">Used Phones</button>
@@ -121,65 +115,46 @@
 
             <form id="productForm" onsubmit="addProduct(event)">
                 <input type="hidden" id="pCategory" value="Brand New Phone">
-                
                 <label id="lblModel">Model Name:</label>
                 <input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra, iPhone 15" required>
-                
-                <label>Select Brand (Type or select):</label>
-                <input type="text" id="pBrand" list="brandList" placeholder="Type or select brand (e.g. Samsung, Apple)">
-                <datalist id="brandList">
-                    <option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Redmi"><option value="Oppo"><option value="Vivo"><option value="Realme"><option value="Nokia"><option value="Huawei"><option value="JBL"><option value="Sony"><option value="Remax"><option value="HOCO">
-                </datalist>
-                
-                <label>Select Colour (Type or select):</label>
-                <input type="text" id="pColor" list="colorList" placeholder="Type or select colour (e.g. Midnight Black)">
-                <datalist id="colorList">
-                    <option value="Midnight Black"><option value="Phantom Black"><option value="Space Gray"><option value="Silver"><option value="Gold"><option value="Rose Gold"><option value="Alpine Green"><option value="Sierra Blue"><option value="Pearl White"><option value="Graphite"><option value="Deep Purple"><option value="Titanium Gray"><option value="Blue"><option value="Red">
-                </datalist>
-                
+                <label>Select Brand:</label>
+                <input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple">
+                <datalist id="brandList"><option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"><option value="JBL"></datalist>
+                <label>Select Colour:</label>
+                <input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue">
+                <datalist id="colorList"><option value="Black"><option value="Blue"><option value="White"><option value="Red"></datalist>
                 <label>Cost Price (Rs.):</label>
                 <input type="number" id="pCost" placeholder="0.00" step="0.01">
-                
                 <label>Selling Price (Rs.):</label>
                 <input type="number" id="pPrice" placeholder="0.00" step="0.01" required>
-                
                 <label>Stock Quantity:</label>
                 <input type="number" id="pStock" value="1" required>
-                
                 <div id="imeiGroup">
-                    <label>IMEI Number (Optional for phones):</label>
-                    <input type="text" id="pImei" placeholder="Enter 15-digit IMEI">
+                    <label>IMEI Number:</label>
+                    <input type="text" id="pImei" placeholder="Enter IMEI">
                 </div>
-                
                 <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product & Print Barcode</button>
             </form>
         </div>
 
-        <!-- Tab 2: Billing / POS -->
+        <!-- Tab 2 -->
         <div id="tab2" class="section">
             <h3>2. Billing & Checkout</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                         <label>🔍 Search ID, Name, IMEI or Repair Job ID:</label>
-                        <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">📷 Scan Camera Barcode</button>
+                        <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">📷 Camera Scanner</button>
                     </div>
-                    
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
-
                     <input type="text" id="billingSearch" placeholder="Type ID (001), Name, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
-
                     <select id="billingProductSelect" size="5" onchange="selectBillingProduct()" style="height: 140px; margin-top: 5px;"></select>
-
                     <label>Selling Price (Rs.):</label>
                     <input type="number" id="billingPrice" step="0.01">
-
                     <label>Discount Amount (Rs.):</label>
                     <input type="number" id="billingDiscount" value="0" step="0.01" oninput="renderCart()">
-
                     <label>Quantity:</label>
                     <input type="number" id="billingQty" value="1" min="1">
-
                     <button type="button" onclick="addToCart()" style="margin-top: 15px; background: #28a745;">Add to Bill</button>
                 </div>
                 <div>
@@ -193,12 +168,11 @@
                         <option value="Cash">Cash</option>
                         <option value="Card">Card</option>
                         <option value="Bank Transfer">Bank Transfer</option>
-                        <option value="Installment">Installment Payments</option>
+                        <option value="Installment">Installment</option>
                         <option value="Koko">Koko Payment</option>
                     </select>
-
                     <table>
-                        <thead><tr><th>Product / Repair</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
+                        <thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
                         <tbody id="cartTableBody"><tr><td colspan="4" style="text-align:center;">Cart is empty</td></tr></tbody>
                     </table>
                     <h3>Total Payable: Rs. <span id="cartTotal">0.00</span></h3>
@@ -207,21 +181,21 @@
             </div>
         </div>
 
-        <!-- Tab 3: Stock Inventory -->
+        <!-- Tab 3 -->
         <div id="tab3" class="section">
             <h3>3. Stock Inventory Management</h3>
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" onclick="switchStockSubTab('all', this)">All Stock</button>
-                <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">⚠️ Out of Stock Items</button>
+                <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">⚠️ Out of Stock</button>
             </div>
-            <input type="text" id="searchStock" placeholder="Search by ID (001), Name, Brand, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
+            <input type="text" id="searchStock" placeholder="Search by ID, Name, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
             <table>
                 <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
                 <tbody id="inventoryTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody>
             </table>
         </div>
 
-        <!-- Tab 4: Sales History & Separate Repair Analytics -->
+        <!-- Tab 4: Sales History (NEW 4-Card Analytics) -->
         <div id="tab4" class="section">
             <h3 id="salesHeaderTitle">4. Sales History & Analytics (Showing: All Sales)</h3>
             <div class="analytics-grid">
@@ -252,7 +226,7 @@
             </table>
         </div>
 
-        <!-- Tab 5: Repair Jobs -->
+        <!-- Tab 5 -->
         <div id="tab5" class="section">
             <h3>5. Repair Jobs Management</h3>
             <form id="repairForm" onsubmit="addRepair(event)" style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;">
@@ -271,17 +245,14 @@
         </div>
     </div>
 
-    <!-- Barcode Sticker Modal with Quantity Selector -->
+    <!-- Barcode Modal -->
     <div id="barcodeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
         <div class="printable" style="background:white; padding:25px; border-radius:8px; width:340px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.2); max-height:90vh; overflow-y:auto;">
-            
             <div id="barcodeHideBtn">
                 <label style="font-weight:bold; display:block; margin-bottom:5px;">Print Quantity / Copies:</label>
                 <input type="number" id="bcPrintQty" value="1" min="1" oninput="renderBarcodeStickers()" style="width:100px; text-align:center; font-weight:bold; margin-bottom:15px; border:2px solid #28a745;">
             </div>
-
             <div id="stickersContainer"></div>
-            
             <div id="barcodeHideBtnControls" style="display:flex; gap:10px; margin-top:15px;">
                 <button onclick="window.print()" style="background:#28a745; flex:1;">🖨️ Print Sticker(s)</button>
                 <button onclick="closeBarcodeModal()" style="background:#6c757d; flex:1;">Close</button>
@@ -289,11 +260,10 @@
         </div>
     </div>
 
-    <!-- Bill Receipt Modal Container -->
+    <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
         <div class="printable" style="background:white; padding:30px; border-radius:8px; width:450px; max-width:90%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="color:#28a745; margin-top:0;">✅ Sale Completed Successfully!</h3>
-            <p>Generated Auto WhatsApp / Bill Message for Customer:</p>
             <textarea id="autoReceiptText" rows="10" style="width:100%; font-family:monospace; font-size:13px; padding:10px;" readonly></textarea>
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
                 <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">🖨️ Print Bill</button>
@@ -361,18 +331,12 @@
             document.getElementById('productForm').reset();
             document.getElementById('pCategory').value = cat;
             document.getElementById('categoryTitle').textContent = titleText;
-            
             document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
             const imeiGroup = document.getElementById('imeiGroup');
             const lblModel = document.getElementById('lblModel');
-            
-            if(cat === 'Accessory') {
-                lblModel.textContent = 'Product Name:';
-                imeiGroup.style.display = 'none';
-            } else if(cat === 'Karaoke Box') {
-                lblModel.textContent = 'Karaoke Model Name:';
+            if(cat === 'Accessory' || cat === 'Karaoke Box') {
+                lblModel.textContent = 'Name:';
                 imeiGroup.style.display = 'none';
             } else {
                 lblModel.textContent = 'Model Name:';
@@ -383,16 +347,11 @@
         function switchTab(tabNum, btn) {
             document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('inactive'));
-            
             document.getElementById(`tab${tabNum}`).classList.add('active');
             if(btn) btn.classList.remove('inactive');
 
-            if(tabNum === 2) {
-                loadInventory();
-                loadRepairs();
-            } else if(tabNum === 4) {
-                loadSales();
-            }
+            if(tabNum === 2) { loadInventory(); loadRepairs(); }
+            else if(tabNum === 4) { loadSales(); }
         }
 
         async function loadInventory() {
@@ -400,7 +359,7 @@
                 const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
                 allProducts = await res.json();
                 renderInventory(allProducts);
-            } catch (err) { console.error('Error loading inventory:', err); }
+            } catch (err) { console.error(err); }
         }
 
         function switchStockSubTab(type, btn) {
@@ -413,11 +372,7 @@
         function renderInventory(products) {
             const tbody = document.getElementById('inventoryTable');
             tbody.innerHTML = '';
-            
-            let filtered = products;
-            if(currentStockFilter === 'out') {
-                filtered = products.filter(p => p.stock <= 0);
-            }
+            let filtered = currentStockFilter === 'out' ? products.filter(p => p.stock <= 0) : products;
 
             if(filtered.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No products found.</td></tr>`;
@@ -441,10 +396,7 @@
 
         function filterStock() {
             const query = document.getElementById('searchStock').value.toLowerCase();
-            let baseList = allProducts;
-            if(currentStockFilter === 'out') {
-                baseList = allProducts.filter(p => p.stock <= 0);
-            }
+            let baseList = currentStockFilter === 'out' ? allProducts.filter(p => p.stock <= 0) : allProducts;
             const filtered = baseList.filter(p => 
                 (p.product_code && p.product_code.toLowerCase().includes(query)) ||
                 p.name.toLowerCase().includes(query) || 
@@ -456,15 +408,12 @@
 
         async function addProduct(e) {
             e.preventDefault();
-            const brandVal = document.getElementById('pBrand').value.trim();
-            const colorVal = document.getElementById('pColor').value.trim();
             const stockQty = parseInt(document.getElementById('pStock').value) || 1;
-
             const data = {
                 shop_id: currentUser.shop_id,
                 name: document.getElementById('pName').value,
-                brand: brandVal,
-                color: colorVal,
+                brand: document.getElementById('pBrand').value,
+                color: document.getElementById('pColor').value,
                 category: document.getElementById('pCategory').value,
                 cost_price: document.getElementById('pCost').value,
                 selling_price: document.getElementById('pPrice').value,
@@ -480,20 +429,13 @@
                 });
                 const result = await res.json();
                 if(res.ok) {
-                    currentBarcodeData = {
-                        shop: currentUser.shop_name,
-                        name: data.name,
-                        code: result.product_code,
-                        price: data.selling_price
-                    };
+                    currentBarcodeData = { shop: currentUser.shop_name, name: data.name, code: result.product_code, price: data.selling_price };
                     document.getElementById('bcPrintQty').value = stockQty;
                     showBarcodeModal();
                     document.getElementById('productForm').reset();
                     loadInventory();
-                } else {
-                    alert('Error adding product: ' + (result.error || 'Unknown error'));
                 }
-            } catch (err) { console.error('Error adding product:', err); }
+            } catch (err) { console.error(err); }
         }
 
         function showBarcodeModal() {
@@ -505,7 +447,6 @@
             const container = document.getElementById('stickersContainer');
             container.innerHTML = '';
             const qty = parseInt(document.getElementById('bcPrintQty').value) || 1;
-
             for(let i = 0; i < qty; i++) {
                 const card = document.createElement('div');
                 card.className = 'sticker-card';
@@ -520,22 +461,17 @@
             }
         }
 
-        function closeBarcodeModal() {
-            document.getElementById('barcodeModal').style.display = 'none';
-        }
+        function closeBarcodeModal() { document.getElementById('barcodeModal').style.display = 'none'; }
 
         async function deleteProduct(id) {
-            if(!confirm('Are you sure?')) return;
-            try {
-                const res = await fetch(`/api/products/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-                if(res.ok) loadInventory();
-            } catch(err) { console.error(err); }
+            if(!confirm('Delete item?')) return;
+            await fetch(`/api/products/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            loadInventory();
         }
 
         function populateBillingDropdown(products, repairs) {
             const select = document.getElementById('billingProductSelect');
             select.innerHTML = '';
-            
             products.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = 'prod_' + p.product_id;
@@ -543,7 +479,6 @@
                 if(p.stock <= 0) opt.style.color = 'red';
                 select.appendChild(opt);
             });
-
             repairs.forEach(r => {
                 const balanceDue = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
                 const opt = document.createElement('option');
@@ -591,33 +526,10 @@
 
         function handleBillingSearch() {
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
-            if(!query) { 
-                populateBillingDropdown(allProducts, allRepairs); 
-                return; 
-            }
-            const filteredProds = allProducts.filter(p => 
-                (p.product_code && p.product_code.toLowerCase() === query) ||
-                (p.product_code && p.product_code.toLowerCase().includes(query)) ||
-                p.name.toLowerCase().includes(query) ||
-                (p.imei && p.imei.toLowerCase().includes(query))
-            );
-            const filteredReps = allRepairs.filter(r => {
-                const rId = (r.id || r.repair_id).toString();
-                return rId === query || rId.includes(query) ||
-                    r.customer_name.toLowerCase().includes(query) ||
-                    r.customer_phone.includes(query) ||
-                    r.device_model.toLowerCase().includes(query);
-            });
-            
+            if(!query) { populateBillingDropdown(allProducts, allRepairs); return; }
+            const filteredProds = allProducts.filter(p => (p.product_code && p.product_code.toLowerCase().includes(query)) || p.name.toLowerCase().includes(query) || (p.imei && p.imei.toLowerCase().includes(query)));
+            const filteredReps = allRepairs.filter(r => (r.id || r.repair_id).toString().includes(query) || r.customer_name.toLowerCase().includes(query) || r.customer_phone.includes(query) || r.device_model.toLowerCase().includes(query));
             populateBillingDropdown(filteredProds, filteredReps);
-            
-            if(filteredProds.length === 1 && filteredReps.length === 0) {
-                document.getElementById('billingProductSelect').value = 'prod_' + filteredProds[0].product_id;
-                selectBillingProduct();
-            } else if(filteredReps.length === 1 && filteredProds.length === 0) {
-                document.getElementById('billingProductSelect').value = 'rep_' + (filteredReps[0].id || filteredReps[0].repair_id);
-                selectBillingProduct();
-            }
         }
 
         function toggleCameraScanner() {
@@ -641,15 +553,12 @@
             const val = document.getElementById('billingProductSelect').value;
             if(!val) return;
             if(val.startsWith('prod_')) {
-                const id = val.replace('prod_', '');
-                const p = allProducts.find(item => item.product_id == id);
+                const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
                 if(p) document.getElementById('billingPrice').value = p.selling_price;
             } else if(val.startsWith('rep_')) {
-                const id = val.replace('rep_', '');
-                const r = allRepairs.find(item => (item.id || item.repair_id) == id);
+                const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(r) {
-                    const balanceDue = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
-                    document.getElementById('billingPrice').value = balanceDue;
+                    document.getElementById('billingPrice').value = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
                     document.getElementById('custName').value = r.customer_name;
                     document.getElementById('custPhone').value = r.customer_phone;
                 }
@@ -661,22 +570,18 @@
             const price = parseFloat(document.getElementById('billingPrice').value);
             const qty = parseInt(document.getElementById('billingQty').value);
 
-            if(!val || qty <= 0 || isNaN(price)) return alert('Select valid product or repair job.');
+            if(!val || qty <= 0 || isNaN(price)) return alert('Select valid product/repair');
 
             if(val.startsWith('prod_')) {
-                const id = val.replace('prod_', '');
-                const p = allProducts.find(item => item.product_id == id);
-                if(!p) return;
-                if(p.stock < qty) return alert('Not enough stock!');
+                const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
+                if(!p || p.stock < qty) return alert('Out of stock!');
                 cart.push({ type: 'product', product_id: p.product_id, name: `#${p.product_code} ${p.name}`, price, qty, subtotal: price * qty });
             } else if(val.startsWith('rep_')) {
-                const id = val.replace('rep_', '');
-                const r = allRepairs.find(item => (item.id || item.repair_id) == id);
+                const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(!r) return;
                 const rId = r.id || r.repair_id;
                 cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, price, qty: 1, subtotal: price });
             }
-
             renderCart();
             document.getElementById('billingSearch').value = '';
             populateBillingDropdown(allProducts, allRepairs);
@@ -698,10 +603,7 @@
             document.getElementById('cartTotal').textContent = Math.max(0, total - discount).toFixed(2);
         }
 
-        function removeFromCart(index) {
-            cart.splice(index, 1);
-            renderCart();
-        }
+        function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
 
         async function completeCheckout() {
             if(cart.length === 0) return alert('Cart is empty!');
@@ -712,18 +614,13 @@
             const customer_phone = document.getElementById('custPhone').value.trim() || 'N/A';
             const payment_method = document.getElementById('paymentMethod').value;
 
-            lastSaleData = {
-                customer_name, customer_phone, payment_method, discount, total_amount, items: [...cart], branch: currentUser.shop_name
-            };
+            lastSaleData = { customer_name, customer_phone, payment_method, discount, total_amount, items: [...cart], branch: currentUser.shop_name };
 
             try {
                 const res = await fetch('/api/sales', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        shop_id: currentUser.shop_id,
-                        customer_name, customer_phone, payment_method, discount, total_amount, items: cart
-                    })
+                    body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items: cart })
                 });
                 if(res.ok) {
                     generateAutoMessage(lastSaleData);
@@ -735,56 +632,34 @@
                     loadInventory();
                     loadSales();
                     loadRepairs();
-                } else {
-                    const errRes = await res.json();
-                    alert('Checkout failed: ' + (errRes.error || 'Unknown error'));
                 }
-            } catch(err) { console.error('Checkout error:', err); alert('Checkout error occurred!'); }
+            } catch(err) { console.error(err); }
         }
 
         function generateAutoMessage(sale) {
-            let msg = `📱 *${sale.branch.toUpperCase()}* 📱\n`;
-            msg += `✨ *PURCHASE RECEIPT* ✨\n\n`;
-            msg += `👤 Customer: ${sale.customer_name}\n`;
-            msg += `📞 Phone: ${sale.customer_phone}\n`;
-            msg += `📅 Date: ${new Date().toLocaleString()}\n\n`;
-            msg += `🛒 *Purchased Items / Services:*\n`;
-            sale.items.forEach(item => {
-                msg += `• ${item.name} (Qty: ${item.qty}) - Rs. ${item.subtotal.toFixed(2)}\n`;
-            });
-            if(sale.discount > 0) {
-                msg += `\n🏷️ Discount: Rs. ${sale.discount.toFixed(2)}`;
-            }
-            msg += `\n\n💰 *Total Payable: Rs. ${sale.total_amount.toFixed(2)}*`;
-            msg += `\n💳 Payment Method: ${sale.payment_method}`;
-            msg += `\n\n🙏 *Thank you for shopping with us! Please come again.*`;
-
+            let msg = `📱 *${sale.branch.toUpperCase()}* 📱\n✨ *PURCHASE RECEIPT* ✨\n\n👤 Customer: ${sale.customer_name}\n📞 Phone: ${sale.customer_phone}\n📅 Date: ${new Date().toLocaleString()}\n\n🛒 *Items:*\n`;
+            sale.items.forEach(item => { msg += `• ${item.name} (Qty: ${item.qty}) - Rs. ${item.subtotal.toFixed(2)}\n`; });
+            if(sale.discount > 0) msg += `\n🏷️ Discount: Rs. ${sale.discount.toFixed(2)}`;
+            msg += `\n\n💰 *Total: Rs. ${sale.total_amount.toFixed(2)}*\n💳 Payment: ${sale.payment_method}\n\n🙏 *Thank you!*`;
             document.getElementById('autoReceiptText').value = msg;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
         function copyReceiptText() {
-            const txt = document.getElementById('autoReceiptText');
-            txt.select();
+            document.getElementById('autoReceiptText').select();
             document.execCommand('copy');
-            alert('Receipt message copied to clipboard!');
+            alert('Copied!');
         }
 
         function sendWhatsAppMessage() {
-            const txt = document.getElementById('autoReceiptText').value;
             let phone = lastSaleData.customer_phone.replace(/[^0-9]/g, '');
-            if(phone.startsWith('0')) {
-                phone = '94' + phone.substring(1);
-            }
-            const url = `https://wa.me/${phone}?text=${encodeURIComponent(txt)}`;
-            window.open(url, '_blank');
+            if(phone.startsWith('0')) phone = '94' + phone.substring(1);
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(document.getElementById('autoReceiptText').value)}`, '_blank');
         }
 
-        function closeReceiptModal() {
-            document.getElementById('receiptModal').style.display = 'none';
-        }
+        function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
 
-        // Robust Local Date Parsing & Separate Repair Sales Analytics
+        // Perfect Local Date Strings from Server Side Columns
         async function loadSales() {
             try {
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
@@ -792,20 +667,23 @@
                 
                 let dailyAmt = 0, monthlyAmt = 0, repairAmt = 0;
                 
-                // Get Sri Lanka / Local YYYY-MM-DD Date String
+                // Get local today date string
                 const now = new Date();
-                const todayYMD = now.toLocaleDateString('en-CA'); // "YYYY-MM-DD"
-                const thisYM = todayYMD.substring(0, 7); // "YYYY-MM"
+                const y = now.getFullYear();
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                const d = String(now.getDate()).padStart(2, '0');
+                
+                const todayStr = `${y}-${m}-${d}`;
+                const thisMonthStr = `${y}-${m}`;
 
                 rawSalesData.forEach(s => {
-                    const sDate = new Date(s.created_at);
-                    const sYMD = sDate.toLocaleDateString('en-CA');
-                    const sYM = sYMD.substring(0, 7);
+                    const sDateOnly = s.date_only || (s.formatted_date ? s.formatted_date.substring(0, 10) : '');
+                    const sMonthOnly = s.month_only || (s.formatted_date ? s.formatted_date.substring(0, 7) : '');
 
-                    if(sYMD === todayYMD) {
+                    if(sDateOnly === todayStr) {
                         dailyAmt += parseFloat(s.total_amount);
                     }
-                    if(sYM === thisYM) {
+                    if(sMonthOnly === thisMonthStr) {
                         monthlyAmt += parseFloat(s.total_amount);
                     }
                     if(s.sale_type === 'Repair' || s.sale_type === 'Mixed') {
@@ -828,15 +706,10 @@
             if(cardEl) cardEl.classList.add('active-card');
             
             const headerTitle = document.getElementById('salesHeaderTitle');
-            if(type === 'daily') {
-                headerTitle.textContent = "4. Sales History & Analytics (Showing: Today's Sales)";
-            } else if(type === 'monthly') {
-                headerTitle.textContent = "4. Sales History & Analytics (Showing: This Month's Sales)";
-            } else if(type === 'repair') {
-                headerTitle.textContent = "4. Sales History & Analytics (Showing: Repair Sales Only)";
-            } else {
-                headerTitle.textContent = "4. Sales History & Analytics (Showing: All Sales)";
-            }
+            if(type === 'daily') headerTitle.textContent = "4. Sales History & Analytics (Showing: Today's Sales)";
+            else if(type === 'monthly') headerTitle.textContent = "4. Sales History & Analytics (Showing: This Month's Sales)";
+            else if(type === 'repair') headerTitle.textContent = "4. Sales History & Analytics (Showing: Repair Sales Only)";
+            else headerTitle.textContent = "4. Sales History & Analytics (Showing: All Sales)";
 
             renderSalesTable();
         }
@@ -846,22 +719,21 @@
             tbody.innerHTML = '';
             
             const now = new Date();
-            const todayYMD = now.toLocaleDateString('en-CA');
-            const thisYM = todayYMD.substring(0, 7);
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            
+            const todayStr = `${y}-${m}-${d}`;
+            const thisMonthStr = `${y}-${m}`;
 
             let displaySales = rawSalesData.filter(s => {
-                const sDate = new Date(s.created_at);
-                const sYMD = sDate.toLocaleDateString('en-CA');
-                const sYM = sYMD.substring(0, 7);
+                const sDateOnly = s.date_only || (s.formatted_date ? s.formatted_date.substring(0, 10) : '');
+                const sMonthOnly = s.month_only || (s.formatted_date ? s.formatted_date.substring(0, 7) : '');
 
-                if(currentSalesFilter === 'daily') {
-                    return sYMD === todayYMD;
-                } else if(currentSalesFilter === 'monthly') {
-                    return sYM === thisYM;
-                } else if(currentSalesFilter === 'repair') {
-                    return s.sale_type === 'Repair' || s.sale_type === 'Mixed';
-                }
-                return true; // 'all'
+                if(currentSalesFilter === 'daily') return sDateOnly === todayStr;
+                if(currentSalesFilter === 'monthly') return sMonthOnly === thisMonthStr;
+                if(currentSalesFilter === 'repair') return s.sale_type === 'Repair' || s.sale_type === 'Mixed';
+                return true;
             });
 
             if(displaySales.length === 0) {
@@ -871,12 +743,10 @@
 
             displaySales.forEach(s => {
                 const sId = s.id || s.sale_id;
-                const sDate = new Date(s.created_at);
-                
-                let badgeClass = 'badge-product';
+                let badgeClass = 'badge-prod';
                 let stype = s.sale_type || 'Product';
-                if(stype === 'Repair') badgeClass = 'badge-repair';
-                else if(stype === 'Mixed') badgeClass = 'badge-mixed';
+                if(stype === 'Repair') badgeClass = 'badge-rep';
+                else if(stype === 'Mixed') badgeClass = 'badge-mix';
 
                 tbody.innerHTML += `<tr>
                     <td><b>#${sId}</b></td>
@@ -885,25 +755,18 @@
                     <td><span class="${badgeClass}">${stype}</span></td>
                     <td>${s.payment_method}</td>
                     <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
-                    <td>${sDate.toLocaleString()}</td>
+                    <td>${s.formatted_date || s.created_at}</td>
                     <td><button onclick="deleteSale(${sId})" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
                 </tr>`;
             });
         }
 
         async function deleteSale(id) {
-            if(!confirm('Delete this sale record?')) return;
-            try {
-                const res = await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-                if(res.ok) {
-                    loadSales();
-                } else {
-                    alert('Failed to delete sale');
-                }
-            } catch(err) { console.error(err); }
+            if(!confirm('Delete sale record?')) return;
+            await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            loadSales();
         }
 
-        // Repair Functions
         async function addRepair(e) {
             e.preventDefault();
             const data = {
@@ -915,42 +778,20 @@
                 advance_cost: document.getElementById('repAdvance').value,
                 total_cost: document.getElementById('repTotalCost').value
             };
-            try {
-                const res = await fetch('/api/repairs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                if(res.ok) {
-                    alert('Repair job added successfully!');
-                    document.getElementById('repairForm').reset();
-                    loadRepairs();
-                } else {
-                    alert('Error adding repair job');
-                }
-            } catch(err) { console.error(err); }
+            await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            alert('Repair added!');
+            document.getElementById('repairForm').reset();
+            loadRepairs();
         }
 
         async function updateRepairStatus(id, status) {
-            try {
-                await fetch(`/api/repairs/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shop_id: currentUser.shop_id, status })
-                });
-            } catch(err) { console.error(err); }
+            await fetch(`/api/repairs/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status }) });
         }
 
         async function deleteRepair(id) {
-            if(!confirm('Delete repair job?')) return;
-            try {
-                const res = await fetch(`/api/repairs/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-                if(res.ok) {
-                    loadRepairs();
-                } else {
-                    alert('Failed to delete repair job');
-                }
-            } catch(err) { console.error(err); }
+            if(!confirm('Delete repair?')) return;
+            await fetch(`/api/repairs/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            loadRepairs();
         }
 
         window.onload = initApp;
