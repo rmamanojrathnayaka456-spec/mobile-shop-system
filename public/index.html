@@ -157,10 +157,16 @@
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
                     <input type="text" id="billingSearch" placeholder="Type ID (001), Name, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
                     <select id="billingProductSelect" size="5" onchange="selectBillingProduct()" style="height: 140px; margin-top: 5px;"></select>
-                    <label>Selling Price (Rs.):</label>
-                    <input type="number" id="billingPrice" step="0.01">
+                    
+                    <label>Original Price (Rs.):</label>
+                    <input type="number" id="originalPrice" style="background:#e9ecef; font-weight:bold;" disabled>
+
+                    <label>Selling / Custom Price (Rs.):</label>
+                    <input type="number" id="billingPrice" step="0.01" oninput="calculateAutoDiscount()">
+
                     <label>Discount Amount (Rs.):</label>
-                    <input type="number" id="billingDiscount" value="0" step="0.01" oninput="renderCart()">
+                    <input type="number" id="billingDiscountDisplay" value="0.00" style="background:#e9ecef; font-weight:bold; color:#dc3545;" disabled>
+
                     <label>Quantity:</label>
                     <input type="number" id="billingQty" value="1" min="1">
                     <button type="button" onclick="addToCart()" style="margin-top: 15px; background: #28a745;">Add to Bill</button>
@@ -296,6 +302,7 @@
         let html5QrcodeScanner = null;
         let lastSaleData = null;
         let currentBarcodeData = null;
+        let selectedOriginalPrice = 0;
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -364,9 +371,23 @@
             document.getElementById(`tab${tabNum}`).classList.add('active');
             if(btn) btn.classList.remove('inactive');
 
+            // Clear billing inputs when leaving or switching tabs
+            if(tabNum !== 2) {
+                clearBillingFields();
+            }
+
             if(tabNum === 2) { loadInventory(); loadRepairs(); }
             else if(tabNum === 4) { loadSales(); }
             else if(tabNum === 5) { loadRepairs(); }
+        }
+
+        function clearBillingFields() {
+            document.getElementById('billingSearch').value = '';
+            document.getElementById('originalPrice').value = '';
+            document.getElementById('billingPrice').value = '';
+            document.getElementById('billingDiscountDisplay').value = '0.00';
+            document.getElementById('billingQty').value = '1';
+            selectedOriginalPrice = 0;
         }
 
         async function loadInventory() {
@@ -591,15 +612,29 @@
             if(!val) return;
             if(val.startsWith('prod_')) {
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
-                if(p) document.getElementById('billingPrice').value = p.selling_price;
+                if(p) {
+                    selectedOriginalPrice = parseFloat(p.selling_price);
+                    document.getElementById('originalPrice').value = selectedOriginalPrice.toFixed(2);
+                    document.getElementById('billingPrice').value = selectedOriginalPrice.toFixed(2);
+                    document.getElementById('billingDiscountDisplay').value = '0.00';
+                }
             } else if(val.startsWith('rep_')) {
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(r) {
-                    document.getElementById('billingPrice').value = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
+                    selectedOriginalPrice = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
+                    document.getElementById('originalPrice').value = selectedOriginalPrice.toFixed(2);
+                    document.getElementById('billingPrice').value = selectedOriginalPrice.toFixed(2);
+                    document.getElementById('billingDiscountDisplay').value = '0.00';
                     document.getElementById('custName').value = r.customer_name;
                     document.getElementById('custPhone').value = r.customer_phone;
                 }
             }
+        }
+
+        function calculateAutoDiscount() {
+            const currentPrice = parseFloat(document.getElementById('billingPrice').value) || 0;
+            const discount = Math.max(0, selectedOriginalPrice - currentPrice);
+            document.getElementById('billingDiscountDisplay').value = discount.toFixed(2);
         }
 
         function addToCart() {
@@ -612,7 +647,6 @@
             if(val.startsWith('prod_')) {
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
                 if(!p || p.stock < qty) return alert('Out of stock!');
-                // Cart item name without product code (#022)
                 cart.push({ type: 'product', product_id: p.product_id, name: p.name, price, qty, subtotal: price * qty });
             } else if(val.startsWith('rep_')) {
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
@@ -621,7 +655,7 @@
                 cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, price, qty: 1, subtotal: price });
             }
             renderCart();
-            document.getElementById('billingSearch').value = '';
+            clearBillingFields();
             populateBillingDropdown(allProducts, allRepairs);
         }
 
@@ -637,33 +671,29 @@
                     tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>Rs. ${item.subtotal.toFixed(2)}</td><td><button onclick="removeFromCart(${index})" style="background:#dc3545; padding:2px 5px; width:auto;">X</button></td></tr>`;
                 });
             }
-            const discount = parseFloat(document.getElementById('billingDiscount').value) || 0;
-            document.getElementById('cartTotal').textContent = Math.max(0, total - discount).toFixed(2);
+            document.getElementById('cartTotal').textContent = total.toFixed(2);
         }
 
         function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
 
         async function completeCheckout() {
             if(cart.length === 0) return alert('Cart is empty!');
-            const rawTotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
-            const discount = parseFloat(document.getElementById('billingDiscount').value) || 0;
-            const total_amount = Math.max(0, rawTotal - discount);
+            const total_amount = cart.reduce((sum, item) => sum + item.subtotal, 0);
             const customer_name = document.getElementById('custName').value.trim() || 'Cash Customer';
             const customer_phone = document.getElementById('custPhone').value.trim() || 'N/A';
             const payment_method = document.getElementById('paymentMethod').value;
 
-            lastSaleData = { customer_name, customer_phone, payment_method, discount, total_amount, items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
+            lastSaleData = { customer_name, customer_phone, payment_method, total_amount, items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
 
             try {
                 const res = await fetch('/api/sales', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items: cart })
+                    body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name, customer_phone, payment_method, discount: 0, total_amount, items: cart })
                 });
                 if(res.ok) {
                     generateAutoMessage(lastSaleData);
                     cart = [];
-                    document.getElementById('billingDiscount').value = 0;
                     document.getElementById('custName').value = '';
                     document.getElementById('custPhone').value = '';
                     renderCart();
@@ -676,12 +706,17 @@
 
         function generateAutoMessage(sale) {
             let msg = `================================\n`;
-            msg += `          ${sale.branch.toUpperCase()}\n`;
+            let shopNameLine = sale.branch.toUpperCase();
+            let padName = Math.max(0, Math.floor((32 - shopNameLine.length) / 2));
+            msg += " ".repeat(padName) + shopNameLine + "\n";
+            
             if (sale.branch_phone) {
-                msg += `       Contact: ${sale.branch_phone}\n`;
+                let phoneLine = `Contact: ${sale.branch_phone}`;
+                let padPhone = Math.max(0, Math.floor((32 - phoneLine.length) / 2));
+                msg += " ".repeat(padPhone) + phoneLine + "\n";
             }
             msg += `================================\n`;
-            msg += `INVOICE / PURCHASE RECEIPT\n`;
+            msg += `    INVOICE / PURCHASE RECEIPT  \n`;
             msg += `--------------------------------\n`;
             msg += `Date: ${new Date().toLocaleString()}\n`;
             msg += `Customer Name : ${sale.customer_name}\n`;
@@ -689,16 +724,13 @@
             msg += `--------------------------------\n`;
             msg += `PURCHASED ITEMS:\n`;
             sale.items.forEach(item => { 
-                msg += `- ${item.name} (Qty: ${item.qty}) \n  Subtotal: Rs. ${item.subtotal.toFixed(2)}\n`; 
+                msg += `- ${item.name} (Qty: ${item.qty})\n  Subtotal: Rs. ${item.subtotal.toFixed(2)}\n`; 
             });
             msg += `--------------------------------\n`;
-            if (sale.discount > 0) {
-                msg += `Discount      : Rs. ${sale.discount.toFixed(2)}\n`;
-            }
             msg += `TOTAL PAYABLE : Rs. ${sale.total_amount.toFixed(2)}\n`;
             msg += `Payment Method: ${sale.payment_method}\n`;
             msg += `================================\n`;
-            msg += `       Thank you for your business!       \n`;
+            msg += `   Thank you for your business!   \n`;
             msg += `================================`;
             
             document.getElementById('autoReceiptText').value = msg;
