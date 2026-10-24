@@ -22,14 +22,16 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Shops & System Accounts with Unique Passwords
+// Auto Create Shops & System Accounts with shop_phone support
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
         shop_name VARCHAR(100) NOT NULL,
+        shop_phone VARCHAR(50) DEFAULT '',
         status VARCHAR(20) DEFAULT 'ACTIVE'
     )
 `, () => {
+    db.query("ALTER TABLE shops ADD COLUMN shop_phone VARCHAR(50) DEFAULT ''", () => {});
     for (let i = 1; i <= 10; i++) {
         db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [i, `Shop ${i}`]);
     }
@@ -105,11 +107,11 @@ db.query(`
     )
 `);
 
-// Login API with Subscription Check & Custom Shop Name Update
+// Login API with Shop Name & Shop Phone Update
 app.post('/api/login', (req, res) => {
-    const { username, password, custom_shop_name } = req.body;
+    const { username, password, custom_shop_name, shop_phone } = req.body;
     db.query(`
-        SELECT u.*, s.shop_name, s.status 
+        SELECT u.*, s.shop_name, s.shop_phone, s.status 
         FROM users u 
         JOIN shops s ON u.shop_id = s.shop_id 
         WHERE u.username = ? AND u.password = ?
@@ -118,14 +120,16 @@ app.post('/api/login', (req, res) => {
         if (results.length === 0) return res.status(401).json({ error: 'Invalid username or password' });
         
         const user = results[0];
-        
         if (user.status !== 'ACTIVE') {
             return res.status(403).json({ error: 'Account Locked. Please contact administrator to renew subscription.' });
         }
 
         const finalShopName = custom_shop_name && custom_shop_name.trim() !== '' ? custom_shop_name.trim() : user.shop_name;
-        db.query('UPDATE shops SET shop_name = ? WHERE shop_id = ?', [finalShopName, user.shop_id], () => {
+        const finalShopPhone = shop_phone && shop_phone.trim() !== '' ? shop_phone.trim() : (user.shop_phone || '');
+
+        db.query('UPDATE shops SET shop_name = ?, shop_phone = ? WHERE shop_id = ?', [finalShopName, finalShopPhone, user.shop_id], () => {
             user.shop_name = finalShopName;
+            user.shop_phone = finalShopPhone;
             res.json({ success: true, user });
         });
     });

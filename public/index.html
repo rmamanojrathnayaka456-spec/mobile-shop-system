@@ -71,11 +71,15 @@
 <body>
 
     <div id="loginScreen">
-        <h2>📱 MOBILE SHOP SYSTEM</h2>
+        <h2>MOBILE SHOP SYSTEM</h2>
         <form onsubmit="handleLogin(event)">
             <div class="login-group">
-                <label>Shop Name / User Display Name:</label>
-                <input type="text" id="loginShopName" placeholder="e.g. SHA MOBILE" required>
+                <label>Shop Name:</label>
+                <input type="text" id="loginShopName" placeholder="e.g. SHAMOBILE" required>
+            </div>
+            <div class="login-group">
+                <label>Shop Contact Number:</label>
+                <input type="text" id="loginShopPhone" placeholder="e.g. 0771234567" required>
             </div>
             <div class="login-group">
                 <label>Username:</label>
@@ -83,7 +87,7 @@
             </div>
             <div class="login-group">
                 <label>Password:</label>
-                <input type="password" id="loginPass" placeholder="e.g. system321" required>
+                <input type="password" id="loginPass" placeholder="e.g. sysKey@01" required>
             </div>
             <button type="submit" style="margin-top: 10px;">Login to System</button>
         </form>
@@ -91,9 +95,9 @@
 
     <div id="appContainer" class="container">
         <header>
-            <h2>📱 MOBILE SHOP SYSTEM</h2>
+            <h2>MOBILE SHOP SYSTEM</h2>
             <div style="display: flex; align-items: center; gap: 15px;">
-                <div class="user-badge" id="userDisplay">SHA MOBILE</div>
+                <div class="user-badge" id="userDisplay">SHAMOBILE</div>
                 <button class="logout-btn" onclick="handleLogout()">Logout</button>
             </div>
         </header>
@@ -147,8 +151,8 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                        <label>🔍 Search ID, Name, IMEI or Repair Job ID:</label>
-                        <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">📷 Camera Scanner</button>
+                        <label>Search ID, Name, IMEI or Repair Job ID:</label>
+                        <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">Camera Scanner</button>
                     </div>
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
                     <input type="text" id="billingSearch" placeholder="Type ID (001), Name, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
@@ -190,7 +194,7 @@
             <h3>3. Stock Inventory Management</h3>
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" onclick="switchStockSubTab('all', this)">All Stock</button>
-                <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">⚠️ Out of Stock</button>
+                <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">Out of Stock</button>
             </div>
             <input type="text" id="searchStock" placeholder="Search by ID, Name, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
             <table>
@@ -214,7 +218,7 @@
                     <span style="font-size:11px; color:#666;">(Click to view this month's sales)</span>
                 </div>
                 <div class="card" id="cardRepair" onclick="filterSalesView('repair', this)" style="border-left-color: #17a2b8;">
-                    <h4>🔧 Repair Income (Total)</h4>
+                    <h4>Repair Income (Total)</h4>
                     <p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p>
                     <span style="font-size:11px; color:#666;">(Click to view repair sales only)</span>
                 </div>
@@ -243,7 +247,7 @@
                 <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job</button>
             </form>
 
-            <input type="text" id="searchRepair" placeholder="🔍 Search Repair by Job ID (#1), Customer Name, Phone, Device..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #007bff;">
+            <input type="text" id="searchRepair" placeholder="Search Repair by Job ID (#1), Customer Name, Phone, Device..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #007bff;">
 
             <table>
                 <thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
@@ -261,7 +265,7 @@
             </div>
             <div id="stickersContainer"></div>
             <div id="barcodeHideBtnControls" style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="window.print()" style="background:#28a745; flex:1;">🖨️ Print Sticker(s)</button>
+                <button onclick="window.print()" style="background:#28a745; flex:1;">Print Sticker(s)</button>
                 <button onclick="closeBarcodeModal()" style="background:#6c757d; flex:1;">Close</button>
             </div>
         </div>
@@ -270,12 +274,12 @@
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
         <div class="printable" style="background:white; padding:30px; border-radius:8px; width:450px; max-width:90%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="color:#28a745; margin-top:0;">✅ Sale Completed Successfully!</h3>
-            <textarea id="autoReceiptText" rows="10" style="width:100%; font-family:monospace; font-size:13px; padding:10px;" readonly></textarea>
+            <h3 style="color:#28a745; margin-top:0;">Sale Completed Successfully!</h3>
+            <textarea id="autoReceiptText" rows="12" style="width:100%; font-family:monospace; font-size:13px; padding:10px;" readonly></textarea>
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
-                <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">🖨️ Print Bill</button>
-                <button onclick="copyReceiptText()" style="background:#007bff; flex:1;">📋 Copy</button>
-                <button onclick="sendWhatsAppMessage()" style="background:#25d366; flex:1;">💬 WhatsApp</button>
+                <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">Print Bill</button>
+                <button onclick="copyReceiptText()" style="background:#007bff; flex:1;">Copy</button>
+                <button onclick="sendWhatsAppMessage()" style="background:#25d366; flex:1;">WhatsApp</button>
                 <button onclick="closeReceiptModal()" style="background:#6c757d; flex:1;">Close</button>
             </div>
         </div>
@@ -298,12 +302,13 @@
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value.trim();
             const custom_shop_name = document.getElementById('loginShopName').value.trim();
+            const shop_phone = document.getElementById('loginShopPhone').value.trim();
 
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password, custom_shop_name })
+                    body: JSON.stringify({ username, password, custom_shop_name, shop_phone })
                 });
                 const data = await res.json();
                 if(res.ok && data.success) {
@@ -646,7 +651,7 @@
             const customer_phone = document.getElementById('custPhone').value.trim() || 'N/A';
             const payment_method = document.getElementById('paymentMethod').value;
 
-            lastSaleData = { customer_name, customer_phone, payment_method, discount, total_amount, items: [...cart], branch: currentUser.shop_name };
+            lastSaleData = { customer_name, customer_phone, payment_method, discount, total_amount, items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
 
             try {
                 const res = await fetch('/api/sales', {
@@ -669,10 +674,32 @@
         }
 
         function generateAutoMessage(sale) {
-            let msg = `📱 *${sale.branch.toUpperCase()}* 📱\n✨ *PURCHASE RECEIPT* ✨\n\n👤 Customer: ${sale.customer_name}\n📞 Phone: ${sale.customer_phone}\n📅 Date: ${new Date().toLocaleString()}\n\n🛒 *Items:*\n`;
-            sale.items.forEach(item => { msg += `• ${item.name} (Qty: ${item.qty}) - Rs. ${item.subtotal.toFixed(2)}\n`; });
-            if(sale.discount > 0) msg += `\n🏷️ Discount: Rs. ${sale.discount.toFixed(2)}`;
-            msg += `\n\n💰 *Total: Rs. ${sale.total_amount.toFixed(2)}*\n💳 Payment: ${sale.payment_method}\n\n🙏 *Thank you!*`;
+            let msg = `================================\n`;
+            msg += `          ${sale.branch.toUpperCase()}\n`;
+            if (sale.branch_phone) {
+                msg += `       Contact: ${sale.branch_phone}\n`;
+            }
+            msg += `================================\n`;
+            msg += `INVOICE / PURCHASE RECEIPT\n`;
+            msg += `--------------------------------\n`;
+            msg += `Date: ${new Date().toLocaleString()}\n`;
+            msg += `Customer Name : ${sale.customer_name}\n`;
+            msg += `Customer Phone: ${sale.customer_phone}\n`;
+            msg += `--------------------------------\n`;
+            msg += `PURCHASED ITEMS:\n`;
+            sale.items.forEach(item => { 
+                msg += `- ${item.name} (Qty: ${item.qty}) \n  Subtotal: Rs. ${item.subtotal.toFixed(2)}\n`; 
+            });
+            msg += `--------------------------------\n`;
+            if (sale.discount > 0) {
+                msg += `Discount      : Rs. ${sale.discount.toFixed(2)}\n`;
+            }
+            msg += `TOTAL PAYABLE : Rs. ${sale.total_amount.toFixed(2)}\n`;
+            msg += `Payment Method: ${sale.payment_method}\n`;
+            msg += `================================\n`;
+            msg += `       Thank you for your business!       \n`;
+            msg += `================================`;
+            
             document.getElementById('autoReceiptText').value = msg;
             document.getElementById('receiptModal').style.display = 'flex';
         }
@@ -806,7 +833,7 @@
 
         async function addRepair(e) {
             e.preventDefault();
-            const data = {
+            printRepairData = {
                 shop_id: currentUser.shop_id,
                 customer_name: document.getElementById('repCustomer').value,
                 customer_phone: document.getElementById('repPhone').value,
@@ -815,7 +842,7 @@
                 advance_cost: document.getElementById('repAdvance').value,
                 total_cost: document.getElementById('repTotalCost').value
             };
-            await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(printRepairData) });
             alert('Repair added!');
             document.getElementById('repairForm').reset();
             loadRepairs();
