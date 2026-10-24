@@ -274,8 +274,8 @@
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
         <div class="printable" style="background:white; padding:30px; border-radius:8px; width:450px; max-width:90%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="color:#28a745; margin-top:0;">Sale Completed Successfully!</h3>
-            <textarea id="autoReceiptText" rows="12" style="width:100%; font-family:monospace; font-size:13px; padding:10px;" readonly></textarea>
+            <h3 style="color:#28a745; margin-top:0; text-align:center;">Sale Completed Successfully!</h3>
+            <textarea id="autoReceiptText" rows="12" style="width:100%; font-family:monospace; font-size:13px; padding:10px; text-align:center;" readonly></textarea>
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
                 <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">Print Bill</button>
                 <button onclick="copyReceiptText()" style="background:#007bff; flex:1;">Copy</button>
@@ -612,7 +612,8 @@
             if(val.startsWith('prod_')) {
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
                 if(!p || p.stock < qty) return alert('Out of stock!');
-                cart.push({ type: 'product', product_id: p.product_id, name: `#${p.product_code} ${p.name}`, price, qty, subtotal: price * qty });
+                // Cart item name without product code (#022)
+                cart.push({ type: 'product', product_id: p.product_id, name: p.name, price, qty, subtotal: price * qty });
             } else if(val.startsWith('rep_')) {
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(!r) return;
@@ -833,7 +834,7 @@
 
         async function addRepair(e) {
             e.preventDefault();
-            printRepairData = {
+            const data = {
                 shop_id: currentUser.shop_id,
                 customer_name: document.getElementById('repCustomer').value,
                 customer_phone: document.getElementById('repPhone').value,
@@ -842,7 +843,7 @@
                 advance_cost: document.getElementById('repAdvance').value,
                 total_cost: document.getElementById('repTotalCost').value
             };
-            await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(printRepairData) });
+            await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             alert('Repair added!');
             document.getElementById('repairForm').reset();
             loadRepairs();
