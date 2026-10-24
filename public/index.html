@@ -169,9 +169,11 @@
                 <input type="hidden" id="pCategory" value="Brand New Phone">
                 <label id="lblModel">Model Name:</label>
                 <input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra, iPhone 15" required>
+                
                 <label>Select Brand:</label>
                 <input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple">
                 <datalist id="brandList"><option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"><option value="JBL"></datalist>
+                
                 <label>Select Colour:</label>
                 <input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue">
                 <datalist id="colorList"><option value="Black"><option value="Blue"><option value="White"><option value="Red"></datalist>
@@ -608,6 +610,15 @@
             filterStock();
         }
 
+        function parseProductItem(fullName) {
+            if (!fullName) return { name: '-', warranty: 'No Warranty' };
+            const match = fullName.match(/^(.*?)\[Warranty:\s*(.*?)\]$/);
+            if (match) {
+                return { name: match[1].trim(), warranty: match[2].trim() };
+            }
+            return { name: fullName.trim(), warranty: 'No Warranty' };
+        }
+
         function renderInventory(products) {
             const tbody = document.getElementById('inventoryTable');
             tbody.innerHTML = '';
@@ -630,19 +641,21 @@
                 if(isOut) rowClass = 'out-of-stock';
                 else if(isLow) rowClass = 'low-stock-row';
 
+                const parsed = parseProductItem(p.name);
+
                 tbody.innerHTML += `<tr class="${rowClass}">
                     <td><b>#${p.product_code || p.product_id}</b></td>
-                    <td>${p.name} ${isLow ? '<span class="low-stock-badge">LOW STOCK</span>' : ''}</td>
+                    <td>${parsed.name} ${isLow ? '<span class="low-stock-badge">LOW STOCK</span>' : ''}</td>
                     <td>${p.brand || '-'}</td>
                     <td>${p.category || '-'}</td>
                     <td>${p.color || '-'}</td>
-                    <td><span style="color:#007bff; font-weight:bold;">${p.warranty || 'No Warranty'}</span></td>
+                    <td><span style="color:#007bff; font-weight:bold;">${parsed.warranty}</span></td>
                     <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
                     <td>${p.stock} ${isOut ? '(OUT OF STOCK)' : ''}</td>
                     <td>${p.imei || '-'}</td>
                     <td>
                         <div style="display:flex; gap:5px; flex-wrap:wrap;">
-                            <button onclick="printExistingBarcode('${p.name}', '${p.product_code || p.product_id}', ${p.selling_price})" style="background:#17a2b8; padding:5px; width:auto; font-size:11px;">Barcode</button>
+                            <button onclick="printExistingBarcode('${parsed.name}', '${p.product_code || p.product_id}', ${p.selling_price})" style="background:#17a2b8; padding:5px; width:auto; font-size:11px;">Barcode</button>
                             <button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:5px; width:auto; font-size:11px;">Delete</button>
                         </div>
                     </td>
@@ -665,26 +678,30 @@
                 baseList = allProducts.filter(p => p.stock > 0 && p.stock <= 2);
             }
 
-            const filtered = baseList.filter(p => 
-                (p.product_code && p.product_code.toLowerCase().includes(query)) ||
-                p.name.toLowerCase().includes(query) || 
-                (p.brand && p.brand.toLowerCase().includes(query)) || 
-                (p.imei && p.imei.toLowerCase().includes(query)) ||
-                (p.warranty && p.warranty.toLowerCase().includes(query))
-            );
+            const filtered = baseList.filter(p => {
+                const parsed = parseProductItem(p.name);
+                return (p.product_code && p.product_code.toLowerCase().includes(query)) ||
+                    parsed.name.toLowerCase().includes(query) || 
+                    (p.brand && p.brand.toLowerCase().includes(query)) || 
+                    (p.imei && p.imei.toLowerCase().includes(query)) ||
+                    parsed.warranty.toLowerCase().includes(query);
+            });
             renderInventory(filtered);
         }
 
         async function addProduct(e) {
             e.preventDefault();
+            const baseName = document.getElementById('pName').value.trim();
+            const warrantyInput = document.getElementById('pWarranty').value.trim() || 'No Warranty';
+            const finalName = `${baseName} [Warranty: ${warrantyInput}]`;
             const stockQty = parseInt(document.getElementById('pStock').value) || 1;
+
             const data = {
                 shop_id: currentUser.shop_id,
-                name: document.getElementById('pName').value,
+                name: finalName,
                 brand: document.getElementById('pBrand').value,
                 color: document.getElementById('pColor').value,
                 category: document.getElementById('pCategory').value,
-                warranty: document.getElementById('pWarranty').value.trim() || 'No Warranty',
                 cost_price: document.getElementById('pCost').value,
                 selling_price: document.getElementById('pPrice').value,
                 stock: stockQty,
@@ -699,7 +716,7 @@
                 });
                 const result = await res.json();
                 if(res.ok) {
-                    currentBarcodeData = { shop: currentUser.shop_name || "SHA MOBILE", name: data.name, code: result.product_code, price: data.selling_price };
+                    currentBarcodeData = { shop: currentUser.shop_name || "SHA MOBILE", name: baseName, code: result.product_code, price: data.selling_price };
                     document.getElementById('bcPrintQty').value = stockQty;
                     showBarcodeModal();
                     document.getElementById('productForm').reset();
@@ -752,9 +769,10 @@
             const select = document.getElementById('billingProductSelect');
             select.innerHTML = '';
             products.forEach(p => {
+                const parsed = parseProductItem(p.name);
                 const opt = document.createElement('option');
                 opt.value = 'prod_' + p.product_id;
-                opt.textContent = `[Product] #${p.product_code || p.product_id} - ${p.name} [Warranty: ${p.warranty || 'None'}] - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
+                opt.textContent = `[Product] #${p.product_code || p.product_id} - ${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
                 if(p.stock <= 0) opt.style.color = 'red';
                 select.appendChild(opt);
             });
@@ -931,13 +949,13 @@
                 items: [{
                     type: 'repair',
                     repair_id: rId,
-                    name: `Repair Job #${rId} (${selectedBillingRepair.device_model} - ${parsed.issue}) [Warranty: ${parsed.warranty}]`,
+                    name: `Repair Job #${rId} (${selectedBillingRepair.device_model} - ${parsed.issue})`,
+                    warranty: parsed.warranty,
                     originalPrice: balance,
                     costPrice: 0,
                     price: balance,
                     qty: 1,
-                    subtotal: balance,
-                    warranty: parsed.warranty
+                    subtotal: balance
                 }]
             };
 
@@ -979,7 +997,10 @@
         function handleBillingSearch() {
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
             if(!query) { populateBillingDropdown(allProducts, allRepairs); return; }
-            const filteredProds = allProducts.filter(p => (p.product_code && p.product_code.toLowerCase().includes(query)) || p.name.toLowerCase().includes(query) || (p.imei && p.imei.toLowerCase().includes(query)));
+            const filteredProds = allProducts.filter(p => {
+                const parsed = parseProductItem(p.name);
+                return (p.product_code && p.product_code.toLowerCase().includes(query)) || parsed.name.toLowerCase().includes(query) || (p.imei && p.imei.toLowerCase().includes(query));
+            });
             const filteredReps = allRepairs.filter(r => {
                 const rId = (r.id || r.repair_id).toString();
                 const parsed = parseRepairIssue(r.issue_description);
@@ -1013,7 +1034,8 @@
                 if(p) {
                     selectedOriginalPrice = parseFloat(p.selling_price);
                     selectedCostPrice = parseFloat(p.cost_price || 0);
-                    selectedProductWarranty = p.warranty || 'No Warranty';
+                    const parsed = parseProductItem(p.name);
+                    selectedProductWarranty = parsed.warranty;
                     document.getElementById('billingProductWarranty').value = selectedProductWarranty;
                     document.getElementById('costPriceDisplay').value = selectedCostPrice.toFixed(2);
                     document.getElementById('originalPrice').value = selectedOriginalPrice.toFixed(2);
@@ -1062,7 +1084,8 @@
             if(val.startsWith('prod_')) {
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
                 if(!p || p.stock < qty) return alert('Out of stock!');
-                cart.push({ type: 'product', product_id: p.product_id, name: p.name, warranty: selectedProductWarranty, originalPrice: selectedOriginalPrice, costPrice: selectedCostPrice, price, qty, discount: discount * qty, subtotal: price * qty });
+                const parsed = parseProductItem(p.name);
+                cart.push({ type: 'product', product_id: p.product_id, name: parsed.name, warranty: selectedProductWarranty, originalPrice: selectedOriginalPrice, costPrice: selectedCostPrice, price, qty, discount: discount * qty, subtotal: price * qty });
             } else if(val.startsWith('rep_')) {
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(!r) return;
