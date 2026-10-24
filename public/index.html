@@ -210,11 +210,11 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                        <label>Search ID, Name, IMEI or Repair Job ID:</label>
+                        <label>Search ID, Name, Brand, IMEI or Repair Job ID:</label>
                         <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">Camera Scanner</button>
                     </div>
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
-                    <input type="text" id="billingSearch" autocomplete="off" placeholder="Type ID (001), Name, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
+                    <input type="text" id="billingSearch" autocomplete="off" placeholder="Type ID (001), Name, Brand, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
                     <select id="billingProductSelect" size="5" onchange="selectBillingProduct()" style="height: 140px; margin-top: 5px;"></select>
                     
                     <label>Product / Item Warranty:</label>
@@ -278,7 +278,7 @@
                 <button class="sub-tab-btn" onclick="switchStockSubTab('low', this)">Low Stock (<=2)</button>
                 <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">Out of Stock</button>
             </div>
-            <input type="text" id="searchStock" placeholder="Search by ID, Name, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
+            <input type="text" id="searchStock" placeholder="Search by ID, Name, Brand, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
             <table>
                 <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Warranty</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
                 <tbody id="inventoryTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
@@ -768,12 +768,14 @@
         function populateBillingDropdown(products, repairs) {
             const select = document.getElementById('billingProductSelect');
             select.innerHTML = '';
-            // Only show products with stock > 0
-            products.filter(p => p.stock > 0).forEach(p => {
+            products.forEach(p => {
                 const parsed = parseProductItem(p.name);
+                const isOut = p.stock <= 0;
+                const brandStr = p.brand ? `[${p.brand}] ` : '';
                 const opt = document.createElement('option');
                 opt.value = 'prod_' + p.product_id;
-                opt.textContent = `[Product] #${p.product_code || p.product_id} - ${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
+                opt.textContent = `[Product] #${p.product_code || p.product_id} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}] ${isOut ? '⚠️ [OUT OF STOCK]' : ''}`;
+                if(isOut) opt.style.color = 'red';
                 select.appendChild(opt);
             });
             repairs.forEach(r => {
@@ -998,9 +1000,11 @@
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
             if(!query) { populateBillingDropdown(allProducts, allRepairs); return; }
             const filteredProds = allProducts.filter(p => {
-                if(p.stock <= 0) return false;
                 const parsed = parseProductItem(p.name);
-                return (p.product_code && p.product_code.toLowerCase().includes(query)) || parsed.name.toLowerCase().includes(query) || (p.imei && p.imei.toLowerCase().includes(query));
+                return (p.product_code && p.product_code.toLowerCase().includes(query)) || 
+                       parsed.name.toLowerCase().includes(query) || 
+                       (p.brand && p.brand.toLowerCase().includes(query)) ||
+                       (p.imei && p.imei.toLowerCase().includes(query));
             });
             const filteredReps = allRepairs.filter(r => {
                 const rId = (r.id || r.repair_id).toString();
@@ -1229,7 +1233,7 @@
         }
 
         function viewSale(saleId) {
-            const sale = rawSalesData.get ? rawSalesData.find(s => s.sale_id == saleId) : rawSalesData.find(s => s.sale_id == saleId);
+            const sale = rawSalesData.find(s => s.sale_id == saleId);
             if(!sale) return alert('Sale record not found!');
 
             lastSaleData = {
