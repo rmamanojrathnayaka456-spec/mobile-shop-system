@@ -458,6 +458,7 @@
         let selectedOriginalPrice = 0;
         let selectedCostPrice = 0;
         let selectedProductWarranty = 'No Warranty';
+        let selectedProductBrand = '';
         let rawReceiptPlaintext = "";
         let selectedBillingRepair = null;
 
@@ -579,6 +580,7 @@
             selectedOriginalPrice = 0;
             selectedCostPrice = 0;
             selectedProductWarranty = 'No Warranty';
+            selectedProductBrand = '';
         }
 
         async function loadInventory() {
@@ -775,7 +777,6 @@
                 const opt = document.createElement('option');
                 opt.value = 'prod_' + p.product_id;
                 opt.textContent = `[Product] #${p.product_code || p.product_id} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}] ${isOut ? '⚠️ [OUT OF STOCK]' : ''}`;
-                if(isOut) opt.style.color = 'red';
                 select.appendChild(opt);
             });
             repairs.forEach(r => {
@@ -1041,6 +1042,7 @@
                     selectedCostPrice = parseFloat(p.cost_price || 0);
                     const parsed = parseProductItem(p.name);
                     selectedProductWarranty = parsed.warranty;
+                    selectedProductBrand = p.brand || '';
                     document.getElementById('billingProductWarranty').value = selectedProductWarranty;
                     document.getElementById('costPriceDisplay').value = selectedCostPrice.toFixed(2);
                     document.getElementById('originalPrice').value = selectedOriginalPrice.toFixed(2);
@@ -1054,6 +1056,7 @@
                     selectedCostPrice = 0;
                     const parsed = parseRepairIssue(r.issue_description);
                     selectedProductWarranty = parsed.warranty;
+                    selectedProductBrand = '';
                     document.getElementById('billingProductWarranty').value = selectedProductWarranty;
                     document.getElementById('costPriceDisplay').value = '0.00';
                     document.getElementById('originalPrice').value = selectedOriginalPrice.toFixed(2);
@@ -1090,13 +1093,40 @@
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
                 if(!p || p.stock < qty) return alert('Out of stock!');
                 const parsed = parseProductItem(p.name);
-                cart.push({ type: 'product', product_id: p.product_id, name: parsed.name, warranty: selectedProductWarranty, originalPrice: selectedOriginalPrice, costPrice: selectedCostPrice, price, qty, discount: discount * qty, subtotal: price * qty });
+                
+                // Combine Brand and Model name directly into the item name
+                const brandStr = p.brand ? `[${p.brand}] ` : '';
+                const fullItemName = `${brandStr}${parsed.name}`;
+
+                cart.push({ 
+                    type: 'product', 
+                    product_id: p.product_id, 
+                    name: fullItemName, 
+                    warranty: selectedProductWarranty, 
+                    originalPrice: selectedOriginalPrice, 
+                    costPrice: selectedCostPrice, 
+                    price, 
+                    qty, 
+                    discount: discount * qty, 
+                    subtotal: price * qty 
+                });
             } else if(val.startsWith('rep_')) {
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(!r) return;
                 const rId = r.id || r.repair_id;
                 const parsed = parseRepairIssue(r.issue_description);
-                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model} - ${parsed.issue})`, warranty: parsed.warranty, originalPrice: selectedOriginalPrice, costPrice: 0, price, qty: 1, discount: discount, subtotal: price });
+                cart.push({ 
+                    type: 'repair', 
+                    repair_id: rId, 
+                    name: `Repair Job #${rId} (${r.device_model} - ${parsed.issue})`, 
+                    warranty: parsed.warranty, 
+                    originalPrice: selectedOriginalPrice, 
+                    costPrice: 0, 
+                    price, 
+                    qty: 1, 
+                    discount: discount, 
+                    subtotal: price 
+                });
             }
             renderCart();
             clearBillingFields();
