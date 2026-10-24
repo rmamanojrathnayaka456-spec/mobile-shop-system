@@ -326,7 +326,7 @@
                     </datalist>
 
                     <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period (Select or Type):</label>
-                    <input type="text" id="repWarranty" list="warrantyList" placeholder="e.g. 1 Month, No Warranty" value="No Warranty" required>
+                    <input type="text" id="repWarranty" list="warrantyList" placeholder="Select or Type Warranty (e.g. 1 Month, No Warranty)">
                     <datalist id="warrantyList">
                         <option value="No Warranty">
                         <option value="1 Week">
@@ -1337,7 +1337,6 @@
             await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             alert('Repair added successfully!');
             document.getElementById('repairForm').reset();
-            document.getElementById('repWarranty').value = 'No Warranty';
             loadRepairs();
         }
 
