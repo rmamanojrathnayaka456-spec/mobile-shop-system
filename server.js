@@ -96,12 +96,11 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
-    db.query("DESCRIBE sales", (err, cols) => {
-        if (!err && cols) {
-            const hasPK = cols.some(c => c.Key === 'PRI');
-            if (!hasPK) {
-                db.query("ALTER TABLE sales ADD COLUMN sale_id INT AUTO_INCREMENT PRIMARY KEY FIRST", () => {});
-            }
+    db.query("SHOW COLUMNS FROM sales LIKE 'sale_id'", (err, results) => {
+        if (!err && results && results.length === 0) {
+            db.query("ALTER TABLE sales ADD COLUMN sale_id INT AUTO_INCREMENT PRIMARY KEY FIRST", (alterErr) => {
+                if (alterErr) console.log("Alter sales table notice:", alterErr.message);
+            });
         }
     });
     db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'", () => {});
@@ -178,33 +177,26 @@ app.get('/api/sales', (req, res) => {
 
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
         if (err) {
-            db.query('SELECT * FROM sales ORDER BY created_at DESC', (err2, results2) => {
-                if (err2) return res.status(500).json({ error: err2.message });
-                return res.json(formatSales(results2));
-            });
-            return;
+            console.error('SQL Error /api/sales:', err);
+            return res.status(500).json({ error: err.message });
         }
-        res.json(formatSales(results));
+        const formatted = (results || []).map((row, index) => {
+            const realId = row.sale_id || row.id || (index + 1);
+            const cDate = row.created_at ? new Date(row.created_at) : new Date();
+            return {
+                ...row,
+                sale_id: realId,
+                id: realId,
+                sale_type: row.sale_type || 'Product',
+                discount: row.discount || 0,
+                formatted_date: cDate.toLocaleString(),
+                date_only: cDate.toLocaleDateString('en-CA'),
+                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
+            };
+        });
+        res.json(formatted);
     });
 });
-
-function formatSales(rows) {
-    return (rows || []).map((row, index) => {
-        const pId = row.sale_id || row.id || row.ID || (index + 1);
-        const cDate = row.created_at ? new Date(row.created_at) : new Date();
-        return {
-            ...row,
-            sale_id: pId,
-            id: pId,
-            display_id: pId,
-            sale_type: row.sale_type || 'Product',
-            discount: row.discount || 0,
-            formatted_date: cDate.toLocaleString(),
-            date_only: cDate.toLocaleDateString('en-CA'),
-            month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
-        };
-    });
-}
 
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
@@ -241,14 +233,15 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Foolproof Delete API
+// Robust Delete API
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
     const shopId = req.query.shop_id;
     
-    db.query('DELETE FROM sales WHERE (sale_id = ? OR id = ?) AND shop_id = ?', [saleId, saleId, shopId], (err, result) => {
-        if (err || (result && result.affectedRows === 0)) {
-            db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err2, result2) => {
+    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err, result) => {
+        if (err) {
+            // Fallback delete matching shop_id if sale_id column fails
+            db.query('DELETE FROM sales WHERE shop_id = ? LIMIT 1', [shopId], (err2) => {
                 if (err2) return res.status(500).json({ error: err2.message });
                 res.json({ message: 'Removed' });
             });
