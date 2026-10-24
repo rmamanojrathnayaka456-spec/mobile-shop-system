@@ -82,7 +82,7 @@ db.query(`
     )
 `);
 
-// Clean & Fresh Sales Table with standard sale_id
+// Auto Create & Auto Migrate Sales Table Schema
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -95,7 +95,22 @@ db.query(`
         total_amount DECIMAL(10, 2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`);
+`, () => {
+    // Automatically fix if table was created with 'id' instead of 'sale_id'
+    db.query("DESCRIBE sales", (err, cols) => {
+        if (!err && cols && cols.length > 0) {
+            const hasSaleId = cols.some(c => c.Field === 'sale_id');
+            const hasId = cols.some(c => c.Field === 'id');
+            if (!hasSaleId && hasId) {
+                db.query("ALTER TABLE sales CHANGE COLUMN id sale_id INT AUTO_INCREMENT PRIMARY KEY", (e) => {
+                    if (e) console.log("Migration notice:", e.message);
+                });
+            }
+        }
+    });
+    db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'", () => {});
+    db.query("ALTER TABLE sales ADD COLUMN discount DECIMAL(10, 2) DEFAULT 0", () => {});
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -173,7 +188,7 @@ app.get('/api/sales', (req, res) => {
             customer_name, 
             customer_phone, 
             payment_method, 
-            sale_type, 
+            COALESCE(sale_type, 'Product') AS sale_type, 
             discount, 
             total_amount, 
             DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS formatted_date,
@@ -228,7 +243,7 @@ app.post('/api/sales', (req, res) => {
 });
 
 app.delete('/api/sales/:id', (req, res) => {
-    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
+    db.query('DELETE FROM sales WHERE (sale_id = ? OR id = ?) AND shop_id = ?', [req.params.id, req.params.id, req.query.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
     });
