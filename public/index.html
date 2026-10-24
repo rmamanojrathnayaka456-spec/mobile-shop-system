@@ -214,10 +214,14 @@
                         <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">Camera Scanner</button>
                     </div>
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
-                    <input type="text" id="billingSearch" autocomplete="off" placeholder="Type ID (001), Name, Brand, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
-                    <select id="billingProductSelect" size="5" onchange="selectBillingProduct()" style="height: 140px; margin-top: 5px;"></select>
+                    <input type="text" id="billingSearch" autocomplete="off" placeholder="Type ID (001), Name, Brand, IMEI or Scan..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #007bff;">
                     
-                    <label>Product / Item Warranty:</label>
+                    <!-- Professional Custom Dropdown List -->
+                    <div style="position: relative;">
+                        <div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 180px; overflow-y: auto; background: var(--input-bg); border: 2px solid #007bff; z-index: 99; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"></div>
+                    </div>
+                    
+                    <label style="margin-top: 10px; display: block;">Product / Item Warranty:</label>
                     <input type="text" id="billingProductWarranty" style="font-weight:bold; color:#007bff;" disabled>
 
                     <label>Cost Price (Rs.):</label>
@@ -461,6 +465,7 @@
         let selectedProductBrand = '';
         let rawReceiptPlaintext = "";
         let selectedBillingRepair = null;
+        let selectedBillingValue = "";
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -581,13 +586,13 @@
             selectedCostPrice = 0;
             selectedProductWarranty = 'No Warranty';
             selectedProductBrand = '';
+            selectedBillingValue = "";
         }
 
         async function loadInventory() {
             try {
                 const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
                 allProducts = await res.json();
-                renderInventory(allProducts);
                 checkLowStockAlert(allProducts);
             } catch (err) { console.error(err); }
         }
@@ -767,29 +772,97 @@
             return { issue: fullDesc.trim(), warranty: 'No Warranty' };
         }
 
-        function populateBillingDropdown(products, repairs) {
-            const select = document.getElementById('billingProductSelect');
-            select.innerHTML = '';
+        function openBillingDropdown() {
+            handleBillingSearch();
+        }
+
+        function populateCustomBillingDropdown(products, repairs) {
+            const container = document.getElementById('customDropdownList');
+            container.innerHTML = '';
+            
+            if(products.length === 0 && repairs.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
             products.forEach(p => {
                 const parsed = parseProductItem(p.name);
                 const isOut = p.stock <= 0;
                 const brandStr = p.brand ? `[${p.brand}] ` : '';
-                const stockText = isOut ? '🔴 [OUT OF STOCK]' : `[Stock: ${p.stock}]`;
-                const opt = document.createElement('option');
-                opt.value = 'prod_' + p.product_id;
-                opt.textContent = `#${p.product_code || p.product_id} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} ${stockText}`;
-                select.appendChild(opt);
+                const stockText = isOut ? '[OUT OF STOCK]' : `[Stock: ${p.stock}]`;
+                const itemText = `#${p.product_code || p.product_id} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} ${stockText}`;
+                
+                const div = document.createElement('div');
+                div.style.padding = '8px 12px';
+                div.style.cursor = 'pointer';
+                div.style.borderBottom = '1px solid var(--border-color)';
+                div.style.fontSize = '13px';
+                div.style.whiteSpace = 'nowrap';
+                div.style.overflow = 'hidden';
+                div.style.textOverflow = 'ellipsis';
+                
+                if (isOut) {
+                    div.style.color = '#dc3545';
+                    div.style.fontWeight = 'bold';
+                    div.style.backgroundColor = 'rgba(220, 53, 69, 0.08)';
+                } else {
+                    div.style.color = 'var(--input-text)';
+                    div.style.fontWeight = 'normal';
+                }
+                
+                div.textContent = itemText;
+                div.onmouseover = () => div.style.backgroundColor = isOut ? 'rgba(220, 53, 69, 0.2)' : 'rgba(0, 123, 255, 0.15)';
+                div.onmouseout = () => div.style.backgroundColor = isOut ? 'rgba(220, 53, 69, 0.08)' : 'transparent';
+                
+                div.onclick = () => {
+                    selectedBillingValue = 'prod_' + p.product_id;
+                    document.getElementById('billingSearch').value = `${brandStr}${parsed.name}`;
+                    container.style.display = 'none';
+                    selectBillingProductById(selectedBillingValue);
+                };
+                container.appendChild(div);
             });
+
             repairs.forEach(r => {
                 const balanceDue = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
                 const parsed = parseRepairIssue(r.issue_description);
-                const opt = document.createElement('option');
-                opt.value = 'rep_' + r.repair_id;
-                opt.textContent = `[Repair Job] #${r.repair_id} - ${r.customer_name} (${r.device_model}) [Warranty: ${parsed.warranty}] - Due: Rs. ${balanceDue.toFixed(2)}`;
-                opt.style.color = '#007bff';
-                select.appendChild(opt);
+                const itemText = `[Repair Job] #${r.repair_id} - ${r.customer_name} (${r.device_model}) [Warranty: ${parsed.warranty}] - Due: Rs. ${balanceDue.toFixed(2)}`;
+                
+                const div = document.createElement('div');
+                div.style.padding = '8px 12px';
+                div.style.cursor = 'pointer';
+                div.style.borderBottom = '1px solid var(--border-color)';
+                div.style.fontSize = '13px';
+                div.style.whiteSpace = 'nowrap';
+                div.style.overflow = 'hidden';
+                div.style.textOverflow = 'ellipsis';
+                div.style.color = '#007bff';
+                div.style.fontWeight = 'bold';
+                
+                div.textContent = itemText;
+                div.onmouseover = () => div.style.backgroundColor = 'rgba(0, 123, 255, 0.15)';
+                div.onmouseout = () => div.style.backgroundColor = 'transparent';
+                
+                div.onclick = () => {
+                    selectedBillingValue = 'rep_' + r.repair_id;
+                    document.getElementById('billingSearch').value = `Repair Job #${r.repair_id} - ${r.customer_name}`;
+                    container.style.display = 'none';
+                    selectBillingProductById(selectedBillingValue);
+                };
+                container.appendChild(div);
             });
+            
+            container.style.display = 'block';
         }
+
+        // Close custom dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('customDropdownList');
+            const searchInput = document.getElementById('billingSearch');
+            if(dropdown && searchInput && !dropdown.contains(e.target) && e.target !== searchInput) {
+                dropdown.style.display = 'none';
+            }
+        });
 
         async function loadRepairs() {
             try {
@@ -1000,9 +1073,9 @@
 
         function handleBillingSearch() {
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
-            if(!query) { populateBillingDropdown(allProducts, allRepairs); return; }
             const filteredProds = allProducts.filter(p => {
                 const parsed = parseProductItem(p.name);
+                if(!query) return true;
                 return (p.product_code && p.product_code.toLowerCase().includes(query)) || 
                        parsed.name.toLowerCase().includes(query) || 
                        (p.brand && p.brand.toLowerCase().includes(query)) ||
@@ -1011,9 +1084,10 @@
             const filteredReps = allRepairs.filter(r => {
                 const rId = (r.id || r.repair_id).toString();
                 const parsed = parseRepairIssue(r.issue_description);
+                if(!query) return true;
                 return rId.includes(query) || r.customer_name.toLowerCase().includes(query) || r.customer_phone.includes(query) || r.device_model.toLowerCase().includes(query) || parsed.issue.toLowerCase().includes(query);
             });
-            populateBillingDropdown(filteredProds, filteredReps);
+            populateCustomBillingDropdown(filteredProds, filteredReps);
         }
 
         function toggleCameraScanner() {
@@ -1033,8 +1107,7 @@
             }
         }
 
-        function selectBillingProduct() {
-            const val = document.getElementById('billingProductSelect').value;
+        function selectBillingProductById(val) {
             if(!val) return;
             if(val.startsWith('prod_')) {
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
@@ -1083,7 +1156,7 @@
         }
 
         function addToCart() {
-            const val = document.getElementById('billingProductSelect').value;
+            const val = selectedBillingValue;
             const price = parseFloat(document.getElementById('billingPrice').value);
             const qty = parseInt(document.getElementById('billingQty').value);
             const discount = parseFloat(document.getElementById('billingDiscountDisplay').value) || 0;
@@ -1130,7 +1203,6 @@
             }
             renderCart();
             clearBillingFields();
-            populateBillingDropdown(allProducts, allRepairs);
         }
 
         function renderCart() {
