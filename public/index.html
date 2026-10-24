@@ -61,7 +61,7 @@
         .cat-btn { padding: 8px 15px; background: var(--section-bg); border: 1px solid var(--border-color); border-radius: 20px; cursor: pointer; font-weight: bold; width: auto; color: var(--text-color); }
         .cat-btn.active { background: #007bff; color: white; border-color: #007bff; }
 
-        .sub-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .sub-tabs { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
         .sub-tab-btn { padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; }
         .sub-tab-btn.active { background: #28a745; }
 
@@ -85,6 +85,7 @@
 
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: rgba(255, 0, 0, 0.15) !important; color: #d9534f; font-weight: bold; }
+        .low-stock-row { background-color: rgba(255, 152, 0, 0.1) !important; }
         .low-stock-badge { background: #ff9800; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 5px; white-space: nowrap; display: inline-block; }
         .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; page-break-inside: avoid; }
 
@@ -198,7 +199,7 @@
                         <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">Camera Scanner</button>
                     </div>
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
-                    <input type="text" id="billingSearch" placeholder="Type ID (001), Name, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
+                    <input type="text" id="billingSearch" autocomplete="off" placeholder="Type ID (001), Name, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
                     <select id="billingProductSelect" size="5" onchange="selectBillingProduct()" style="height: 140px; margin-top: 5px;"></select>
                     
                     <label>Cost Price (Rs.):</label>
@@ -256,6 +257,7 @@
             </div>
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" onclick="switchStockSubTab('all', this)">All Stock</button>
+                <button class="sub-tab-btn" onclick="switchStockSubTab('low', this)">Low Stock (<=2)</button>
                 <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">Out of Stock</button>
             </div>
             <input type="text" id="searchStock" placeholder="Search by ID, Name, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
@@ -500,7 +502,13 @@
         function renderInventory(products) {
             const tbody = document.getElementById('inventoryTable');
             tbody.innerHTML = '';
-            let filtered = currentStockFilter === 'out' ? products.filter(p => p.stock <= 0) : products;
+            
+            let filtered = products;
+            if(currentStockFilter === 'out') {
+                filtered = products.filter(p => p.stock <= 0);
+            } else if(currentStockFilter === 'low') {
+                filtered = products.filter(p => p.stock > 0 && p.stock <= 2);
+            }
 
             if(filtered.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No products found.</td></tr>`;
@@ -509,7 +517,11 @@
             filtered.forEach(p => {
                 const isOut = p.stock <= 0;
                 const isLow = p.stock > 0 && p.stock <= 2;
-                tbody.innerHTML += `<tr class="${isOut ? 'out-of-stock' : ''}">
+                let rowClass = '';
+                if(isOut) rowClass = 'out-of-stock';
+                else if(isLow) rowClass = 'low-stock-row';
+
+                tbody.innerHTML += `<tr class="${rowClass}">
                     <td><b>#${p.product_code || p.product_id}</b></td>
                     <td>${p.name} ${isLow ? '<span class="low-stock-badge">LOW STOCK</span>' : ''}</td>
                     <td>${p.brand || '-'}</td>
@@ -536,7 +548,13 @@
 
         function filterStock() {
             const query = document.getElementById('searchStock').value.toLowerCase();
-            let baseList = currentStockFilter === 'out' ? allProducts.filter(p => p.stock <= 0) : allProducts;
+            let baseList = allProducts;
+            if(currentStockFilter === 'out') {
+                baseList = allProducts.filter(p => p.stock <= 0);
+            } else if(currentStockFilter === 'low') {
+                baseList = allProducts.filter(p => p.stock > 0 && p.stock <= 2);
+            }
+
             const filtered = baseList.filter(p => 
                 (p.product_code && p.product_code.toLowerCase().includes(query)) ||
                 p.name.toLowerCase().includes(query) || 
