@@ -774,10 +774,10 @@
                 const parsed = parseProductItem(p.name);
                 const isOut = p.stock <= 0;
                 const brandStr = p.brand ? `[${p.brand}] ` : '';
+                const stockText = isOut ? '🔴 [OUT OF STOCK]' : `[Stock: ${p.stock}]`;
                 const opt = document.createElement('option');
                 opt.value = 'prod_' + p.product_id;
-                // Removed [Product] tag here for a cleaner display
-                opt.textContent = `#${p.product_code || p.product_id} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}] ${isOut ? '⚠️ [OUT OF STOCK]' : ''}`;
+                opt.textContent = `#${p.product_code || p.product_id} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} ${stockText}`;
                 select.appendChild(opt);
             });
             repairs.forEach(r => {
