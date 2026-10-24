@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables
+// Auto Create Shops & Users
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -82,6 +82,7 @@ db.query(`
     )
 `);
 
+// Clean & Fresh Sales Table with standard sale_id
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -94,10 +95,7 @@ db.query(`
         total_amount DECIMAL(10, 2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`, () => {
-    db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'", () => {});
-    db.query("ALTER TABLE sales ADD COLUMN discount DECIMAL(10, 2) DEFAULT 0", () => {});
-});
+`);
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -162,25 +160,25 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Safely Formatted)
+// Sales APIs
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
     const sql = `
         SELECT 
-            sale_id AS id, 
             sale_id, 
+            sale_id AS id, 
             shop_id, 
             customer_name, 
             customer_phone, 
             payment_method, 
-            COALESCE(sale_type, 'Product') AS sale_type, 
+            sale_type, 
             discount, 
             total_amount, 
-            COALESCE(DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'), NOW()) AS formatted_date,
-            COALESCE(DATE_FORMAT(created_at, '%Y-%m-%d'), CURDATE()) AS date_only,
-            COALESCE(DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(NOW(), '%Y-%m')) AS month_only
+            DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS formatted_date,
+            DATE_FORMAT(created_at, '%Y-%m-%d') AS date_only,
+            DATE_FORMAT(created_at, '%Y-%m') AS month_only
         FROM sales 
         WHERE shop_id = ? 
         ORDER BY sale_id DESC
