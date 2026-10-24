@@ -301,34 +301,101 @@
         <!-- Tab 5: Repair Jobs -->
         <div id="tab5" class="section">
             <h3>5. Repair Jobs Management</h3>
-            <form id="repairForm" onsubmit="addRepair(event)" style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px;">
-                <input type="text" id="repCustomer" placeholder="Customer Name" required>
-                <input type="text" id="repPhone" placeholder="Customer Phone" required>
-                <input type="text" id="repDevice" placeholder="Device Model (e.g. iPhone 11)" required>
-                
-                <input type="text" id="repIssue" list="commonIssues" placeholder="Issue Description (Select or Type e.g. Display Replacement)" required>
-                <datalist id="commonIssues">
-                    <option value="Display / Screen Replacement">
-                    <option value="Battery Replacement">
-                    <option value="Charging Port / Flex Issue">
-                    <option value="Speaker / Mic Issue">
-                    <option value="Camera Issue">
-                    <option value="Back Cover / Glass Damage">
-                    <option value="Software / Flashing Issue">
-                    <option value="Dead Phone / Power Issue">
-                </datalist>
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" onclick="switchRepairSubTab('list', this)">Repair Jobs List</button>
+                <button class="sub-tab-btn" onclick="switchRepairSubTab('billing', this)">Repair Billing & Checkout</button>
+            </div>
 
-                <input type="number" id="repAdvance" placeholder="Advance Cost (e.g. 1000)" value="0" step="0.01">
-                <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" required>
-                <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job</button>
-            </form>
+            <!-- Sub Tab 1: Repair List & Form -->
+            <div id="repListSubSection">
+                <form id="repairForm" onsubmit="addRepair(event)" style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px;">
+                    <input type="text" id="repCustomer" placeholder="Customer Name" required>
+                    <input type="text" id="repPhone" placeholder="Customer Phone" required>
+                    <input type="text" id="repDevice" placeholder="Device Model (e.g. iPhone 11)" required>
+                    
+                    <input type="text" id="repIssue" list="commonIssues" placeholder="Issue Description (Select or Type e.g. Display Replacement)" required>
+                    <datalist id="commonIssues">
+                        <option value="Display / Screen Replacement">
+                        <option value="Battery Replacement">
+                        <option value="Charging Port / Flex Issue">
+                        <option value="Speaker / Mic Issue">
+                        <option value="Camera Issue">
+                        <option value="Back Cover / Glass Damage">
+                        <option value="Software / Flashing Issue">
+                        <option value="Dead Phone / Power Issue">
+                    </datalist>
 
-            <input type="text" id="searchRepair" placeholder="Search Repair by Job ID (#1), Customer Name, Phone, Device..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #007bff;">
+                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
+                    <select id="repWarranty">
+                        <option value="No Warranty">No Warranty</option>
+                        <option value="1 Week">1 Week</option>
+                        <option value="2 Weeks">2 Weeks</option>
+                        <option value="1 Month">1 Month</option>
+                        <option value="3 Months">3 Months</option>
+                        <option value="6 Months">6 Months</option>
+                        <option value="1 Year">1 Year</option>
+                    </select>
 
-            <table>
-                <thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
-                <tbody id="repairsTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody>
-            </table>
+                    <input type="number" id="repAdvance" placeholder="Advance Cost (e.g. 1000)" value="0" step="0.01">
+                    <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" required>
+                    <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job</button>
+                </form>
+
+                <input type="text" id="searchRepair" placeholder="Search Repair by Job ID (#1), Customer Name, Phone, Device..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #007bff;">
+
+                <table>
+                    <thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody id="repairsTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
+                </table>
+            </div>
+
+            <!-- Sub Tab 2: Repair Billing & Checkout -->
+            <div id="repBillingSubSection" style="display:none;">
+                <div style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 6px;">
+                    <h4>Repair Checkout & Receipt Generation</h4>
+                    <label>Select Repair Job:</label>
+                    <select id="repBillingSelect" onchange="selectRepairForBilling()" style="border: 2px solid #007bff; font-weight:bold;">
+                        <option value="">-- Select Repair Job --</option>
+                    </select>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                        <div>
+                            <label>Customer Name:</label>
+                            <input type="text" id="repBillCustomer" disabled style="font-weight:bold;">
+                            <label>Customer Phone:</label>
+                            <input type="text" id="repBillPhone" disabled style="font-weight:bold;">
+                            <label>Device & Issue:</label>
+                            <input type="text" id="repBillDeviceIssue" disabled style="font-weight:bold;">
+                            <label>Warranty Period:</label>
+                            <input type="text" id="repBillWarranty" disabled style="font-weight:bold; color:#007bff;">
+                        </div>
+                        <div>
+                            <label>Total Repair Cost (Rs.):</label>
+                            <input type="number" id="repBillTotal" disabled style="font-weight:bold;">
+                            <label>Advance Paid (Rs.):</label>
+                            <input type="number" id="repBillAdvance" disabled style="font-weight:bold; color:#e65100;">
+                            <label>Balance Due to Pay (Rs.):</label>
+                            <input type="number" id="repBillBalance" disabled style="font-weight:bold; color:#28a745; background:#e8f4fd; font-size:16px;">
+                            
+                            <label>Payment Method:</label>
+                            <select id="repBillPaymentMethod">
+                                <option value="Cash">Cash</option>
+                                <option value="Card">Card</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="Koko">Koko Payment</option>
+                            </select>
+
+                            <label>Amount Paid / Cash Tendered (Rs.):</label>
+                            <input type="number" id="repBillAmountPaid" placeholder="0.00" step="0.01" oninput="calculateRepChangeDue()" style="border: 2px solid #28a745; font-weight: bold;">
+
+                            <label>Change Due (Rs.):</label>
+                            <input type="number" id="repBillChangeDue" value="0.00" style="font-weight:bold; color:#28a745;" disabled>
+
+                            <button type="button" onclick="completeRepairCheckout()" style="background:#28a745; margin-top:15px; font-size:16px; padding:12px;">Complete Repair & Print Bill</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -377,6 +444,7 @@
         let selectedOriginalPrice = 0;
         let selectedCostPrice = 0;
         let rawReceiptPlaintext = "";
+        let selectedBillingRepair = null;
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -469,6 +537,19 @@
             if(tabNum === 2) { loadInventory(); loadRepairs(); }
             else if(tabNum === 4) { loadSales(); }
             else if(tabNum === 5) { loadRepairs(); }
+        }
+
+        function switchRepairSubTab(type, btn) {
+            document.querySelectorAll('#tab5 .sub-tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if(type === 'list') {
+                document.getElementById('repListSubSection').style.display = 'block';
+                document.getElementById('repBillingSubSection').style.display = 'none';
+            } else {
+                document.getElementById('repListSubSection').style.display = 'none';
+                document.getElementById('repBillingSubSection').style.display = 'block';
+                populateRepairBillingDropdown();
+            }
         }
 
         function clearBillingFields() {
@@ -672,7 +753,7 @@
             if(!tbody) return;
             tbody.innerHTML = '';
             if(repairs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No repair jobs found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No repair jobs found.</td></tr>`;
                 return;
             }
             repairs.forEach(r => {
@@ -683,6 +764,7 @@
                     <td>${r.customer_phone}</td>
                     <td>${r.device_model}</td>
                     <td>${r.issue_description}</td>
+                    <td><span style="color:#007bff; font-weight:bold;">${r.warranty_period || 'No Warranty'}</span></td>
                     <td>Rs. ${parseFloat(r.advance_cost || 0).toFixed(2)}</td>
                     <td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td>
                     <td>
@@ -713,6 +795,128 @@
                     (r.issue_description && r.issue_description.toLowerCase().includes(query));
             });
             renderRepairsTable(filtered);
+        }
+
+        function populateRepairBillingDropdown() {
+            const select = document.getElementById('repBillingSelect');
+            select.innerHTML = '<option value="">-- Select Repair Job --</option>';
+            allRepairs.forEach(r => {
+                const rId = r.id || r.repair_id;
+                const balanceDue = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
+                const opt = document.createElement('option');
+                opt.value = rId;
+                opt.textContent = `Job #${rId} - ${r.customer_name} (${r.device_model}) - Due: Rs. ${balanceDue.toFixed(2)} [${r.status}]`;
+                select.appendChild(opt);
+            });
+        }
+
+        function selectRepairForBilling() {
+            const rId = document.getElementById('repBillingSelect').value;
+            if(!rId) {
+                selectedBillingRepair = null;
+                document.getElementById('repBillCustomer').value = '';
+                document.getElementById('repBillPhone').value = '';
+                document.getElementById('repBillDeviceIssue').value = '';
+                document.getElementById('repBillWarranty').value = '';
+                document.getElementById('repBillTotal').value = '';
+                document.getElementById('repBillAdvance').value = '';
+                document.getElementById('repBillBalance').value = '';
+                document.getElementById('repBillAmountPaid').value = '';
+                document.getElementById('repBillChangeDue').value = '0.00';
+                return;
+            }
+            selectedBillingRepair = allRepairs.find(item => (item.id || item.repair_id) == rId);
+            if(selectedBillingRepair) {
+                const total = parseFloat(selectedBillingRepair.total_cost || 0);
+                const advance = parseFloat(selectedBillingRepair.advance_cost || 0);
+                const balance = Math.max(0, total - advance);
+
+                document.getElementById('repBillCustomer').value = selectedBillingRepair.customer_name;
+                document.getElementById('repBillPhone').value = selectedBillingRepair.customer_phone;
+                document.getElementById('repBillDeviceIssue').value = `${selectedBillingRepair.device_model} - ${selectedBillingRepair.issue_description}`;
+                document.getElementById('repBillWarranty').value = selectedBillingRepair.warranty_period || 'No Warranty';
+                document.getElementById('repBillTotal').value = total.toFixed(2);
+                document.getElementById('repBillAdvance').value = advance.toFixed(2);
+                document.getElementById('repBillBalance').value = balance.toFixed(2);
+                document.getElementById('repBillAmountPaid').value = balance.toFixed(2);
+                calculateRepChangeDue();
+            }
+        }
+
+        function calculateRepChangeDue() {
+            if(!selectedBillingRepair) return;
+            const total = parseFloat(selectedBillingRepair.total_cost || 0);
+            const advance = parseFloat(selectedBillingRepair.advance_cost || 0);
+            const balance = Math.max(0, total - advance);
+            const paid = parseFloat(document.getElementById('repBillAmountPaid').value) || 0;
+            const change = Math.max(0, paid - balance);
+            document.getElementById('repBillChangeDue').value = change.toFixed(2);
+        }
+
+        async function completeRepairCheckout() {
+            if(!selectedBillingRepair) return alert('Please select a repair job first!');
+            const rId = selectedBillingRepair.id || selectedBillingRepair.repair_id;
+            const total = parseFloat(selectedBillingRepair.total_cost || 0);
+            const advance = parseFloat(selectedBillingRepair.advance_cost || 0);
+            const balance = Math.max(0, total - advance);
+            const paid = parseFloat(document.getElementById('repBillAmountPaid').value) || balance;
+            const change = Math.max(0, paid - balance);
+            const payment_method = document.getElementById('repBillPaymentMethod').value;
+
+            // Create sale record on backend
+            const saleData = {
+                shop_id: currentUser.shop_id,
+                customer_name: selectedBillingRepair.customer_name,
+                customer_phone: selectedBillingRepair.customer_phone,
+                payment_method: payment_method,
+                discount: 0,
+                total_amount: balance,
+                items: [{
+                    type: 'repair',
+                    repair_id: rId,
+                    name: `Repair Job #${rId} (${selectedBillingRepair.device_model} - ${selectedBillingRepair.issue_description}) [Warranty: ${selectedBillingRepair.warranty_period || 'None'}]`,
+                    originalPrice: balance,
+                    costPrice: 0,
+                    price: balance,
+                    qty: 1,
+                    subtotal: balance
+                }]
+            };
+
+            try {
+                const res = await fetch('/api/sales', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(saleData)
+                });
+                if(res.ok) {
+                    // Update repair status to Delivered
+                    await fetch(`/api/repairs/${rId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ shop_id: currentUser.shop_id, status: 'Delivered' })
+                    });
+
+                    lastSaleData = {
+                        customer_name: selectedBillingRepair.customer_name,
+                        customer_phone: selectedBillingRepair.customer_phone,
+                        payment_method: payment_method,
+                        total_amount: balance,
+                        total_discount: 0,
+                        amount_paid: paid,
+                        change_due: change,
+                        items: saleData.items,
+                        branch: currentUser.shop_name || "SHA MOBILE",
+                        branch_phone: currentUser.shop_phone
+                    };
+
+                    generateAutoMessage(lastSaleData);
+                    loadRepairs();
+                    loadSales();
+                    document.getElementById('repBillingSelect').value = '';
+                    selectRepairForBilling();
+                }
+            } catch(err) { console.error(err); alert('Error completing repair checkout!'); }
         }
 
         function handleBillingSearch() {
@@ -1075,11 +1279,12 @@
                 customer_phone: document.getElementById('repPhone').value,
                 device_model: document.getElementById('repDevice').value,
                 issue_description: document.getElementById('repIssue').value,
+                warranty_period: document.getElementById('repWarranty').value,
                 advance_cost: document.getElementById('repAdvance').value,
                 total_cost: document.getElementById('repTotalCost').value
             };
             await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            alert('Repair added!');
+            alert('Repair added successfully!');
             document.getElementById('repairForm').reset();
             loadRepairs();
         }
