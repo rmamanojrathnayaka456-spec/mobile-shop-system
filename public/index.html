@@ -175,6 +175,19 @@
                 <label>Select Colour:</label>
                 <input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue">
                 <datalist id="colorList"><option value="Black"><option value="Blue"><option value="White"><option value="Red"></datalist>
+                
+                <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period (Select or Type):</label>
+                <input type="text" id="pWarranty" list="warrantyList" placeholder="Select or Type Warranty (e.g. 6 Months, No Warranty)">
+                <datalist id="warrantyList">
+                    <option value="No Warranty">
+                    <option value="1 Week">
+                    <option value="2 Weeks">
+                    <option value="1 Month">
+                    <option value="3 Months">
+                    <option value="6 Months">
+                    <option value="1 Year">
+                </datalist>
+
                 <label>Cost Price (Rs.):</label>
                 <input type="number" id="pCost" placeholder="0.00" step="0.01">
                 <label>Selling Price (Rs.):</label>
@@ -202,6 +215,9 @@
                     <input type="text" id="billingSearch" autocomplete="off" placeholder="Type ID (001), Name, IMEI or Scan..." oninput="handleBillingSearch()" style="border: 2px solid #007bff;">
                     <select id="billingProductSelect" size="5" onchange="selectBillingProduct()" style="height: 140px; margin-top: 5px;"></select>
                     
+                    <label>Product / Item Warranty:</label>
+                    <input type="text" id="billingProductWarranty" style="font-weight:bold; color:#007bff;" disabled>
+
                     <label>Cost Price (Rs.):</label>
                     <input type="number" id="costPriceDisplay" style="font-weight:bold; color:#e65100; background:rgba(255, 152, 0, 0.1);" disabled>
 
@@ -262,8 +278,8 @@
             </div>
             <input type="text" id="searchStock" placeholder="Search by ID, Name, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
             <table>
-                <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
-                <tbody id="inventoryTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody>
+                <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Warranty</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
+                <tbody id="inventoryTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
             </table>
         </div>
 
@@ -327,15 +343,6 @@
 
                     <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period (Select or Type):</label>
                     <input type="text" id="repWarranty" list="warrantyList" placeholder="Select or Type Warranty (e.g. 1 Month, No Warranty)">
-                    <datalist id="warrantyList">
-                        <option value="No Warranty">
-                        <option value="1 Week">
-                        <option value="2 Weeks">
-                        <option value="1 Month">
-                        <option value="3 Months">
-                        <option value="6 Months">
-                        <option value="1 Year">
-                    </datalist>
 
                     <input type="number" id="repAdvance" placeholder="Advance Cost (e.g. 1000)" value="0" step="0.01">
                     <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" required>
@@ -422,7 +429,7 @@
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
         <div class="printable" style="background:white; color:#333; padding:30px; border-radius:8px; width:450px; max-width:90%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="color:#28a745; margin-top:0; text-align:center;">Sale Completed Successfully!</h3>
+            <h3 style="color:#28a745; margin-top:0; text-align:center;" id="receiptModalTitle">Sale Completed Successfully!</h3>
             
             <div id="receiptBoxContainer"></div>
 
@@ -448,6 +455,7 @@
         let currentBarcodeData = null;
         let selectedOriginalPrice = 0;
         let selectedCostPrice = 0;
+        let selectedProductWarranty = 'No Warranty';
         let rawReceiptPlaintext = "";
         let selectedBillingRepair = null;
 
@@ -560,6 +568,7 @@
 
         function clearBillingFields() {
             document.getElementById('billingSearch').value = '';
+            document.getElementById('billingProductWarranty').value = '';
             document.getElementById('costPriceDisplay').value = '';
             document.getElementById('originalPrice').value = '';
             document.getElementById('billingPrice').value = '';
@@ -567,6 +576,7 @@
             document.getElementById('billingQty').value = '1';
             selectedOriginalPrice = 0;
             selectedCostPrice = 0;
+            selectedProductWarranty = 'No Warranty';
         }
 
         async function loadInventory() {
@@ -610,7 +620,7 @@
             }
 
             if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No products found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No products found.</td></tr>`;
                 return;
             }
             filtered.forEach(p => {
@@ -626,6 +636,7 @@
                     <td>${p.brand || '-'}</td>
                     <td>${p.category || '-'}</td>
                     <td>${p.color || '-'}</td>
+                    <td><span style="color:#007bff; font-weight:bold;">${p.warranty || 'No Warranty'}</span></td>
                     <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
                     <td>${p.stock} ${isOut ? '(OUT OF STOCK)' : ''}</td>
                     <td>${p.imei || '-'}</td>
@@ -658,7 +669,8 @@
                 (p.product_code && p.product_code.toLowerCase().includes(query)) ||
                 p.name.toLowerCase().includes(query) || 
                 (p.brand && p.brand.toLowerCase().includes(query)) || 
-                (p.imei && p.imei.toLowerCase().includes(query))
+                (p.imei && p.imei.toLowerCase().includes(query)) ||
+                (p.warranty && p.warranty.toLowerCase().includes(query))
             );
             renderInventory(filtered);
         }
@@ -672,6 +684,7 @@
                 brand: document.getElementById('pBrand').value,
                 color: document.getElementById('pColor').value,
                 category: document.getElementById('pCategory').value,
+                warranty: document.getElementById('pWarranty').value.trim() || 'No Warranty',
                 cost_price: document.getElementById('pCost').value,
                 selling_price: document.getElementById('pPrice').value,
                 stock: stockQty,
@@ -741,7 +754,7 @@
             products.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = 'prod_' + p.product_id;
-                opt.textContent = `[Product] #${p.product_code || p.product_id} - ${p.name} - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
+                opt.textContent = `[Product] #${p.product_code || p.product_id} - ${p.name} [Warranty: ${p.warranty || 'None'}] - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
                 if(p.stock <= 0) opt.style.color = 'red';
                 select.appendChild(opt);
             });
@@ -923,7 +936,8 @@
                     costPrice: 0,
                     price: balance,
                     qty: 1,
-                    subtotal: balance
+                    subtotal: balance,
+                    warranty: parsed.warranty
                 }]
             };
 
@@ -999,6 +1013,8 @@
                 if(p) {
                     selectedOriginalPrice = parseFloat(p.selling_price);
                     selectedCostPrice = parseFloat(p.cost_price || 0);
+                    selectedProductWarranty = p.warranty || 'No Warranty';
+                    document.getElementById('billingProductWarranty').value = selectedProductWarranty;
                     document.getElementById('costPriceDisplay').value = selectedCostPrice.toFixed(2);
                     document.getElementById('originalPrice').value = selectedOriginalPrice.toFixed(2);
                     document.getElementById('billingPrice').value = selectedOriginalPrice.toFixed(2);
@@ -1009,6 +1025,9 @@
                 if(r) {
                     selectedOriginalPrice = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
                     selectedCostPrice = 0;
+                    const parsed = parseRepairIssue(r.issue_description);
+                    selectedProductWarranty = parsed.warranty;
+                    document.getElementById('billingProductWarranty').value = selectedProductWarranty;
                     document.getElementById('costPriceDisplay').value = '0.00';
                     document.getElementById('originalPrice').value = selectedOriginalPrice.toFixed(2);
                     document.getElementById('billingPrice').value = selectedOriginalPrice.toFixed(2);
@@ -1043,13 +1062,13 @@
             if(val.startsWith('prod_')) {
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
                 if(!p || p.stock < qty) return alert('Out of stock!');
-                cart.push({ type: 'product', product_id: p.product_id, name: p.name, originalPrice: selectedOriginalPrice, costPrice: selectedCostPrice, price, qty, discount: discount * qty, subtotal: price * qty });
+                cart.push({ type: 'product', product_id: p.product_id, name: p.name, warranty: selectedProductWarranty, originalPrice: selectedOriginalPrice, costPrice: selectedCostPrice, price, qty, discount: discount * qty, subtotal: price * qty });
             } else if(val.startsWith('rep_')) {
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(!r) return;
                 const rId = r.id || r.repair_id;
                 const parsed = parseRepairIssue(r.issue_description);
-                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model} - ${parsed.issue}) [Warranty: ${parsed.warranty}]`, originalPrice: selectedOriginalPrice, costPrice: 0, price, qty: 1, discount: discount, subtotal: price });
+                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model} - ${parsed.issue})`, warranty: parsed.warranty, originalPrice: selectedOriginalPrice, costPrice: 0, price, qty: 1, discount: discount, subtotal: price });
             }
             renderCart();
             clearBillingFields();
@@ -1065,7 +1084,7 @@
             } else {
                 cart.forEach((item, index) => {
                     total += item.subtotal;
-                    tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>Rs. ${item.subtotal.toFixed(2)}</td><td><button onclick="removeFromCart(${index})" style="background:#dc3545; padding:2px 5px; width:auto;">X</button></td></tr>`;
+                    tbody.innerHTML += `<tr><td>${item.name} <br><small style="color:#007bff;">[Warranty: ${item.warranty || 'No Warranty'}]</small></td><td>${item.qty}</td><td>Rs. ${item.subtotal.toFixed(2)}</td><td><button onclick="removeFromCart(${index})" style="background:#dc3545; padding:2px 5px; width:auto;">X</button></td></tr>`;
                 });
             }
             document.getElementById('cartTotal').textContent = total.toFixed(2);
@@ -1128,6 +1147,7 @@
             msg += `PURCHASED ITEMS:\n`;
             sale.items.forEach(item => { 
                 msg += `- ${item.name} (Qty: ${item.qty})\n`;
+                if(item.warranty) msg += `  Warranty: ${item.warranty}\n`;
                 if (item.originalPrice && item.originalPrice !== item.price) {
                     msg += `  Original Price: Rs. ${(item.originalPrice * item.qty).toFixed(2)}\n`;
                 }
@@ -1161,6 +1181,7 @@
             htmlMsg += `PURCHASED ITEMS:<br>`;
             sale.items.forEach(item => {
                 htmlMsg += `- ${item.name} (Qty: ${item.qty})<br>`;
+                if(item.warranty) htmlMsg += `&nbsp;&nbsp;Warranty: ${item.warranty}<br>`;
                 if (item.originalPrice && item.originalPrice !== item.price) {
                     htmlMsg += `&nbsp;&nbsp;Original Price: Rs. ${(item.originalPrice * item.qty).toFixed(2)}<br>`;
                 }
@@ -1178,8 +1199,30 @@
             htmlMsg += `Thank you for your business!<br>`;
             htmlMsg += `================================`;
 
+            document.getElementById('receiptModalTitle').textContent = "Sale Completed Successfully!";
             document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';
+        }
+
+        function viewSale(saleId) {
+            const sale = rawSalesData.find(s => s.sale_id == saleId);
+            if(!sale) return alert('Sale record not found!');
+
+            lastSaleData = {
+                customer_name: sale.customer_name,
+                customer_phone: sale.customer_phone,
+                payment_method: sale.payment_method,
+                total_amount: sale.total_amount,
+                total_discount: sale.discount || 0,
+                amount_paid: sale.total_amount,
+                change_due: 0,
+                items: sale.items || [],
+                branch: currentUser.shop_name || "SHA MOBILE",
+                branch_phone: currentUser.shop_phone
+            };
+
+            generateAutoMessage(lastSaleData);
+            document.getElementById('receiptModalTitle').textContent = `Sale Details (#${sale.sale_id})`;
         }
 
         function copyReceiptText() {
@@ -1302,7 +1345,12 @@
                     <td>${s.payment_method}</td>
                     <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
                     <td>${s.formatted_date || s.created_at}</td>
-                    <td><button onclick="deleteSale('${deleteKey}')" style="background:#dc3545; padding:3px; width:auto;">Remove</button></td>
+                    <td>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <button onclick="viewSale(${sId})" style="background:#17a2b8; padding:3px 6px; width:auto; font-size:11px;">View</button>
+                            <button onclick="deleteSale('${deleteKey}')" style="background:#dc3545; padding:3px 6px; width:auto; font-size:11px;">Remove</button>
+                        </div>
+                    </td>
                 </tr>`;
             });
         }
