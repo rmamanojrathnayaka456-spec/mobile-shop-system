@@ -82,10 +82,9 @@ db.query(`
     )
 `);
 
-// Sales Table Creation & Auto Migration for sale_id
+// Sales Table Auto-Migration & Primary Key Fix
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
-        sale_id INT AUTO_INCREMENT PRIMARY KEY,
         shop_id INT NOT NULL,
         customer_name VARCHAR(100),
         customer_phone VARCHAR(20),
@@ -98,11 +97,8 @@ db.query(`
 `, () => {
     db.query("DESCRIBE sales", (err, cols) => {
         if (!err && cols) {
-            const hasSaleId = cols.some(c => c.Field === 'sale_id');
-            const hasId = cols.some(c => c.Field === 'id');
-            if (!hasSaleId && hasId) {
-                db.query("ALTER TABLE sales CHANGE COLUMN id sale_id INT AUTO_INCREMENT PRIMARY KEY", () => {});
-            } else if (!hasSaleId && !hasId) {
+            const hasId = cols.some(c => c.Field === 'sale_id' || c.Field === 'id');
+            if (!hasId) {
                 db.query("ALTER TABLE sales ADD COLUMN sale_id INT AUTO_INCREMENT PRIMARY KEY FIRST", () => {});
             }
         }
@@ -174,7 +170,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Robust JS Mapping for Sale ID)
+// Sales APIs
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
@@ -192,8 +188,8 @@ app.get('/api/sales', (req, res) => {
 });
 
 function formatSales(rows) {
-    return (rows || []).map(row => {
-        const pId = row.sale_id || row.id || row.ID || 0;
+    return (rows || []).map((row, index) => {
+        const pId = row.sale_id || row.id || row.ID || (index + 1);
         const cDate = row.created_at ? new Date(row.created_at) : new Date();
         return {
             ...row,
@@ -245,15 +241,8 @@ app.post('/api/sales', (req, res) => {
 
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
-    const shopId = req.query.shop_id;
-    db.query('DELETE FROM sales WHERE (sale_id = ? OR id = ?) AND shop_id = ?', [saleId, saleId, shopId], (err) => {
-        if (err) {
-            db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err2) => {
-                if (err2) return res.status(500).json({ error: err2.message });
-                res.json({ message: 'Removed' });
-            });
-            return;
-        }
+    db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
     });
 });
