@@ -766,15 +766,15 @@
             }
 
             displaySales.forEach(s => {
-                const sId = s.sale_id || s.id || s.created_at;
+                const sId = s.id; // composite deletion token
+                const displayId = s.display_id;
                 let badgeClass = 'badge-prod';
                 let stype = s.sale_type || 'Product';
                 if(stype === 'Repair') badgeClass = 'badge-rep';
                 else if(stype === 'Mixed') badgeClass = 'badge-mix';
 
-                // Notice the quotes around '${sId}' so strings or numbers pass safely to deleteSale
                 tbody.innerHTML += `<tr>
-                    <td><b>#${s.sale_id || s.id}</b></td>
+                    <td><b>#${displayId}</b></td>
                     <td>${s.customer_name}</td>
                     <td>${s.customer_phone}</td>
                     <td><span class="${badgeClass}">${stype}</span></td>
