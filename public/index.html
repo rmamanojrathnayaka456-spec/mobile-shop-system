@@ -325,16 +325,17 @@
                         <option value="Dead Phone / Power Issue">
                     </datalist>
 
-                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
-                    <select id="repWarranty" style="font-weight: bold;">
-                        <option value="No Warranty">No Warranty</option>
-                        <option value="1 Week">1 Week</option>
-                        <option value="2 Weeks">2 Weeks</option>
-                        <option value="1 Month">1 Month</option>
-                        <option value="3 Months">3 Months</option>
-                        <option value="6 Months">6 Months</option>
-                        <option value="1 Year">1 Year</option>
-                    </select>
+                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period (Select or Type):</label>
+                    <input type="text" id="repWarranty" list="warrantyList" placeholder="e.g. 1 Month, No Warranty" value="No Warranty" required>
+                    <datalist id="warrantyList">
+                        <option value="No Warranty">
+                        <option value="1 Week">
+                        <option value="2 Weeks">
+                        <option value="1 Month">
+                        <option value="3 Months">
+                        <option value="6 Months">
+                        <option value="1 Year">
+                    </datalist>
 
                     <input type="number" id="repAdvance" placeholder="Advance Cost (e.g. 1000)" value="0" step="0.01">
                     <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" required>
@@ -725,6 +726,15 @@
             loadInventory();
         }
 
+        function parseRepairIssue(fullDesc) {
+            if (!fullDesc) return { issue: '-', warranty: 'No Warranty' };
+            const match = fullDesc.match(/^(.*?)\[Warranty:\s*(.*?)\]$/);
+            if (match) {
+                return { issue: match[1].trim(), warranty: match[2].trim() };
+            }
+            return { issue: fullDesc.trim(), warranty: 'No Warranty' };
+        }
+
         function populateBillingDropdown(products, repairs) {
             const select = document.getElementById('billingProductSelect');
             select.innerHTML = '';
@@ -737,9 +747,10 @@
             });
             repairs.forEach(r => {
                 const balanceDue = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
+                const parsed = parseRepairIssue(r.issue_description);
                 const opt = document.createElement('option');
                 opt.value = 'rep_' + r.repair_id;
-                opt.textContent = `[Repair Job] #${r.repair_id} - ${r.customer_name} (${r.device_model}) - Due: Rs. ${balanceDue.toFixed(2)}`;
+                opt.textContent = `[Repair Job] #${r.repair_id} - ${r.customer_name} (${r.device_model}) [Warranty: ${parsed.warranty}] - Due: Rs. ${balanceDue.toFixed(2)}`;
                 opt.style.color = '#007bff';
                 select.appendChild(opt);
             });
@@ -763,13 +774,14 @@
             }
             repairs.forEach(r => {
                 const rId = r.id || r.repair_id;
+                const parsed = parseRepairIssue(r.issue_description);
                 tbody.innerHTML += `<tr>
                     <td><b>#${rId}</b></td>
                     <td>${r.customer_name}</td>
                     <td>${r.customer_phone}</td>
                     <td>${r.device_model}</td>
-                    <td>${r.issue_description}</td>
-                    <td><span style="color:#007bff; font-weight:bold;">${r.warranty_period || 'No Warranty'}</span></td>
+                    <td>${parsed.issue}</td>
+                    <td><span style="color:#007bff; font-weight:bold;">${parsed.warranty}</span></td>
                     <td>Rs. ${parseFloat(r.advance_cost || 0).toFixed(2)}</td>
                     <td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td>
                     <td>
@@ -793,11 +805,13 @@
             }
             const filtered = allRepairs.filter(r => {
                 const rId = (r.id || r.repair_id).toString();
+                const parsed = parseRepairIssue(r.issue_description);
                 return rId === query || rId.includes(query) ||
                     (r.customer_name && r.customer_name.toLowerCase().includes(query)) ||
                     (r.customer_phone && r.customer_phone.includes(query)) ||
                     (r.device_model && r.device_model.toLowerCase().includes(query)) ||
-                    (r.issue_description && r.issue_description.toLowerCase().includes(query));
+                    (parsed.issue && parsed.issue.toLowerCase().includes(query)) ||
+                    (parsed.warranty && parsed.warranty.toLowerCase().includes(query));
             });
             renderRepairsTable(filtered);
         }
@@ -809,11 +823,13 @@
             const query = filterQuery.toLowerCase().trim();
             const filtered = allRepairs.filter(r => {
                 const rId = (r.id || r.repair_id).toString();
+                const parsed = parseRepairIssue(r.issue_description);
                 if(!query) return true;
                 return rId === query || rId.includes(query) ||
                     (r.customer_name && r.customer_name.toLowerCase().includes(query)) ||
                     (r.customer_phone && r.customer_phone.includes(query)) ||
-                    (r.device_model && r.device_model.toLowerCase().includes(query));
+                    (r.device_model && r.device_model.toLowerCase().includes(query)) ||
+                    (parsed.issue && parsed.issue.toLowerCase().includes(query));
             });
 
             if(filtered.length === 0) {
@@ -823,10 +839,11 @@
 
             filtered.forEach(r => {
                 const rId = r.id || r.repair_id;
+                const parsed = parseRepairIssue(r.issue_description);
                 const balanceDue = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
                 const opt = document.createElement('option');
                 opt.value = rId;
-                opt.textContent = `Job #${rId} - ${r.customer_name} (${r.device_model}) [Warranty: ${r.warranty_period || 'No Warranty'}] - Due: Rs. ${balanceDue.toFixed(2)} [${r.status}]`;
+                opt.textContent = `Job #${rId} - ${r.customer_name} (${r.device_model} - ${parsed.issue}) [Warranty: ${parsed.warranty}] - Due: Rs. ${balanceDue.toFixed(2)} [${r.status}]`;
                 select.appendChild(opt);
             });
         }
@@ -856,11 +873,12 @@
                 const total = parseFloat(selectedBillingRepair.total_cost || 0);
                 const advance = parseFloat(selectedBillingRepair.advance_cost || 0);
                 const balance = Math.max(0, total - advance);
+                const parsed = parseRepairIssue(selectedBillingRepair.issue_description);
 
                 document.getElementById('repBillCustomer').value = selectedBillingRepair.customer_name;
                 document.getElementById('repBillPhone').value = selectedBillingRepair.customer_phone;
-                document.getElementById('repBillDeviceIssue').value = `${selectedBillingRepair.device_model} - ${selectedBillingRepair.issue_description}`;
-                document.getElementById('repBillWarranty').value = selectedBillingRepair.warranty_period || 'No Warranty';
+                document.getElementById('repBillDeviceIssue').value = `${selectedBillingRepair.device_model} - ${parsed.issue}`;
+                document.getElementById('repBillWarranty').value = parsed.warranty;
                 document.getElementById('repBillTotal').value = total.toFixed(2);
                 document.getElementById('repBillAdvance').value = advance.toFixed(2);
                 document.getElementById('repBillBalance').value = balance.toFixed(2);
@@ -888,6 +906,7 @@
             const paid = parseFloat(document.getElementById('repBillAmountPaid').value) || balance;
             const change = Math.max(0, paid - balance);
             const payment_method = document.getElementById('repBillPaymentMethod').value;
+            const parsed = parseRepairIssue(selectedBillingRepair.issue_description);
 
             const saleData = {
                 shop_id: currentUser.shop_id,
@@ -899,7 +918,7 @@
                 items: [{
                     type: 'repair',
                     repair_id: rId,
-                    name: `Repair Job #${rId} (${selectedBillingRepair.device_model} - ${selectedBillingRepair.issue_description}) [Warranty: ${selectedBillingRepair.warranty_period || 'None'}]`,
+                    name: `Repair Job #${rId} (${selectedBillingRepair.device_model} - ${parsed.issue}) [Warranty: ${parsed.warranty}]`,
                     originalPrice: balance,
                     costPrice: 0,
                     price: balance,
@@ -947,7 +966,11 @@
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
             if(!query) { populateBillingDropdown(allProducts, allRepairs); return; }
             const filteredProds = allProducts.filter(p => (p.product_code && p.product_code.toLowerCase().includes(query)) || p.name.toLowerCase().includes(query) || (p.imei && p.imei.toLowerCase().includes(query)));
-            const filteredReps = allRepairs.filter(r => (r.id || r.repair_id).toString().includes(query) || r.customer_name.toLowerCase().includes(query) || r.customer_phone.includes(query) || r.device_model.toLowerCase().includes(query));
+            const filteredReps = allRepairs.filter(r => {
+                const rId = (r.id || r.repair_id).toString();
+                const parsed = parseRepairIssue(r.issue_description);
+                return rId.includes(query) || r.customer_name.toLowerCase().includes(query) || r.customer_phone.includes(query) || r.device_model.toLowerCase().includes(query) || parsed.issue.toLowerCase().includes(query);
+            });
             populateBillingDropdown(filteredProds, filteredReps);
         }
 
@@ -1025,7 +1048,8 @@
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
                 if(!r) return;
                 const rId = r.id || r.repair_id;
-                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, originalPrice: selectedOriginalPrice, costPrice: 0, price, qty: 1, discount: discount, subtotal: price });
+                const parsed = parseRepairIssue(r.issue_description);
+                cart.push({ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model} - ${parsed.issue}) [Warranty: ${parsed.warranty}]`, originalPrice: selectedOriginalPrice, costPrice: 0, price, qty: 1, discount: discount, subtotal: price });
             }
             renderCart();
             clearBillingFields();
@@ -1297,13 +1321,16 @@
 
         async function addRepair(e) {
             e.preventDefault();
+            const issueInput = document.getElementById('repIssue').value.trim();
+            const warrantyInput = document.getElementById('repWarranty').value.trim() || 'No Warranty';
+            const combinedIssue = `${issueInput} [Warranty: ${warrantyInput}]`;
+
             const data = {
                 shop_id: currentUser.shop_id,
                 customer_name: document.getElementById('repCustomer').value,
                 customer_phone: document.getElementById('repPhone').value,
                 device_model: document.getElementById('repDevice').value,
-                issue_description: document.getElementById('repIssue').value,
-                warranty_period: document.getElementById('repWarranty').value,
+                issue_description: combinedIssue,
                 advance_cost: document.getElementById('repAdvance').value,
                 total_cost: document.getElementById('repTotalCost').value
             };
