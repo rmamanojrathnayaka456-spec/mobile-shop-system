@@ -776,7 +776,8 @@
                 const brandStr = p.brand ? `[${p.brand}] ` : '';
                 const opt = document.createElement('option');
                 opt.value = 'prod_' + p.product_id;
-                opt.textContent = `[Product] #${p.product_code || p.product_id} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}] ${isOut ? '⚠️ [OUT OF STOCK]' : ''}`;
+                // Removed [Product] tag here for a cleaner display
+                opt.textContent = `#${p.product_code || p.product_id} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}] ${isOut ? '⚠️ [OUT OF STOCK]' : ''}`;
                 select.appendChild(opt);
             });
             repairs.forEach(r => {
@@ -1094,7 +1095,6 @@
                 if(!p || p.stock < qty) return alert('Out of stock!');
                 const parsed = parseProductItem(p.name);
                 
-                // Combine Brand and Model name directly into the item name
                 const brandStr = p.brand ? `[${p.brand}] ` : '';
                 const fullItemName = `${brandStr}${parsed.name}`;
 
