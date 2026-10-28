@@ -78,14 +78,14 @@ db.query(`
         amount_paid DECIMAL(10,2) DEFAULT 0,
         balance_due DECIMAL(10,2) DEFAULT 0,
         sale_type VARCHAR(50) DEFAULT 'Product',
-        items TEXT,
+        items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, () => {
     db.query("ALTER TABLE sales ADD COLUMN amount_paid DECIMAL(10,2) DEFAULT 0", () => {});
     db.query("ALTER TABLE sales ADD COLUMN balance_due DECIMAL(10,2) DEFAULT 0", () => {});
     db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(50) DEFAULT 'Product'", () => {});
-    db.query("ALTER TABLE sales ADD COLUMN items TEXT", () => {});
+    db.query("ALTER TABLE sales ADD COLUMN items LONGTEXT", () => {});
 });
 
 db.query(`
@@ -153,7 +153,10 @@ app.delete('/api/products/:id', (req, res) => {
 
 app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [req.query.shop_id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error("Sales Fetch Error:", err);
+            return res.status(500).json({ error: err.message });
+        }
         const formatted = results.map(row => {
             let parsedItems = [];
             try {
