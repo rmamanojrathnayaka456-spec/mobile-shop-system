@@ -1489,7 +1489,7 @@
                 tbody.innerHTML = '';
                 const credits = sales.filter(s => parseFloat(s.balance_due) > 0);
                 if(credits.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No pending credit sales.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No credit sales found.</td></tr>`;
                     return;
                 }
                 credits.forEach(s => {
@@ -1775,7 +1775,7 @@
                 });
             }
             document.getElementById('cartTotal').textContent = total.toFixed(2);
-            document.getElementById('amountPaid').value = total.toFixed(2);
+            document.getElementById('amountPaid').value = total > 0 ? total.toFixed(2) : '0.00';
             document.getElementById('creditAmountPaid').value = '0.00';
             calculateChangeDue();
             calculateCreditBalanceDue();
@@ -1786,6 +1786,11 @@
         async function completeCheckout() {
             if(cart.length === 0) return alert('Cart is empty!');
             const total_amount = cart.reduce((sum, item) => sum + item.subtotal, 0);
+            
+            if(total_amount < 0) {
+                return alert('Error: Exchange value cannot be greater than the total item price resulting in a negative payable amount!');
+            }
+
             const total_discount = cart.reduce((sum, item) => sum + (item.discount || 0), 0);
             const payment_method = document.getElementById('paymentMethod').value;
             const customer_name = document.getElementById('custName').value.trim() || 'Cash Customer';
@@ -1827,8 +1832,10 @@
                     loadSales();
                     loadRepairs();
                     loadCreditSales();
+                } else {
+                    alert('Checkout failed on server!');
                 }
-            } catch(err) { console.error(err); }
+            } catch(err) { console.error(err); alert('Server connection error during checkout!'); }
         }
 
         function generateAutoMessage(sale) {
@@ -2089,6 +2096,7 @@
         async function loadSales() {
             try {
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
+                if (!res.ok) throw new Error('Failed to fetch sales');
                 rawSalesData = await res.json();
                 
                 let dailyAmt = 0, monthlyAmt = 0, todayRepairAmt = 0;
@@ -2133,7 +2141,11 @@
                 document.getElementById('eodKoko').textContent = `Rs. ${eodKoko.toFixed(2)}`;
 
                 renderSalesTable();
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.error(err); 
+                const tbody = document.getElementById('salesTable');
+                if(tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#dc3545;">Error loading sales history!</td></tr>`;
+            }
         }
 
         function filterSalesView(type, cardEl) {
