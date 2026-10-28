@@ -1272,7 +1272,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(saleData)
                 });
-                if(res.ok) {
+                const result = await res.json();
+                if(res.ok && result.success) {
                     await fetch(`/api/repairs/${rId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -1297,6 +1298,8 @@
                     loadSales();
                     document.getElementById('repBillingSelect').value = '';
                     selectRepairForBilling();
+                } else {
+                    alert('Checkout failed: ' + (result.error || 'Unknown error'));
                 }
             } catch(err) { console.error(err); alert('Error completing repair checkout!'); }
         }
@@ -1807,15 +1810,35 @@
             }
             const change_due = Math.max(0, amount_paid - total_amount);
 
+            let saleType = 'Product';
+            const hasProd = cart.some(i => i.type === 'product' || i.type === 'exchange' || !i.type);
+            const hasRep = cart.some(i => i.type === 'repair');
+            if (hasProd && hasRep) saleType = 'Mixed';
+            else if (hasRep) saleType = 'Repair';
+
+            const payload = {
+                shop_id: Number(currentUser.shop_id),
+                customer_name: customer_name,
+                customer_phone: customer_phone,
+                payment_method: payment_method,
+                discount: Number(total_discount),
+                total_amount: Number(total_amount),
+                amount_paid: Number(amount_paid),
+                balance_due: Number(balance_due),
+                sale_type: saleType,
+                items: cart
+            };
+
             lastSaleData = { customer_name, customer_phone, payment_method, total_amount, total_discount, amount_paid, balance_due, change_due, items: [...cart], branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone };
 
             try {
                 const res = await fetch('/api/sales', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name, customer_phone, payment_method, discount: total_discount, total_amount, amount_paid, balance_due, items: cart })
+                    body: JSON.stringify(payload)
                 });
-                if(res.ok) {
+                const result = await res.json();
+                if(res.ok && result.success) {
                     generateAutoMessage(lastSaleData);
                     cart = [];
                     document.getElementById('custName').value = '';
@@ -1833,9 +1856,12 @@
                     loadRepairs();
                     loadCreditSales();
                 } else {
-                    alert('Checkout failed on server!');
+                    alert('Checkout failed on server: ' + (result.error || 'Unknown error'));
                 }
-            } catch(err) { console.error(err); alert('Server connection error during checkout!'); }
+            } catch(err) { 
+                console.error(err); 
+                alert('Server connection error during checkout!'); 
+            }
         }
 
         function generateAutoMessage(sale) {
