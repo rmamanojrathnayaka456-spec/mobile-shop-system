@@ -152,7 +152,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Fixed View & Delete)
+// Sales APIs (Fixed View, Delete & Date Formatting)
 app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -164,7 +164,8 @@ app.get('/api/sales', (req, res) => {
                 parsedItems = [];
             }
             
-            const dateObj = new Date(row.created_at);
+            // Local date parsing to avoid timezone offset mismatches
+            const dateObj = row.created_at ? new Date(row.created_at) : new Date();
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
             const d = String(dateObj.getDate()).padStart(2, '0');
