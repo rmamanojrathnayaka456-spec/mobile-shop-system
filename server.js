@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables
+// Auto Create Tables & Safe Alter Columns
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -147,7 +147,7 @@ app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [req.query.shop_id], (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err);
-            return res.json([]); // Return empty array instead of 500 error to prevent frontend crash
+            return res.json([]);
         }
         const formatted = (results || []).map(row => {
             let parsedItems = [];
