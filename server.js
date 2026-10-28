@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MySQL Connection Pool (Using Environment Variables)
+// MySQL Connection Pool
 const db = mysql.createPool({
     host: process.env.DB_HOST || 'mysql-32a1ff4d-rmamanojrathnayaka456-11f5.h.aivencloud.com',
     user: process.env.DB_USER || 'avnadmin',
@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Updates
+// Auto Create Tables & Safe Alter Columns
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -85,6 +85,7 @@ db.query(`
     db.query("ALTER TABLE sales ADD COLUMN amount_paid DECIMAL(10,2) DEFAULT 0", () => {});
     db.query("ALTER TABLE sales ADD COLUMN balance_due DECIMAL(10,2) DEFAULT 0", () => {});
     db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(50) DEFAULT 'Product'", () => {});
+    db.query("ALTER TABLE sales ADD COLUMN items TEXT", () => {});
 });
 
 db.query(`
@@ -102,7 +103,6 @@ db.query(`
 
 // --- API ROUTES ---
 
-// Login / Register Shop
 app.post('/api/login', (req, res) => {
     const { username, password, custom_shop_name, shop_phone } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
@@ -120,7 +120,6 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Products APIs
 app.get('/api/products', (req, res) => {
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -152,7 +151,6 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Fixed View, Delete & Date Formatting)
 app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -164,7 +162,6 @@ app.get('/api/sales', (req, res) => {
                 parsedItems = [];
             }
             
-            // Local date parsing to avoid timezone offset mismatches
             const dateObj = row.created_at ? new Date(row.created_at) : new Date();
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -189,7 +186,7 @@ app.post('/api/sales', (req, res) => {
     
     let saleType = 'Product';
     if (items && items.length > 0) {
-        const hasProd = items.some(i => i.type === 'product' || !i.type);
+        const hasProd = items.some(i => i.type === 'product' || i.type === 'exchange' || !i.type);
         const hasRep = items.some(i => i.type === 'repair');
         if (hasProd && hasRep) saleType = 'Mixed';
         else if (hasRep) saleType = 'Repair';
@@ -197,9 +194,23 @@ app.post('/api/sales', (req, res) => {
 
     db.query(
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, discount, total_amount, amount_paid, balance_due, sale_type, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method, discount || 0, total_amount, amount_paid || total_amount, balance_due || 0, saleType, JSON.stringify(items)],
+        [
+            shop_id, 
+            customer_name || 'Cash Customer', 
+            customer_phone || 'N/A', 
+            payment_method || 'Cash', 
+            discount || 0, 
+            total_amount || 0, 
+            amount_paid || total_amount || 0, 
+            balance_due || 0, 
+            saleType, 
+            JSON.stringify(items || [])
+        ],
         (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) {
+                console.error("Sales Insert Error:", err);
+                return res.status(500).json({ error: err.message });
+            }
             
             if (items && items.length > 0) {
                 items.forEach(item => {
@@ -240,7 +251,6 @@ app.delete('/api/sales/:id', (req, res) => {
     });
 });
 
-// Repairs APIs
 app.get('/api/repairs', (req, res) => {
     db.query('SELECT * FROM repairs WHERE shop_id = ? ORDER BY repair_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -278,7 +288,6 @@ app.delete('/api/repairs/:id', (req, res) => {
     });
 });
 
-// Prepared Items APIs (Tab 8)
 app.get('/api/prepared', (req, res) => {
     db.query('SELECT * FROM prepared_items WHERE shop_id = ? ORDER BY item_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -312,7 +321,6 @@ app.delete('/api/prepared/:id', (req, res) => {
     });
 });
 
-// Backup Restore API
 app.post('/api/restore', (req, res) => {
     const { shop_id, products, sales, repairs } = req.body;
     db.query('DELETE FROM products WHERE shop_id = ?', [shop_id], () => {
