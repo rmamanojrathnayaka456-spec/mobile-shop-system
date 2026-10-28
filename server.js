@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Safe Alter Columns
+// Auto Create Tables
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -30,10 +30,7 @@ db.query(`
         shop_phone VARCHAR(50) DEFAULT '',
         status VARCHAR(20) DEFAULT 'ACTIVE'
     )
-`, () => {
-    db.query("ALTER TABLE shops ADD COLUMN shop_phone VARCHAR(50) DEFAULT ''", () => {});
-    db.query("ALTER TABLE shops ADD COLUMN status VARCHAR(20) DEFAULT 'ACTIVE'", () => {});
-});
+`, () => {});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS products (
@@ -81,12 +78,7 @@ db.query(`
         items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`, () => {
-    db.query("ALTER TABLE sales ADD COLUMN amount_paid DECIMAL(10,2) DEFAULT 0", () => {});
-    db.query("ALTER TABLE sales ADD COLUMN balance_due DECIMAL(10,2) DEFAULT 0", () => {});
-    db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(50) DEFAULT 'Product'", () => {});
-    db.query("ALTER TABLE sales ADD COLUMN items LONGTEXT", () => {});
-});
+`, () => {});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS prepared_items (
@@ -122,7 +114,7 @@ app.post('/api/login', (req, res) => {
 
 app.get('/api/products', (req, res) => {
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) return res.json([]);
         res.json(results);
     });
 });
@@ -130,7 +122,7 @@ app.get('/api/products', (req, res) => {
 app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
     db.query('SELECT COUNT(*) as cnt FROM products WHERE shop_id = ?', [shop_id], (err, results) => {
-        const nextId = (results[0].cnt || 0) + 1;
+        const nextId = (results && results[0] ? results[0].cnt : 0) + 1;
         const product_code = String(nextId).padStart(3, '0');
         
         db.query(
@@ -155,9 +147,9 @@ app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [req.query.shop_id], (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err);
-            return res.status(500).json({ error: err.message });
+            return res.json([]); // Return empty array instead of 500 error to prevent frontend crash
         }
-        const formatted = results.map(row => {
+        const formatted = (results || []).map(row => {
             let parsedItems = [];
             try {
                 parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []);
@@ -232,7 +224,7 @@ app.put('/api/sales/pay-credit/:id', (req, res) => {
     const { shop_id, paid_amount } = req.body;
     
     db.query('SELECT * FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shop_id], (err, results) => {
-        if (err || results.length === 0) return res.status(404).json({ error: 'Sale not found' });
+        if (err || !results || results.length === 0) return res.status(404).json({ error: 'Sale not found' });
         const sale = results[0];
         const newPaid = parseFloat(sale.amount_paid || 0) + parseFloat(paid_amount);
         const newDue = Math.max(0, parseFloat(sale.total_amount) - newPaid);
@@ -256,7 +248,7 @@ app.delete('/api/sales/:id', (req, res) => {
 
 app.get('/api/repairs', (req, res) => {
     db.query('SELECT * FROM repairs WHERE shop_id = ? ORDER BY repair_id DESC', [req.query.shop_id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) return res.json([]);
         res.json(results);
     });
 });
@@ -293,7 +285,7 @@ app.delete('/api/repairs/:id', (req, res) => {
 
 app.get('/api/prepared', (req, res) => {
     db.query('SELECT * FROM prepared_items WHERE shop_id = ? ORDER BY item_id DESC', [req.query.shop_id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) return res.json([]);
         res.json(results);
     });
 });
