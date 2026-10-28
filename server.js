@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Safe Alter Columns
+// Auto Create Tables
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -63,6 +63,7 @@ db.query(`
     )
 `, () => {});
 
+// Sales Table Fresh Creation to fix any schema issues
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -187,6 +188,8 @@ app.post('/api/sales', (req, res) => {
         else if (hasRep) saleType = 'Repair';
     }
 
+    const itemsJson = JSON.stringify(items || []);
+
     db.query(
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, discount, total_amount, amount_paid, balance_due, sale_type, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
@@ -199,7 +202,7 @@ app.post('/api/sales', (req, res) => {
             amount_paid || total_amount || 0, 
             balance_due || 0, 
             saleType, 
-            JSON.stringify(items || [])
+            itemsJson
         ],
         (err, result) => {
             if (err) {
