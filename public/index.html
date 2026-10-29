@@ -115,7 +115,7 @@
 </head>
 <body data-theme="light">
 
-    <!-- Low Stock Dashboard Warning Banner (NEW FEATURE 1) -->
+    <!-- Dashboard Low Stock Alert Banner -->
     <div id="dashboardLowStockAlertBanner" style="display: none; background: #ff9800; color: #000; padding: 12px 20px; text-align: center; font-weight: bold; font-size: 14px; position: sticky; top: 0; z-index: 9999; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
         ⚠️ <span id="dashboardLowStockText">Low Stock Alert: Items are running low (<=2 left)!</span> 
         <button onclick="switchTab(3)" style="margin-left: 15px; padding: 4px 10px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">View Stock</button>
@@ -513,14 +513,13 @@
         </div>
     </div>
 
-    <!-- Receipt & SMS Simulation Modal (NEW FEATURE 3) -->
+    <!-- Receipt & SMS Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
         <div class="printable" style="background:white; color:#333; padding:20px; border-radius:8px; width:480px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="color:#28a745; margin-top:0; text-align:center;" id="receiptModalTitle">Sale Completed Successfully!</h3>
             
             <div id="receiptBoxContainer"></div>
 
-            <!-- SMS Integration Box inside Receipt Modal -->
             <div style="background:#f1f3f5; padding:10px; border-radius:6px; margin-top:10px; border:1px solid #ddd;">
                 <div style="font-weight:bold; font-size:12px; color:#333; margin-bottom:5px;">📱 Customer SMS / WhatsApp Integration</div>
                 <div style="display:flex; gap:5px;">
@@ -641,7 +640,6 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('inactive'));
             document.getElementById(`tab${tabNum}`).classList.add('active');
             
-            // Highlight correct tab button if clicked programmatically
             if(btn) {
                 btn.classList.remove('inactive');
             } else {
@@ -732,7 +730,6 @@
             }
         }
 
-        // FEATURE 1: DASHBOARD LOW STOCK ALERT LOGIC
         function checkLowStockAlert(products) {
             const lowStockItems = products.filter(p => p.stock > 0 && p.stock <= 2);
             const banner = document.getElementById('lowStockWarningBanner');
@@ -1617,7 +1614,6 @@
             } catch(err) { console.error(err); }
         }
 
-        // FEATURE 3: SMS NOTIFICATION & AUTOMATED MESSAGE GENERATOR
         function generateAutoMessage(sale) {
             const isRepairReceipt = sale.items && sale.items.some(i => i.type === 'repair');
             const itemsHeader = isRepairReceipt ? "REPAIR DETAILS" : "PURCHASED ITEMS";
@@ -1670,8 +1666,6 @@
             msg += `================================`;
             
             rawReceiptPlaintext = msg;
-
-            // Set customer phone input in receipt modal for quick SMS
             document.getElementById('modalCustomerPhone').value = sale.customer_phone !== 'N/A' ? sale.customer_phone : '';
 
             let htmlMsg = `
@@ -1968,7 +1962,7 @@
             if(!tbody) return;
             tbody.innerHTML = '';
             
-            const query = document.getElementById('searchSales') ? document.getElementById('searchSales'].value.toLowerCase().trim() : '';
+            const query = document.getElementById('searchSales') ? document.getElementById('searchSales').value.toLowerCase().trim() : '';
             
             const now = new Date();
             const y = now.getFullYear();
