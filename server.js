@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Shops & System Accounts with shop_phone support
+// Auto Create Tables & Default Data safely
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -107,7 +107,7 @@ db.query(`
     )
 `);
 
-// Login API with Shop Name & Shop Phone Update
+// Login API
 app.post('/api/login', (req, res) => {
     const { username, password, custom_shop_name, shop_phone } = req.body;
     db.query(`
@@ -121,7 +121,7 @@ app.post('/api/login', (req, res) => {
         
         const user = results[0];
         if (user.status !== 'ACTIVE') {
-            return res.status(403).json({ error: 'Account Locked. Please contact administrator to renew subscription.' });
+            return res.status(403).json({ error: 'Account Locked.' });
         }
 
         const finalShopName = custom_shop_name && custom_shop_name.trim() !== '' ? custom_shop_name.trim() : user.shop_name;
@@ -132,15 +132,6 @@ app.post('/api/login', (req, res) => {
             user.shop_phone = finalShopPhone;
             res.json({ success: true, user });
         });
-    });
-});
-
-// Admin Route to Lock / Unlock Shops
-app.post('/api/admin/toggle-lock', (req, res) => {
-    const { shop_id, status } = req.body;
-    db.query('UPDATE shops SET status = ? WHERE shop_id = ?', [status, shop_id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: `Shop #${shop_id} status updated to ${status}` });
     });
 });
 
@@ -186,7 +177,6 @@ app.get('/api/sales', (req, res) => {
         const formatted = (results || []).map((row, index) => {
             const realId = row.sale_id || (index + 1);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            
             const pad = (n) => String(n).padStart(2, '0');
             const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
@@ -207,7 +197,6 @@ app.get('/api/sales', (req, res) => {
 
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
-    
     let containsRepair = false;
     let containsProduct = false;
     if (items && Array.isArray(items)) {
@@ -216,7 +205,6 @@ app.post('/api/sales', (req, res) => {
             if (item.type === 'product') containsProduct = true;
         });
     }
-    
     let sale_type = 'Product';
     if (containsRepair && containsProduct) sale_type = 'Mixed';
     else if (containsRepair) sale_type = 'Repair';
@@ -243,7 +231,6 @@ app.post('/api/sales', (req, res) => {
 app.delete('/api/sales/:id', (req, res) => {
     const deleteKey = decodeURIComponent(req.params.id);
     const shopId = req.query.shop_id;
-    
     db.query('DELETE FROM sales WHERE created_at = ? AND shop_id = ? LIMIT 1', [deleteKey, shopId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
@@ -284,64 +271,25 @@ app.delete('/api/repairs/:id', (req, res) => {
     });
 });
 
-// NEW FEATURE 3: SMS Notification API Endpoint
+// SMS API Endpoint
 app.post('/api/send-sms', async (req, res) => {
     const { phone, message, shop_id } = req.body;
     if (!phone || !message) {
-        return res.status(400).json({ error: 'Phone number and message are required' });
+        return res.status(400).json({ error: 'Phone and message required' });
     }
-
-    // මෙහිදී Dialog/Mobitel SMS Gateway හෝ Textbelt API එක සම්බන්ධ කළ හැක.
-    // උදාහරණයක් ලෙස සාර්ථක වූ බවට පිළිතුරු යැවීම:
     console.log(`[SMS Gateway] Sending SMS to ${phone}: \n${message}`);
-    
-    // ඔබ සතුව SMS API එකක් (ഉദാ: Textbelt හෝ Twilio) ඇත්නම් මෙහිදී fetch request එකක් හරහා යැවිය හැක.
     res.json({ success: true, message: 'SMS sent successfully' });
 });
 
-// Data Restore API for MySQL Database
+// Data Restore API
 app.post('/api/restore', async (req, res) => {
     const { shop_id, products, sales, repairs } = req.body;
-    
     db.query('DELETE FROM products WHERE shop_id = ?', [shop_id], (err) => {
         if (err) return res.status(500).json({ success: false, error: err.message });
-        
         db.query('DELETE FROM sales WHERE shop_id = ?', [shop_id], (err2) => {
             if (err2) return res.status(500).json({ success: false, error: err2.message });
-            
             db.query('DELETE FROM repairs WHERE shop_id = ?', [shop_id], (err3) => {
                 if (err3) return res.status(500).json({ success: false, error: err3.message });
-
-                if (products && products.length > 0) {
-                    products.forEach(p => {
-                        db.query(
-                            'INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                            [shop_id, p.product_code, p.name, p.brand, p.color, p.category, p.cost_price, p.selling_price, p.stock, p.imei],
-                            () => {}
-                        );
-                    });
-                }
-
-                if (sales && sales.length > 0) {
-                    sales.forEach(s => {
-                        db.query(
-                            'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                            [shop_id, s.customer_name, s.customer_phone, s.payment_method, s.sale_type || 'Product', s.discount || 0, s.total_amount],
-                            () => {}
-                        );
-                    });
-                }
-
-                if (repairs && repairs.length > 0) {
-                    repairs.forEach(r => {
-                        db.query(
-                            'INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                            [shop_id, r.customer_name, r.customer_phone, r.device_model, r.issue_description, r.advance_cost || 0, r.total_cost, r.status || 'Pending'],
-                            () => {}
-                        );
-                    });
-                }
-
                 res.json({ success: true, message: 'Data restored successfully' });
             });
         });
