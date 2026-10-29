@@ -48,7 +48,6 @@
         .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .card { background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); border-left: 5px solid #007bff; cursor: pointer; }
         .card.active-card { border-color: #28a745 !important; background: rgba(40, 167, 69, 0.1); }
-        .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; }
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
     </style>
 </head>
@@ -476,7 +475,6 @@
             loadInventory();
         }
 
-        // Camera Scanner
         function toggleCameraScanner() {
             const qrDiv = document.getElementById('qr-reader');
             if(qrDiv.style.display === 'none') {
@@ -494,7 +492,6 @@
             }
         }
 
-        // POS
         function handleBillingSearch() {
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
             const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
@@ -551,6 +548,7 @@
             renderCart();
         }
         function addToCart() {
+            if(!selectedBillingValue.startsWith('prod_')) return alert('Please select a valid product!');
             const pId = selectedBillingValue.replace('prod_', '');
             const p = allProducts.find(item => item.product_id == pId);
             const price = parseFloat(document.getElementById('billingPrice').value);
@@ -600,7 +598,6 @@
             }
         }
 
-        // Sales & Analytics
         async function loadSales() {
             const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
             rawSalesData = await res.json();
@@ -655,7 +652,6 @@
             generateAutoMessage(lastSaleData);
         }
 
-        // Credit Sales
         async function loadCreditSales() {
             const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
             const sales = await res.json();
@@ -681,7 +677,6 @@
         }
         function filterCreditSales() { loadCreditSales(); }
 
-        // Repairs & Tracker
         async function loadRepairs() {
             const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
             allRepairs = await res.json();
@@ -748,7 +743,6 @@
             alert('Item logged!');
         }
 
-        // Consignments
         async function loadExternalItems() {
             const res = await fetch(`/api/external-items?shop_id=${currentUser.shop_id}`);
             externalItemsData = await res.json();
@@ -779,7 +773,6 @@
             if(res.ok) { document.getElementById('consignmentForm').reset(); loadExternalItems(); alert('Consignment recorded!'); }
         }
 
-        // Receipt & Utils
         function generateAutoMessage(sale) {
             let msg = `================================\n    ${sale.branch.toUpperCase()}\n================================\n`;
             msg += `Customer: ${sale.customer_name} (${sale.customer_phone})\n`;

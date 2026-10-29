@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Updates
+// Auto Create Tables & Columns
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -123,6 +123,7 @@ db.query(`
     )
 `);
 
+// Login API
 app.post('/api/login', (req, res) => {
     const { username, password, custom_shop_name, shop_phone } = req.body;
     db.query(`
@@ -148,6 +149,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
+// Products APIs
 app.get('/api/products', (req, res) => {
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -178,6 +180,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
+// Sales APIs
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
@@ -240,7 +243,7 @@ app.post('/api/sales', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
-                    if (item.type === 'product' && item.product_id) {
+                    if (item.product_id && item.qty) {
                         db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, shop_id]);
                     } else if (item.type === 'repair' && item.repair_id) {
                         db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ? AND shop_id = ?', [item.repair_id, shop_id]);
@@ -278,6 +281,7 @@ app.delete('/api/sales/:id', (req, res) => {
     });
 });
 
+// Repairs APIs
 app.get('/api/repairs', (req, res) => {
     db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -311,6 +315,7 @@ app.delete('/api/repairs/:id', (req, res) => {
     });
 });
 
+// Consignment APIs
 app.get('/api/external-items', (req, res) => {
     db.query('SELECT * FROM external_shop_items WHERE shop_id = ? ORDER BY item_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.json([]);
@@ -345,6 +350,7 @@ app.delete('/api/external-items/:id', (req, res) => {
     });
 });
 
+// Restore API
 app.post('/api/restore', async (req, res) => {
     const { shop_id, products, sales, repairs } = req.body;
     db.query('DELETE FROM products WHERE shop_id = ?', [shop_id], () => {
