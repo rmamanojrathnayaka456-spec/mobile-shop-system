@@ -155,6 +155,7 @@
             <button class="tab-btn inactive" onclick="switchTab(4, this)">4. Sales History & EOD</button>
             <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repair Jobs</button>
             <button class="tab-btn inactive" onclick="switchTab(6, this)">6. Customer History</button>
+            <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Backup & Restore</button>
         </div>
 
         <!-- Tab 1: Add Product -->
@@ -470,6 +471,27 @@
             </table>
         </div>
 
+        <!-- Tab 7: Backup & Restore -->
+        <div id="tab7" class="section">
+            <h3>7. Data Backup & Restore</h3>
+            <p>Secure your shop data by downloading regular backups or restore from a previous backup file.</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                <div style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 6px;">
+                    <h4 style="color: #007bff; margin-top:0;">📥 Download Backup (Export)</h4>
+                    <p style="font-size: 13px; color: #666;">Export all your products, sales history, and repair jobs into a secure backup JSON file.</p>
+                    <button type="button" onclick="exportDataBackup()" style="background: #28a745; margin-top: 15px;">Download Backup File</button>
+                </div>
+                
+                <div style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 6px;">
+                    <h4 style="color: #dc3545; margin-top:0;">📤 Restore Backup (Import)</h4>
+                    <p style="font-size: 13px; color: #666;">Select a previously saved backup JSON file to restore your shop data.</p>
+                    <input type="file" id="backupFileInput" accept=".json" style="margin-top: 10px; margin-bottom: 10px;">
+                    <button type="button" onclick="restoreDataBackup()" style="background: #ffc107; color: #000; margin-top: 5px;">Restore from Backup</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Barcode Modal -->
@@ -613,6 +635,7 @@
             else if(tabNum === 4) { loadSales(); }
             else if(tabNum === 5) { loadRepairs(); }
             else if(tabNum === 6) { loadSales(); loadRepairs(); filterCustomerHistory(); }
+            else if(tabNum === 7) { /* Backup tab selected */ }
         }
 
         function switchRepairSubTab(type, btn) {
@@ -1269,6 +1292,83 @@
             }
         }
 
+        // --- BACKUP & RESTORE FUNCTIONS ---
+        async function exportDataBackup() {
+            try {
+                const [prodRes, salesRes, repRes] = await Promise.all([
+                    fetch(`/api/products?shop_id=${currentUser.shop_id}`),
+                    fetch(`/api/sales?shop_id=${currentUser.shop_id}`),
+                    fetch(`/api/repairs?shop_id=${currentUser.shop_id}`)
+                ]);
+                const products = await prodRes.json();
+                const sales = await salesRes.json();
+                const repairs = await repRes.json();
+
+                const backupData = {
+                    shop_id: currentUser.shop_id,
+                    shop_name: currentUser.shop_name,
+                    shop_phone: currentUser.shop_phone,
+                    products,
+                    sales,
+                    repairs,
+                    backup_date: new Date().toISOString()
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `sha_mobile_backup_${currentUser.shop_name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                alert('Backup downloaded successfully!');
+            } catch(err) {
+                console.error(err);
+                alert('Error generating backup!');
+            }
+        }
+
+        async function restoreDataBackup() {
+            const fileInput = document.getElementById('backupFileInput');
+            if(!fileInput.files || fileInput.files.length === 0) {
+                return alert('Please select a backup JSON file first!');
+            }
+            if(!confirm('WARNING: Restoring data will overwrite existing items for this shop. Are you sure you want to proceed?')) {
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    const res = await fetch('/api/restore', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            shop_id: currentUser.shop_id,
+                            products: backupData.products || [],
+                            sales: backupData.sales || [],
+                            repairs: backupData.repairs || []
+                        })
+                    });
+                    const result = await res.json();
+                    if(res.ok && result.success) {
+                        alert('Data restored successfully!');
+                        loadInventory();
+                        loadSales();
+                        loadRepairs();
+                    } else {
+                        alert(result.error || 'Restore failed!');
+                    }
+                } catch(err) {
+                    console.error(err);
+                    alert('Invalid backup file format!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function handleBillingSearch() {
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
             const filteredProds = allProducts.filter(p => {
@@ -1321,7 +1421,6 @@
                     document.getElementById('billingPrice').value = selectedOriginalPrice.toFixed(2);
                     document.getElementById('billingDiscountDisplay').value = '0.00';
 
-                    // Show IMEI field for phones / items with IMEI
                     const imeiGroup = document.getElementById('billingImeiGroup');
                     const imeiInput = document.getElementById('billingImei');
                     if (p.category === 'Brand New Phone' || p.category === 'Used Phone' || p.category === 'Button Phone' || (p.imei && p.imei.trim() !== '')) {
