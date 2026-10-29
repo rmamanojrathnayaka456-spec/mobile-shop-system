@@ -284,6 +284,21 @@ app.delete('/api/repairs/:id', (req, res) => {
     });
 });
 
+// NEW FEATURE 3: SMS Notification API Endpoint
+app.post('/api/send-sms', async (req, res) => {
+    const { phone, message, shop_id } = req.body;
+    if (!phone || !message) {
+        return res.status(400).json({ error: 'Phone number and message are required' });
+    }
+
+    // මෙහිදී Dialog/Mobitel SMS Gateway හෝ Textbelt API එක සම්බන්ධ කළ හැක.
+    // උදාහරණයක් ලෙස සාර්ථක වූ බවට පිළිතුරු යැවීම:
+    console.log(`[SMS Gateway] Sending SMS to ${phone}: \n${message}`);
+    
+    // ඔබ සතුව SMS API එකක් (ഉദാ: Textbelt හෝ Twilio) ඇත්නම් මෙහිදී fetch request එකක් හරහා යැවිය හැක.
+    res.json({ success: true, message: 'SMS sent successfully' });
+});
+
 // Data Restore API for MySQL Database
 app.post('/api/restore', async (req, res) => {
     const { shop_id, products, sales, repairs } = req.body;

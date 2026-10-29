@@ -115,6 +115,12 @@
 </head>
 <body data-theme="light">
 
+    <!-- Low Stock Dashboard Warning Banner (NEW FEATURE 1) -->
+    <div id="dashboardLowStockAlertBanner" style="display: none; background: #ff9800; color: #000; padding: 12px 20px; text-align: center; font-weight: bold; font-size: 14px; position: sticky; top: 0; z-index: 9999; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+        ⚠️ <span id="dashboardLowStockText">Low Stock Alert: Items are running low (<=2 left)!</span> 
+        <button onclick="switchTab(3)" style="margin-left: 15px; padding: 4px 10px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">View Stock</button>
+    </div>
+
     <div id="loginScreen">
         <h2>MOBILE SHOP SYSTEM</h2>
         <form onsubmit="handleLogin(event)">
@@ -239,7 +245,6 @@
                     <label style="margin-top: 10px; display: block;">Product / Item Warranty:</label>
                     <input type="text" id="billingProductWarranty" style="font-weight:bold; color:#007bff;" disabled>
 
-                    <!-- IMEI Number Row for Billing -->
                     <div id="billingImeiGroup" style="display:none; margin-top: 5px;">
                         <label style="font-weight:bold; color:#e65100;">Phone IMEI Number:</label>
                         <input type="text" id="billingImei" placeholder="Enter or verify phone IMEI" style="border: 2px solid #e65100; font-weight:bold;">
@@ -347,7 +352,6 @@
                 </div>
             </div>
 
-            <!-- Search Bar for Sales History -->
             <input type="text" id="searchSales" placeholder="Search Sales by Sale ID (#1), Customer Name, Phone, Type (Product/Repair)..." onkeyup="filterSalesTable()" style="margin-bottom: 15px; border: 2px solid #007bff; font-weight: bold;">
 
             <table>
@@ -509,18 +513,27 @@
         </div>
     </div>
 
-    <!-- Receipt Modal -->
+    <!-- Receipt & SMS Simulation Modal (NEW FEATURE 3) -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:white; color:#333; padding:20px; border-radius:8px; width:450px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+        <div class="printable" style="background:white; color:#333; padding:20px; border-radius:8px; width:480px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="color:#28a745; margin-top:0; text-align:center;" id="receiptModalTitle">Sale Completed Successfully!</h3>
             
             <div id="receiptBoxContainer"></div>
 
-            <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
-                <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">Print Bill</button>
-                <button onclick="copyReceiptText()" style="background:#007bff; flex:1;">Copy</button>
-                <button onclick="sendWhatsAppMessage()" style="background:#25d366; flex:1;">WhatsApp</button>
-                <button onclick="closeReceiptModal()" style="background:#6c757d; flex:1;">Close</button>
+            <!-- SMS Integration Box inside Receipt Modal -->
+            <div style="background:#f1f3f5; padding:10px; border-radius:6px; margin-top:10px; border:1px solid #ddd;">
+                <div style="font-weight:bold; font-size:12px; color:#333; margin-bottom:5px;">📱 Customer SMS / WhatsApp Integration</div>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="modalCustomerPhone" placeholder="Phone (e.g. 0775195154)" style="font-size:12px; padding:6px; margin:0; flex:1;">
+                    <button onclick="sendRealSMSApi()" style="background:#ff9800; color:#fff; font-size:11px; padding:6px 10px; width:auto;">Send SMS</button>
+                </div>
+            </div>
+
+            <div id="printHideBtn" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+                <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1; padding:8px;">Print Bill</button>
+                <button onclick="copyReceiptText()" style="background:#007bff; flex:1; padding:8px;">Copy</button>
+                <button onclick="sendWhatsAppMessage()" style="background:#25d366; flex:1; padding:8px;">WhatsApp</button>
+                <button onclick="closeReceiptModal()" style="background:#6c757d; flex:1; padding:8px;">Close</button>
             </div>
         </div>
     </div>
@@ -573,6 +586,7 @@
             currentUser = null;
             document.getElementById('appContainer').style.display = 'none';
             document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('dashboardLowStockAlertBanner').style.display = 'none';
         }
 
         function initApp() {
@@ -626,7 +640,17 @@
             document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('inactive'));
             document.getElementById(`tab${tabNum}`).classList.add('active');
-            if(btn) btn.classList.remove('inactive');
+            
+            // Highlight correct tab button if clicked programmatically
+            if(btn) {
+                btn.classList.remove('inactive');
+            } else {
+                const tabButtons = document.querySelectorAll('.tab-btn');
+                tabButtons.forEach((b, idx) => {
+                    if(idx + 1 === tabNum) b.classList.remove('inactive');
+                    else b.classList.add('inactive');
+                });
+            }
 
             if(tabNum !== 2) { clearBillingFields(); }
 
@@ -708,16 +732,25 @@
             }
         }
 
+        // FEATURE 1: DASHBOARD LOW STOCK ALERT LOGIC
         function checkLowStockAlert(products) {
             const lowStockItems = products.filter(p => p.stock > 0 && p.stock <= 2);
             const banner = document.getElementById('lowStockWarningBanner');
-            if(banner) {
-                if(lowStockItems.length > 0) {
+            const dashBanner = document.getElementById('dashboardLowStockAlertBanner');
+            const dashText = document.getElementById('dashboardLowStockText');
+
+            if(lowStockItems.length > 0) {
+                if(banner) {
                     banner.style.display = 'block';
                     banner.textContent = `⚠️ Low Stock Alert: ${lowStockItems.length} item(s) running low (<=2 left)!`;
-                } else {
-                    banner.style.display = 'none';
                 }
+                if(dashBanner && dashText) {
+                    dashText.textContent = `⚠️ Low Stock Warning: ${lowStockItems.length} item(s) running low (<=2 left)! Check Inventory.`;
+                    dashBanner.style.display = 'block';
+                }
+            } else {
+                if(banner) banner.style.display = 'none';
+                if(dashBanner) dashBanner.style.display = 'none';
             }
         }
 
@@ -987,10 +1020,10 @@
 
         function getStatusColor(status) {
             switch(status) {
-                case 'Pending': return '#ff9800'; // Orange
-                case 'In Progress': return '#007bff'; // Blue
-                case 'Completed': return '#17a2b8'; // Teal
-                case 'Delivered': return '#28a745'; // Green
+                case 'Pending': return '#ff9800';
+                case 'In Progress': return '#007bff';
+                case 'Completed': return '#17a2b8';
+                case 'Delivered': return '#28a745';
                 default: return '#6c757d';
             }
         }
@@ -1292,7 +1325,6 @@
             }
         }
 
-        // --- BACKUP & RESTORE FUNCTIONS ---
         async function exportDataBackup() {
             try {
                 const [prodRes, salesRes, repRes] = await Promise.all([
@@ -1585,6 +1617,7 @@
             } catch(err) { console.error(err); }
         }
 
+        // FEATURE 3: SMS NOTIFICATION & AUTOMATED MESSAGE GENERATOR
         function generateAutoMessage(sale) {
             const isRepairReceipt = sale.items && sale.items.some(i => i.type === 'repair');
             const itemsHeader = isRepairReceipt ? "REPAIR DETAILS" : "PURCHASED ITEMS";
@@ -1637,6 +1670,9 @@
             msg += `================================`;
             
             rawReceiptPlaintext = msg;
+
+            // Set customer phone input in receipt modal for quick SMS
+            document.getElementById('modalCustomerPhone').value = sale.customer_phone !== 'N/A' ? sale.customer_phone : '';
 
             let htmlMsg = `
                 <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.4;">
@@ -1744,6 +1780,7 @@
             msg += `================================`;
             
             rawReceiptPlaintext = msg;
+            document.getElementById('modalCustomerPhone').value = adv.customer_phone !== 'N/A' ? adv.customer_phone : '';
 
             let htmlMsg = `
                 <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.4;">
@@ -1783,6 +1820,28 @@
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
+        async function sendRealSMSApi() {
+            let phone = document.getElementById('modalCustomerPhone').value.trim();
+            if(!phone || phone.length < 9) return alert('කරුණාකර సరైన පාරිභෝගික දුරකථන අංකයක් ඇතුළත් කරන්න!');
+            
+            try {
+                const res = await fetch('/api/send-sms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, message: rawReceiptPlaintext, shop_id: currentUser.shop_id })
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    alert('✅ SMS එක පාරිභෝගිකයා වෙත සාර්ථකව යවන ලදී!');
+                } else {
+                    alert(data.error || 'SMS යැවීමට නොහැකි විය.');
+                }
+            } catch(err) {
+                console.error(err);
+                alert('SMS API සම්බන්ධ වීමේ දෝෂයක් සිදු විය.');
+            }
+        }
+
         function viewSale(saleId) {
             const sale = rawSalesData.find(s => s.sale_id == saleId);
             if(!sale) return alert('Sale record not found!');
@@ -1811,7 +1870,8 @@
         }
 
         function sendWhatsAppMessage() {
-            let phone = lastSaleData.customer_phone.replace(/[^0-9]/g, '');
+            let phone = document.getElementById('modalCustomerPhone').value.trim() || (lastSaleData ? lastSaleData.customer_phone : '');
+            phone = phone.replace(/[^0-9]/g, '');
             if(phone.startsWith('0')) phone = '94' + phone.substring(1);
             window.open(`https://wa.me/${phone}?text=${encodeURIComponent(rawReceiptPlaintext)}`, '_blank');
         }
@@ -1908,7 +1968,7 @@
             if(!tbody) return;
             tbody.innerHTML = '';
             
-            const query = document.getElementById('searchSales') ? document.getElementById('searchSales').value.toLowerCase().trim() : '';
+            const query = document.getElementById('searchSales') ? document.getElementById('searchSales'].value.toLowerCase().trim() : '';
             
             const now = new Date();
             const y = now.getFullYear();
