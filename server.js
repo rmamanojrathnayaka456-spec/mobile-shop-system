@@ -107,7 +107,6 @@ db.query(`
     )
 `);
 
-// Consignment / External Shop Items Table
 db.query(`
     CREATE TABLE IF NOT EXISTS external_shop_items (
         item_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -124,7 +123,6 @@ db.query(`
     )
 `);
 
-// Login API
 app.post('/api/login', (req, res) => {
     const { username, password, custom_shop_name, shop_phone } = req.body;
     db.query(`
@@ -137,9 +135,7 @@ app.post('/api/login', (req, res) => {
         if (results.length === 0) return res.status(401).json({ error: 'Invalid username or password' });
         
         const user = results[0];
-        if (user.status !== 'ACTIVE') {
-            return res.status(403).json({ error: 'Account Locked. Please contact administrator.' });
-        }
+        if (user.status !== 'ACTIVE') return res.status(403).json({ error: 'Account Locked.' });
 
         const finalShopName = custom_shop_name && custom_shop_name.trim() !== '' ? custom_shop_name.trim() : user.shop_name;
         const finalShopPhone = shop_phone && shop_phone.trim() !== '' ? shop_phone.trim() : (user.shop_phone || '');
@@ -152,7 +148,6 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Products APIs
 app.get('/api/products', (req, res) => {
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -183,7 +178,6 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
@@ -223,8 +217,7 @@ app.get('/api/sales', (req, res) => {
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, amount_paid, balance_due, items } = req.body;
     
-    let containsRepair = false;
-    let containsProduct = false;
+    let containsRepair = false, containsProduct = false;
     if (items && Array.isArray(items)) {
         items.forEach(item => {
             if (item.type === 'repair') containsRepair = true;
@@ -254,12 +247,11 @@ app.post('/api/sales', (req, res) => {
                     }
                 });
             }
-            res.json({ message: 'Sale recorded', sale_id: result.insertId });
+            res.json({ success: true, sale_id: result.insertId });
         }
     );
 });
 
-// Pay Credit API
 app.put('/api/sales/pay-credit/:id', (req, res) => {
     const saleId = req.params.id;
     const { shop_id, paid_amount } = req.body;
@@ -280,14 +272,12 @@ app.put('/api/sales/pay-credit/:id', (req, res) => {
 app.delete('/api/sales/:id', (req, res) => {
     const deleteKey = decodeURIComponent(req.params.id);
     const shopId = req.query.shop_id;
-    
     db.query('DELETE FROM sales WHERE created_at = ? AND shop_id = ? LIMIT 1', [deleteKey, shopId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
     });
 });
 
-// Repairs APIs
 app.get('/api/repairs', (req, res) => {
     db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -321,7 +311,6 @@ app.delete('/api/repairs/:id', (req, res) => {
     });
 });
 
-// Consignment APIs
 app.get('/api/external-items', (req, res) => {
     db.query('SELECT * FROM external_shop_items WHERE shop_id = ? ORDER BY item_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.json([]);
@@ -356,7 +345,6 @@ app.delete('/api/external-items/:id', (req, res) => {
     });
 });
 
-// Data Restore API
 app.post('/api/restore', async (req, res) => {
     const { shop_id, products, sales, repairs } = req.body;
     db.query('DELETE FROM products WHERE shop_id = ?', [shop_id], () => {
