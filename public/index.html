@@ -35,7 +35,7 @@
         }
 
         body { font-family: Arial, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: background 0.3s, color 0.3s; }
-        .container { max-width: 1200px; margin: auto; background: var(--container-bg); padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: background 0.3s; }
+        .container { max-width: 1250px; margin: auto; background: var(--container-bg); padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: background 0.3s; }
         
         #loginScreen { max-width: 400px; margin: 80px auto; background: var(--container-bg); color: var(--text-color); padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); text-align: center; }
         #loginScreen h2 { color: #007bff; margin-bottom: 20px; }
@@ -53,7 +53,7 @@
         button:hover { background: #0056b3; }
         
         .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; }
-        .tab-btn { padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; font-size: 13px; }
+        .tab-btn { padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: auto; font-size: 12px; }
         .tab-btn.inactive { background: #e0e0e0; color: #333; }
         [data-theme="dark"] .tab-btn.inactive { background: #333; color: #ccc; }
         
@@ -156,6 +156,8 @@
             <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repair Jobs</button>
             <button class="tab-btn inactive" onclick="switchTab(6, this)">6. Customer History</button>
             <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Backup & Restore</button>
+            <button class="tab-btn inactive" onclick="switchTab(8, this)" style="background:#17a2b8;">8. Items to Prepare</button>
+            <button class="tab-btn inactive" onclick="switchTab(9, this)" style="background:#ffc107; color:#000;">9. Credit Sales</button>
         </div>
 
         <!-- Tab 1: Add Product -->
@@ -222,7 +224,7 @@
 
         <!-- Tab 2: Billing / POS -->
         <div id="tab2" class="section">
-            <h3>2. Billing & Checkout</h3>
+            <h3>2. Billing & Checkout (with Phone Exchange Support)</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
@@ -259,7 +261,16 @@
 
                     <label>Quantity:</label>
                     <input type="number" id="billingQty" value="1" min="1">
-                    <button type="button" onclick="addToCart()" style="margin-top: 15px; background: #28a745;">Add to Bill</button>
+                    <button type="button" onclick="addToCart()" style="margin-top: 10px; background: #28a745;">Add to Bill</button>
+
+                    <!-- Phone Exchange Section inside Billing -->
+                    <div style="margin-top: 20px; background: rgba(255,152,0,0.1); padding: 12px; border-radius: 6px; border: 1px dashed #ff9800;">
+                        <h4 style="margin: 0 0 8px 0; color: #e65100;">🔄 Phone Exchange / Trade-In</h4>
+                        <input type="text" id="exModel" placeholder="Customer's Old Phone Model (e.g. iPhone 7 Plus)" style="margin-bottom:5px;">
+                        <input type="text" id="exImei" placeholder="Old Phone IMEI Number" style="margin-bottom:5px;">
+                        <input type="number" id="exValue" placeholder="Exchange Value / Trade-In Allowance (Rs.)" step="0.01" style="margin-bottom:8px; border: 1px solid #ff9800;">
+                        <button type="button" onclick="addExchangeToCart()" style="background: #ff9800; color:#000;">Add Exchange Phone to Bill</button>
+                    </div>
                 </div>
                 <div>
                     <h4>Bill Details</h4>
@@ -268,19 +279,30 @@
                     <label>Customer Phone:</label>
                     <input type="text" id="custPhone" placeholder="07X XXXXXXX">
                     <label>Payment Method:</label>
-                    <select id="paymentMethod">
+                    <select id="paymentMethod" onchange="checkCreditMethod()">
                         <option value="Cash">Cash</option>
                         <option value="Card">Card</option>
                         <option value="Bank Transfer">Bank Transfer</option>
                         <option value="Installment">Installment</option>
                         <option value="Koko">Koko Payment</option>
+                        <option value="Credit">Credit / Installment Due</option>
                     </select>
 
-                    <label>Amount Paid / Cash Tendered (Rs.):</label>
-                    <input type="number" id="amountPaid" placeholder="0.00" step="0.01" oninput="calculateChangeDue()" style="border: 2px solid #28a745; font-weight: bold;">
+                    <div id="creditPaymentGroup" style="display:none;">
+                        <label style="color:#d9534f; font-weight:bold;">Advance / Amount Paid Now (Rs.):</label>
+                        <input type="number" id="creditAmountPaid" placeholder="0.00" step="0.01" oninput="calculateCreditBalanceDue()" style="border: 2px solid #d9534f; font-weight: bold;">
 
-                    <label>Balance / Change Due (Rs.):</label>
-                    <input type="number" id="changeDue" value="0.00" style="font-weight:bold; color:#28a745; background:#e8f4fd;" disabled>
+                        <label style="color:#d9534f; font-weight:bold;">Balance / Credit Due (Rs.):</label>
+                        <input type="number" id="creditBalanceDue" value="0.00" style="font-weight:bold; color:#d9534f; background:#fff3f3;" disabled>
+                    </div>
+
+                    <div id="cashPaymentGroup">
+                        <label>Amount Paid / Cash Tendered (Rs.):</label>
+                        <input type="number" id="amountPaid" placeholder="0.00" step="0.01" oninput="calculateChangeDue()" style="border: 2px solid #28a745; font-weight: bold;">
+
+                        <label>Balance / Change Due (Rs.):</label>
+                        <input type="number" id="changeDue" value="0.00" style="font-weight:bold; color:#28a745; background:#e8f4fd;" disabled>
+                    </div>
 
                     <table>
                         <thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead>
@@ -312,7 +334,30 @@
 
         <!-- Tab 4: Sales History & EOD Report -->
         <div id="tab4" class="section">
-            <h3 id="salesHeaderTitle">4. Sales History & EOD (End of Day) Report</h3>
+            <h3 id="salesHeaderTitle">4. Sales History & Advanced Filtering (EOD)</h3>
+            
+            <!-- Advanced Date/Month/Year Filter Box -->
+            <div style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px;">
+                <h4 style="margin-top:0; color:#007bff;">🔍 Filter Sales by Date, Month, or Year</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; align-items: flex-end;">
+                    <div>
+                        <label>Filter by Specific Date:</label>
+                        <input type="date" id="filterDate" onchange="applyAdvancedSalesFilter()">
+                    </div>
+                    <div>
+                        <label>Filter by Month:</label>
+                        <input type="month" id="filterMonth" onchange="applyAdvancedSalesFilter()">
+                    </div>
+                    <div>
+                        <label>Filter by Year:</label>
+                        <input type="number" id="filterYear" placeholder="e.g. 2026" oninput="applyAdvancedSalesFilter()">
+                    </div>
+                    <div>
+                        <button type="button" onclick="clearSalesFilters()" style="background:#6c757d;">Reset Filters</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="analytics-grid">
                 <div class="card" id="cardDaily" onclick="filterSalesView('daily', this)">
                     <h4>Daily Sales (Today)</h4>
@@ -351,8 +396,8 @@
             <input type="text" id="searchSales" placeholder="Search Sales by Sale ID (#1), Customer Name, Phone, Type (Product/Repair)..." onkeyup="filterSalesTable()" style="margin-bottom: 15px; border: 2px solid #007bff; font-weight: bold;">
 
             <table>
-                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
-                <tbody id="salesTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
+                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total (Rs.)</th><th>Paid (Rs.)</th><th>Due (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
+                <tbody id="salesTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
             </table>
         </div>
 
@@ -492,6 +537,38 @@
             </div>
         </div>
 
+        <!-- Tab 8: Items to Prepare -->
+        <div id="tab8" class="section">
+            <h3 style="color:#17a2b8;">8. Items / Repairs to be Prepared (Pending Jobs)</h3>
+            <p>Use this tab to track items, custom orders, or phone preparations that need to be completed for customers.</p>
+            
+            <form id="preparedForm" onsubmit="addPreparedItem(event)" style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <input type="text" id="prepCust" placeholder="Customer Name" required>
+                    <input type="text" id="prepPhone" placeholder="Customer Phone" required>
+                </div>
+                <input type="text" id="prepDesc" placeholder="Item or Task Description (e.g. Skin paste, software flash, order item)" required>
+                <textarea id="prepNotes" placeholder="Additional Notes / Instructions" rows="2" style="width:100%; padding:10px; margin:5px 0; border:1px solid var(--border-color); background:var(--input-bg); color:var(--input-text); border-radius:4px;"></textarea>
+                <button type="submit" style="background:#17a2b8; margin-top:5px;">Add Item to Prepare</button>
+            </form>
+
+            <table>
+                <thead><tr><th>ID</th><th>Customer</th><th>Phone</th><th>Task / Item Description</th><th>Notes</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody id="preparedTable"><tr><td colspan="7" style="text-align:center;">No pending prepared items.</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- Tab 9: Credit Sales -->
+        <div id="tab9" class="section">
+            <h3 style="color:#ffc107;">9. Credit Sales & Due Balances</h3>
+            <p>View all customers who bought items on credit or installments and record payments.</p>
+            <input type="text" id="searchCreditSales" placeholder="Search by customer name or phone..." onkeyup="filterCreditSales()" style="margin-bottom: 15px; border: 2px solid #ffc107; font-weight: bold;">
+            <table>
+                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Total (Rs.)</th><th>Paid (Rs.)</th><th>Due Balance (Rs.)</th><th>Date</th><th>Action</th></tr></thead>
+                <tbody id="creditSalesTable"><tr><td colspan="8" style="text-align:center;">No credit sales found.</td></tr></tbody>
+            </table>
+        </div>
+
     </div>
 
     <!-- Barcode Modal -->
@@ -531,6 +608,7 @@
         let allProducts = [];
         let allRepairs = [];
         let rawSalesData = [];
+        let preparedItemsData = [];
         let currentSalesFilter = 'all';
         let currentStockFilter = 'all';
         let html5QrcodeScanner = null;
@@ -585,6 +663,7 @@
                 loadInventory();
                 loadSales();
                 loadRepairs();
+                loadPreparedItems();
             }
             const savedTheme = localStorage.getItem('pos_theme') || 'light';
             setTheme(savedTheme);
@@ -635,7 +714,8 @@
             else if(tabNum === 4) { loadSales(); }
             else if(tabNum === 5) { loadRepairs(); }
             else if(tabNum === 6) { loadSales(); loadRepairs(); filterCustomerHistory(); }
-            else if(tabNum === 7) { /* Backup tab selected */ }
+            else if(tabNum === 8) { loadPreparedItems(); }
+            else if(tabNum === 9) { loadCreditSales(); }
         }
 
         function switchRepairSubTab(type, btn) {
@@ -1292,6 +1372,156 @@
             }
         }
 
+        // --- PHONE EXCHANGE / TRADE-IN FUNCTION ---
+        function addExchangeToCart() {
+            const model = document.getElementById('exModel').value.trim();
+            const imei = document.getElementById('exImei').value.trim();
+            const val = parseFloat(document.getElementById('exValue').value) || 0;
+
+            if(!model || val <= 0) return alert('Enter valid exchange model and allowance value!');
+
+            cart.push({
+                type: 'exchange',
+                name: `[EXCHANGE] Old Phone: ${model} (IMEI: ${imei || 'N/A'})`,
+                warranty: 'No Warranty',
+                imei: imei,
+                originalPrice: val,
+                costPrice: 0,
+                price: -val,
+                qty: 1,
+                discount: 0,
+                subtotal: -val
+            });
+            renderCart();
+            document.getElementById('exModel').value = '';
+            document.getElementById('exImei').value = '';
+            document.getElementById('exValue').value = '';
+            alert('Exchange allowance deducted from bill!');
+        }
+
+        function checkCreditMethod() {
+            const method = document.getElementById('paymentMethod').value;
+            if(method === 'Credit') {
+                document.getElementById('creditPaymentGroup').style.display = 'block';
+                document.getElementById('cashPaymentGroup').style.display = 'none';
+            } else {
+                document.getElementById('creditPaymentGroup').style.display = 'none';
+                document.getElementById('cashPaymentGroup').style.display = 'block';
+            }
+            calculateChangeDue();
+            calculateCreditBalanceDue();
+        }
+
+        function calculateCreditBalanceDue() {
+            const totalPayable = cart.reduce((sum, item) => sum + item.subtotal, 0);
+            const amountPaid = parseFloat(document.getElementById('creditAmountPaid').value) || 0;
+            const due = Math.max(0, totalPayable - amountPaid);
+            document.getElementById('creditBalanceDue').value = due.toFixed(2);
+        }
+
+        // --- ADVANCED SALES FILTERING FUNCTIONS (Tab 4) ---
+        function applyAdvancedSalesFilter() {
+            renderSalesTable();
+        }
+
+        function clearSalesFilters() {
+            document.getElementById('filterDate').value = '';
+            document.getElementById('filterMonth').value = '';
+            document.getElementById('filterYear').value = '';
+            renderSalesTable();
+        }
+
+        // --- TAB 8: ITEMS TO PREPARE FUNCTIONS ---
+        async function loadPreparedItems() {
+            try {
+                const res = await fetch(`/api/prepared?shop_id=${currentUser.shop_id}`);
+                preparedItemsData = await res.json();
+                const tbody = document.getElementById('preparedTable');
+                if(!tbody) return;
+                tbody.innerHTML = '';
+                if(preparedItemsData.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No pending prepared items.</td></tr>`;
+                    return;
+                }
+                preparedItemsData.forEach(item => {
+                    tbody.innerHTML += `<tr>
+                        <td><b>#${item.item_id}</b></td>
+                        <td>${item.customer_name}</td>
+                        <td>${item.customer_phone}</td>
+                        <td>${item.item_description}</td>
+                        <td>${item.notes || '-'}</td>
+                        <td><select onchange="updatePrepStatus(${item.item_id}, this.value)"><option ${item.status==='Pending Preparation'?'selected':''}>Pending Preparation</option><option ${item.status==='Ready'?'selected':''}>Ready</option><option ${item.status==='Completed'?'selected':''}>Completed</option></select></td>
+                        <td><button onclick="deletePrepared(${item.item_id})" style="background:#dc3545; padding:3px; width:auto;">Delete</button></td>
+                    </tr>`;
+                });
+            } catch(err) { console.error(err); }
+        }
+
+        async function addPreparedItem(e) {
+            e.preventDefault();
+            const data = {
+                shop_id: currentUser.shop_id,
+                customer_name: document.getElementById('prepCust').value.trim(),
+                customer_phone: document.getElementById('prepPhone').value.trim(),
+                item_description: document.getElementById('prepDesc').value.trim(),
+                notes: document.getElementById('prepNotes').value.trim()
+            };
+            const res = await fetch('/api/prepared', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            if(res.ok) { document.getElementById('preparedForm').reset(); loadPreparedItems(); alert('Item added for preparation!'); }
+        }
+
+        async function updatePrepStatus(id, status) {
+            await fetch(`/api/prepared/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status }) });
+        }
+
+        async function deletePrepared(id) {
+            await fetch(`/api/prepared/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            loadPreparedItems();
+        }
+
+        // --- TAB 9: CREDIT SALES FUNCTIONS ---
+        async function loadCreditSales() {
+            try {
+                const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
+                const sales = await res.json();
+                const tbody = document.getElementById('creditSalesTable');
+                if(!tbody) return;
+                tbody.innerHTML = '';
+                const credits = sales.filter(s => parseFloat(s.balance_due) > 0);
+                if(credits.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No pending credit sales.</td></tr>`;
+                    return;
+                }
+                credits.forEach(s => {
+                    tbody.innerHTML += `<tr>
+                        <td><b>#${s.sale_id}</b></td>
+                        <td>${s.customer_name}</td>
+                        <td>${s.customer_phone}</td>
+                        <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
+                        <td>Rs. ${parseFloat(s.amount_paid).toFixed(2)}</td>
+                        <td style="color:#d9534f; font-weight:bold;">Rs. ${parseFloat(s.balance_due).toFixed(2)}</td>
+                        <td>${s.formatted_date || s.created_at}</td>
+                        <td><button onclick="payCredit(${s.sale_id})" style="background:#28a745; padding:3px 8px; width:auto; font-size:11px;">Pay Due</button></td>
+                    </tr>`;
+                });
+            } catch(err) { console.error(err); }
+        }
+
+        function filterCreditSales() {
+            loadCreditSales();
+        }
+
+        async function payCredit(saleId) {
+            const amount = prompt('Enter payment amount received (Rs.):');
+            if(!amount || isNaN(amount)) return;
+            const res = await fetch(`/api/sales/pay-credit/${saleId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shop_id: currentUser.shop_id, paid_amount: parseFloat(amount) })
+            });
+            if(res.ok) { loadCreditSales(); alert('Credit payment recorded!'); loadSales(); }
+        }
+
         // --- BACKUP & RESTORE FUNCTIONS ---
         async function exportDataBackup() {
             try {
@@ -1546,7 +1776,9 @@
             }
             document.getElementById('cartTotal').textContent = total.toFixed(2);
             document.getElementById('amountPaid').value = total.toFixed(2);
+            document.getElementById('creditAmountPaid').value = '0.00';
             calculateChangeDue();
+            calculateCreditBalanceDue();
         }
 
         function removeFromCart(index) { cart.splice(index, 1); renderCart(); }
@@ -1555,19 +1787,28 @@
             if(cart.length === 0) return alert('Cart is empty!');
             const total_amount = cart.reduce((sum, item) => sum + item.subtotal, 0);
             const total_discount = cart.reduce((sum, item) => sum + (item.discount || 0), 0);
-            const amount_paid = parseFloat(document.getElementById('amountPaid').value) || 0;
-            const change_due = Math.max(0, amount_paid - total_amount);
+            const payment_method = document.getElementById('paymentMethod').value;
             const customer_name = document.getElementById('custName').value.trim() || 'Cash Customer';
             const customer_phone = document.getElementById('custPhone').value.trim() || 'N/A';
-            const payment_method = document.getElementById('paymentMethod').value;
+            
+            let amount_paid = total_amount;
+            let balance_due = 0;
 
-            lastSaleData = { customer_name, customer_phone, payment_method, total_amount, total_discount, amount_paid, change_due, items: [...cart], branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone };
+            if(payment_method === 'Credit') {
+                amount_paid = parseFloat(document.getElementById('creditAmountPaid').value) || 0;
+                balance_due = Math.max(0, total_amount - amount_paid);
+            } else {
+                amount_paid = parseFloat(document.getElementById('amountPaid').value) || total_amount;
+            }
+            const change_due = Math.max(0, amount_paid - total_amount);
+
+            lastSaleData = { customer_name, customer_phone, payment_method, total_amount, total_discount, amount_paid, balance_due, change_due, items: [...cart], branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone };
 
             try {
                 const res = await fetch('/api/sales', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name, customer_phone, payment_method, discount: total_discount, total_amount, items: cart })
+                    body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name, customer_phone, payment_method, discount: total_discount, total_amount, amount_paid, balance_due, items: cart })
                 });
                 if(res.ok) {
                     generateAutoMessage(lastSaleData);
@@ -1575,12 +1816,17 @@
                     document.getElementById('custName').value = '';
                     document.getElementById('custPhone').value = '';
                     document.getElementById('amountPaid').value = '';
+                    document.getElementById('creditAmountPaid').value = '';
                     document.getElementById('paymentMethod').value = 'Cash';
                     document.getElementById('changeDue').value = '0.00';
+                    document.getElementById('creditBalanceDue').value = '0.00';
+                    document.getElementById('creditPaymentGroup').style.display = 'none';
+                    document.getElementById('cashPaymentGroup').style.display = 'block';
                     renderCart();
                     loadInventory();
                     loadSales();
                     loadRepairs();
+                    loadCreditSales();
                 }
             } catch(err) { console.error(err); }
         }
@@ -1630,7 +1876,11 @@
             }
             msg += `TOTAL PAYABLE : Rs. ${sale.total_amount.toFixed(2)}\n`;
             msg += `AMOUNT PAID   : Rs. ${(sale.amount_paid || 0).toFixed(2)}\n`;
-            msg += `CHANGE DUE    : Rs. ${(sale.change_due || 0).toFixed(2)}\n`;
+            if (sale.balance_due > 0) {
+                msg += `BALANCE DUE   : Rs. ${sale.balance_due.toFixed(2)}\n`;
+            } else {
+                msg += `CHANGE DUE    : Rs. ${(sale.change_due || 0).toFixed(2)}\n`;
+            }
             msg += `Payment Method: ${sale.payment_method}\n`;
             msg += `================================\n`;
             msg += `   Thank you for your business!   \n`;
@@ -1697,8 +1947,13 @@
                         <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #007bff; margin-top: 4px; border-top: 1px dashed #ccc; padding-top: 6px;">
                             <span>Total Payable:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Amount Paid:</span> <span>Rs. ${(sale.amount_paid || 0).toFixed(2)}</span></div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Change Due:</span> <span style="color: #28a745; font-weight: bold;">Rs. ${(sale.change_due || 0).toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Amount Paid:</span> <span>Rs. ${(sale.amount_paid || 0).toFixed(2)}</span></div>`;
+            if (sale.balance_due > 0) {
+                htmlMsg += `<div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Balance Due:</span> <span style="color: #d9534f; font-weight: bold;">Rs. ${sale.balance_due.toFixed(2)}</span></div>`;
+            } else {
+                htmlMsg += `<div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Change Due:</span> <span style="color: #28a745; font-weight: bold;">Rs. ${(sale.change_due || 0).toFixed(2)}</span></div>`;
+            }
+            htmlMsg += `
                         <div style="display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid #eee; padding-top: 4px;"><span>Payment Method:</span> <b style="color: #333;">${sale.payment_method}</b></div>
                     </div>
 
@@ -1793,7 +2048,8 @@
                 payment_method: sale.payment_method,
                 total_amount: sale.total_amount,
                 total_discount: sale.discount || 0,
-                amount_paid: sale.total_amount,
+                amount_paid: sale.amount_paid || sale.total_amount,
+                balance_due: sale.balance_due || 0,
                 change_due: 0,
                 items: sale.items || [],
                 branch: currentUser.shop_name || "SHA MOBILE",
@@ -1843,7 +2099,7 @@
                         if(s.sale_type === 'Repair') {
                             todayRepairAmt += parseFloat(s.total_amount || 0);
                         }
-                        const amt = parseFloat(s.total_amount || 0);
+                        const amt = parseFloat(s.amount_paid || s.total_amount || 0);
                         if(s.payment_method === 'Cash') eodCash += amt;
                         else if(s.payment_method === 'Card') eodCard += amt;
                         else if(s.payment_method === 'Bank Transfer') eodBank += amt;
@@ -1875,10 +2131,10 @@
             if(cardEl) cardEl.classList.add('active-card');
             
             const headerTitle = document.getElementById('salesHeaderTitle');
-            if(type === 'daily') headerTitle.textContent = "4. Sales History & EOD Report (Showing: Today's Sales)";
-            else if(type === 'monthly') headerTitle.textContent = "4. Sales History & EOD Report (Showing: This Month's Sales)";
-            else if(type === 'repair') headerTitle.textContent = "4. Sales History & EOD Report (Showing: Today's Repair Sales)";
-            else headerTitle.textContent = "4. Sales History & EOD Report (Showing: All Sales)";
+            if(type === 'daily') headerTitle.textContent = "4. Sales History & Advanced Filtering (Showing: Today's Sales)";
+            else if(type === 'monthly') headerTitle.textContent = "4. Sales History & Advanced Filtering (Showing: This Month's Sales)";
+            else if(type === 'repair') headerTitle.textContent = "4. Sales History & Advanced Filtering (Showing: Today's Repair Sales)";
+            else headerTitle.textContent = "4. Sales History & Advanced Filtering (Showing: All Sales)";
 
             renderSalesTable();
         }
@@ -1895,7 +2151,7 @@
                 boxEl.style.boxShadow = '0 0 8px rgba(0,123,255,0.4)';
             }
             const headerTitle = document.getElementById('salesHeaderTitle');
-            headerTitle.textContent = `4. Sales History & EOD Report (Today's ${method} Transactions)`;
+            headerTitle.textContent = `4. Sales History & Advanced Filtering (Today's ${method} Transactions)`;
             renderSalesTable();
         }
 
@@ -1909,7 +2165,10 @@
             tbody.innerHTML = '';
             
             const query = document.getElementById('searchSales') ? document.getElementById('searchSales').value.toLowerCase().trim() : '';
-            
+            const dateFilter = document.getElementById('filterDate') ? document.getElementById('filterDate').value : '';
+            const monthFilter = document.getElementById('filterMonth') ? document.getElementById('filterMonth').value : '';
+            const yearFilter = document.getElementById('filterYear') ? document.getElementById('filterYear').value : '';
+
             const now = new Date();
             const y = now.getFullYear();
             const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -1921,6 +2180,11 @@
             let displaySales = rawSalesData.filter(s => {
                 const sDateOnly = s.date_only || (s.formatted_date ? s.formatted_date.substring(0, 10) : '');
                 const sMonthOnly = s.month_only || (s.formatted_date ? s.formatted_date.substring(0, 7) : '');
+                const sYearOnly = s.year_only || sDateOnly.substring(0, 4);
+
+                if(dateFilter && sDateOnly !== dateFilter) return false;
+                if(monthFilter && sMonthOnly !== monthFilter) return false;
+                if(yearFilter && sYearOnly !== yearFilter) return false;
 
                 let matchesFilter = true;
                 if(currentSalesFilter === 'daily') {
@@ -1958,7 +2222,7 @@
             });
 
             if(displaySales.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No sales found matching your search.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No sales found matching your search or filters.</td></tr>`;
                 return;
             }
 
@@ -1977,6 +2241,8 @@
                     <td><span class="${badgeClass}">${stype}</span></td>
                     <td>${s.payment_method}</td>
                     <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
+                    <td>Rs. ${parseFloat(s.amount_paid || s.total_amount).toFixed(2)}</td>
+                    <td style="color:${parseFloat(s.balance_due) > 0 ? '#d9534f' : 'inherit'}; font-weight:${parseFloat(s.balance_due) > 0 ? 'bold' : 'normal'};">Rs. ${parseFloat(s.balance_due || 0).toFixed(2)}</td>
                     <td>${s.formatted_date || s.created_at}</td>
                     <td>
                         <div style="display:flex; gap:5px; flex-wrap:wrap;">
@@ -1992,7 +2258,7 @@
             if(!confirm('Delete sale record?')) return;
             try {
                 const res = await fetch(`/api/sales/${deleteKey}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-                if(res.ok) { loadSales(); }
+                if(res.ok) { loadSales(); loadCreditSales(); }
             } catch(err) { console.error(err); }
         }
 
