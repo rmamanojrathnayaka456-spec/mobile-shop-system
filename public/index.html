@@ -148,7 +148,7 @@
                         <h4 style="margin: 0 0 5px 0; color: #e65100;">🔄 Exchange Phone</h4>
                         <input type="text" id="exModel" placeholder="Old Phone Model" style="margin-bottom:3px;">
                         <input type="number" id="exValue" placeholder="Exchange Value (Rs.)" step="0.01" style="margin-bottom:5px;">
-                        <button type="button" onclick="addExchangeToCart()" style="background: #ff9800; color:#000;">Add Exchange</button>
+                        <button type="button" onclick="addExchangeToCart()" style="background: #ffc107; color:#000;">Add Exchange</button>
                     </div>
                 </div>
                 <div>
@@ -468,6 +468,7 @@
             const data = await res.json();
             if(res.ok && data.success) {
                 currentUser = data.user;
+                console.log("Logged in user data:", currentUser);
                 localStorage.setItem('pos_user', JSON.stringify(currentUser));
                 initApp();
             } else { alert(data.error || 'Login failed!'); }
@@ -484,6 +485,7 @@
             const saved = localStorage.getItem('pos_user');
             if(saved) {
                 currentUser = JSON.parse(saved);
+                console.log("Initialized with currentUser:", currentUser);
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
                 document.getElementById('userDisplay').textContent = currentUser.shop_name;
@@ -530,6 +532,7 @@
         }
 
         async function loadInventory() {
+            if(!currentUser) return;
             const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
             allProducts = await res.json();
             renderInventory(allProducts);
@@ -774,6 +777,8 @@
 
         async function completeCheckout() {
             if(cart.length === 0) return alert('Cart empty!');
+            if(!currentUser) return alert('User not logged in!');
+            
             const total_amount = cart.reduce((sum, i) => sum + i.subtotal, 0);
             const payment_method = document.getElementById('paymentMethod').value;
             let amount_paid = total_amount, balance_due = 0;
@@ -791,9 +796,12 @@
                 total_amount, amount_paid, balance_due, items: cart
             };
 
+            console.log("Sending checkout payload with shop_id:", currentUser.shop_id, payload);
+
             try {
                 const res = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const result = await res.json();
+                console.log("Checkout response:", result);
                 if(res.ok && result.success) {
                     lastSaleData = { 
                         ...payload, 
@@ -887,10 +895,15 @@
         }
 
         async function loadSales() {
-            if(!currentUser) return;
+            if(!currentUser) {
+                console.warn("loadSales called but currentUser is null");
+                return;
+            }
             try {
+                console.log("Fetching sales for shop_id:", currentUser.shop_id);
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
                 rawSalesData = await res.json();
+                console.log("Received raw sales data:", rawSalesData);
                 
                 if (!Array.isArray(rawSalesData)) {
                     rawSalesData = [];
@@ -1148,6 +1161,7 @@
             const tbody = document.getElementById('consignmentTable');
             if(!tbody) return;
             tbody.innerHTML = externalItemsData.length === 0 ? `<tr><td colspan="9" style="text-align:center;">No consignments.</td></tr>` : '';
+            externalItemsData.loadExternalItems = true;
             externalItemsData.forEach(item => {
                 tbody.innerHTML += `<tr>
                     <td><b>#${item.item_id}</b></td>
@@ -1156,7 +1170,7 @@
                     <td>${item.item_name}</td>
                     <td>${item.imei || '-'}</td>
                     <td>Rs. ${parseFloat(item.cost_price).toFixed(2)}</td>
-                    <td>Rs. ${parseFloat(item.expected_price).toFixed(2)}</td>
+                    <td>Rs. ${parseFloat(item.expected_price).Error ? 0 : parseFloat(item.expected_price).toFixed(2)}</td>
                     <td><b>${item.status}</b></td>
                     <td><button onclick="markConsignmentSold(${item.item_id})" style="background:#28a745; padding:3px; font-size:11px;">Sold</button></td>
                 </tr>`;
@@ -1186,7 +1200,7 @@
                 item_name: document.getElementById('consItemName').value.trim(),
                 imei: document.getElementById('consItemImei').value.trim(),
                 cost_price: document.getElementById('consCostPrice').value,
-                expected_price: document.getElementById('consExpectedPrice.value')
+                expected_price: document.getElementById('consExpectedPrice').value
             };
             const res = await fetch('/api/external-items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             if(res.ok) { document.getElementById('consignmentForm').reset(); loadExternalItems(); alert('Consignment recorded!'); }
