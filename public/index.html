@@ -50,7 +50,6 @@
         .card.active-card { border-color: #28a745 !important; background: rgba(40, 167, 69, 0.1); }
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
 
-        /* Print styling to ensure single page and proper white receipt background */
         @media print {
             body * { visibility: hidden; }
             #receiptModal, #receiptModal * { visibility: visible; }
@@ -86,11 +85,11 @@
         <div class="tabs">
             <button class="tab-btn" onclick="switchTab(1, this)">1. Add Product</button>
             <button class="tab-btn inactive" onclick="switchTab(2, this)">2. Billing / POS</button>
-            <button class="tab-btn inactive" onclick="switchTab(3, this)">3. Stock</button>
-            <button class="tab-btn inactive" onclick="switchTab(4, this)">4. Sales & EOD</button>
-            <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repairs</button>
-            <button class="tab-btn inactive" onclick="switchTab(6, this)">6. Customers</button>
-            <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Backup</button>
+            <button class="tab-btn inactive" onclick="switchTab(3, this)">3. Stock Inventory</button>
+            <button class="tab-btn inactive" onclick="switchTab(4, this)">4. Sales History & EOD</button>
+            <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repair Jobs</button>
+            <button class="tab-btn inactive" onclick="switchTab(6, this)">6. Customer History</button>
+            <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Backup & Restore</button>
             <button class="tab-btn inactive" onclick="switchTab(8, this)" style="background:#ffc107; color:#000;">8. Credit Sales</button>
             <button class="tab-btn inactive" onclick="switchTab(9, this)" style="background:#6610f2; color:#fff;">9. Consignments</button>
         </div>
@@ -149,7 +148,7 @@
                         <h4 style="margin: 0 0 5px 0; color: #e65100;">🔄 Exchange Phone</h4>
                         <input type="text" id="exModel" placeholder="Old Phone Model" style="margin-bottom:3px;">
                         <input type="number" id="exValue" placeholder="Exchange Value (Rs.)" step="0.01" style="margin-bottom:5px;">
-                        <button type="button" onclick="addExchangeToCart()" style="background: #ff9800; color:#000;">Add Exchange</button>
+                        <button type="button" onclick="addExchangeToCart()" style="background: #ffr9800; color:#000;">Add Exchange</button>
                     </div>
                 </div>
                 <div>
@@ -196,19 +195,73 @@
             </table>
         </div>
 
-        <!-- Tab 4 -->
+        <!-- Tab 4: Sales History & EOD -->
         <div id="tab4" class="section">
-            <h3 id="salesHeaderTitle">4. Sales History & EOD Report</h3>
+            <h3 id="salesHeaderTitle">4. Sales History & EOD (End of Day) Report</h3>
             <div class="analytics-grid">
-                <div class="card" onclick="filterSalesView('daily', this)"><h4>Daily Sales</h4><p id="dailySalesAmt">Rs. 0.00</p></div>
-                <div class="card" onclick="filterSalesView('monthly', this)"><h4>Monthly Sales</h4><p id="monthlySalesAmt">Rs. 0.00</p></div>
-                <div class="card" onclick="filterSalesView('repair', this)"><h4>Repair Sales</h4><p id="repairSalesAmt">Rs. 0.00</p></div>
-                <div class="card active-card" onclick="filterSalesView('all', this)"><h4>Total Transactions</h4><p id="totalTransactions">0</p></div>
+                <div class="card" onclick="filterSalesView('daily', this)">
+                    <h4>Daily Sales (Today)</h4>
+                    <p id="dailySalesAmt" style="font-weight:bold; color:#007bff; font-size:18px;">Rs. 0.00</p>
+                    <small style="color:#666;">(Click to view today's sales)</small>
+                </div>
+                <div class="card" onclick="filterSalesView('monthly', this)">
+                    <h4>Monthly Sales (This Month)</h4>
+                    <p id="monthlySalesAmt" style="font-weight:bold; color:#007bff; font-size:18px;">Rs. 0.00</p>
+                    <small style="color:#666;">(Click to view this month's sales)</small>
+                </div>
+                <div class="card" onclick="filterSalesView('repair', this)">
+                    <h4>Repair Sales (Today)</h4>
+                    <p id="repairSalesAmt" style="font-weight:bold; color:#007bff; font-size:18px;">Rs. 0.00</p>
+                    <small style="color:#666;">(Click to view today's repair sales)</small>
+                </div>
+                <div class="card active-card" onclick="filterSalesView('all', this)">
+                    <h4>Total Transactions</h4>
+                    <p id="totalTransactions" style="font-weight:bold; color:#28a745; font-size:18px;">0</p>
+                    <small style="color:#666;">(Click to view all sales history)</small>
+                </div>
             </div>
-            <input type="text" id="searchSales" placeholder="Search sales by ID, Customer, or Date (YYYY-MM-DD, MM, YYYY)..." onkeyup="filterSalesTable()" style="margin-bottom: 15px;">
+
+            <!-- EOD Cash Drawer Summary -->
+            <div style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px;">
+                <h4 style="margin-top:0; color:#28a745; display:flex; align-items:center; gap:8px;">
+                    <span>💵 EOD (End of Day) Cash Drawer Summary (Today)</span>
+                    <small style="font-size:11px; color:#666; font-weight:normal;">(Click any box to filter transactions)</small>
+                </h4>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                    <div onclick="filterPaymentMethod('Cash', this)" style="background:var(--section-bg); padding:10px; border-radius:6px; border:1px solid var(--border-color); cursor:pointer;">
+                        <div style="font-size:12px; color:#666;">Cash</div>
+                        <div id="eodCash" style="font-weight:bold; font-size:15px;">Rs. 0.00</div>
+                    </div>
+                    <div onclick="filterPaymentMethod('Card', this)" style="background:var(--section-bg); padding:10px; border-radius:6px; border:1px solid var(--border-color); cursor:pointer;">
+                        <div style="font-size:12px; color:#666;">Card</div>
+                        <div id="eodCard" style="font-weight:bold; font-size:15px;">Rs. 0.00</div>
+                    </div>
+                    <div onclick="filterPaymentMethod('Bank Transfer', this)" style="background:var(--section-bg); padding:10px; border-radius:6px; border:1px solid var(--border-color); cursor:pointer;">
+                        <div style="font-size:12px; color:#666;">Bank</div>
+                        <div id="eodBank" style="font-weight:bold; font-size:15px;">Rs. 0.00</div>
+                    </div>
+                    <div onclick="filterPaymentMethod('Koko', this)" style="background:var(--section-bg); padding:10px; border-radius:6px; border:1px solid var(--border-color); cursor:pointer;">
+                        <div style="font-size:12px; color:#666;">Koko</div>
+                        <div id="eodKoko" style="font-weight:bold; font-size:15px;">Rs. 0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="text" id="searchSales" placeholder="Search Sales by Sale ID (#1), Customer Name, Phone, Type (Product/Repair)..." onkeyup="filterSalesTable()" style="margin-bottom: 15px;">
             <table>
-                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total</th><th>Paid</th><th>Due</th><th>Date & Time</th><th>Action</th></tr></thead>
-                <tbody id="salesTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
+                <thead>
+                    <tr>
+                        <th>Sale ID</th>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Type</th>
+                        <th>Method</th>
+                        <th>Total (Rs.)</th>
+                        <th>Date & Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="salesTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
             </table>
         </div>
 
@@ -308,7 +361,7 @@
         </div>
     </div>
 
-    <!-- Receipt Modal (Forced White Background & Black Text for Clear Visibility) -->
+    <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
         <div style="background:#ffffff; color:#333333; padding:25px; border-radius:8px; width:480px; max-height:90vh; overflow-y:auto; box-shadow:0 8px 25px rgba(0,0,0,0.3); font-family:Arial, sans-serif;">
             <h3 style="color:#28a745; text-align:center; margin-top:0; margin-bottom:20px;">Sale Completed Successfully!</h3>
@@ -338,9 +391,7 @@
                             <th style="padding:8px; border:1px solid #007bff; text-align:right; width:100px;">Total (Rs.)</th>
                         </tr>
                     </thead>
-                    <tbody id="receiptItemsTableBody" style="background:#ffffff; color:#333333;">
-                        <!-- Items rendered dynamically -->
-                    </tbody>
+                    <tbody id="receiptItemsTableBody" style="background:#ffffff; color:#333333;"></tbody>
                 </table>
 
                 <div style="border-top:1px dashed #ccc; padding-top:10px; font-size:13px; color:#333;">
@@ -386,6 +437,7 @@
         let externalItemsData = [], takenRepairItemsData = [], currentSalesFilter = 'all', currentStockFilter = 'all';
         let html5QrcodeScanner = null, lastSaleData = null, currentBarcodeData = null;
         let selectedOriginalPrice = 0, selectedCostPrice = 0, rawReceiptPlaintext = "", selectedBillingValue = "";
+        let paymentMethodFilter = 'all';
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -812,6 +864,8 @@
             const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
             rawSalesData = await res.json();
             let daily = 0, monthly = 0, repair = 0;
+            let cashSum = 0, cardSum = 0, bankSum = 0, kokoSum = 0;
+
             const now = new Date();
             const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -823,12 +877,25 @@
                 if(s.date_only === today) {
                     daily += parseFloat(s.total_amount || 0);
                     if(s.sale_type === 'Repair') repair += parseFloat(s.total_amount || 0);
+
+                    const amt = parseFloat(s.total_amount || 0);
+                    if(s.payment_method === 'Cash') cashSum += amt;
+                    else if(s.payment_method === 'Card') cardSum += amt;
+                    else if(s.payment_method === 'Bank Transfer') bankSum += amt;
+                    else if(s.payment_method === 'Koko') kokoSum += amt;
                 }
             });
+
             document.getElementById('dailySalesAmt').textContent = `Rs. ${daily.toFixed(2)}`;
             document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthly.toFixed(2)}`;
             document.getElementById('repairSalesAmt').textContent = `Rs. ${repair.toFixed(2)}`;
             document.getElementById('totalTransactions').textContent = rawSalesData.length;
+
+            document.getElementById('eodCash').textContent = `Rs. ${cashSum.toFixed(2)}`;
+            document.getElementById('eodCard').textContent = `Rs. ${cardSum.toFixed(2)}`;
+            document.getElementById('eodBank').textContent = `Rs. ${bankSum.toFixed(2)}`;
+            document.getElementById('eodKoko').textContent = `Rs. ${kokoSum.toFixed(2)}`;
+
             renderSalesTable();
         }
 
@@ -837,35 +904,67 @@
             if(!tbody) return;
             tbody.innerHTML = '';
             const query = (document.getElementById('searchSales').value || '').toLowerCase().trim();
+
             const filtered = rawSalesData.filter(s => {
+                if(paymentMethodFilter !== 'all' && s.payment_method !== paymentMethodFilter) return false;
                 if(!query) return true;
                 const matchId = s.sale_id.toString().includes(query);
                 const matchCust = s.customer_name && s.customer_name.toLowerCase().includes(query);
                 const matchPhone = s.customer_phone && s.customer_phone.includes(query);
+                const matchType = s.sale_type && s.sale_type.toLowerCase().includes(query);
                 const matchDate = s.date_only && s.date_only.includes(query);
                 const matchMonth = s.month_only && s.month_only.includes(query);
                 const matchYear = s.date_only && s.date_only.startsWith(query);
-                return matchId || matchCust || matchPhone || matchDate || matchMonth || matchYear;
+                return matchId || matchCust || matchPhone || matchType || matchDate || matchMonth || matchYear;
             });
 
-            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No matching sales found.</td></tr>`; return; }
+            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No matching sales found.</td></tr>`; return; }
+
             filtered.forEach(s => {
+                let badgeBg = '#17a2b8';
+                if(s.sale_type === 'Repair') badgeBg = '#ffc107; color:#000;';
+                else if(s.sale_type === 'Mixed') badgeBg = '#6610f2';
+
                 tbody.innerHTML += `<tr>
                     <td><b>#${s.sale_id}</b></td>
                     <td>${s.customer_name}</td>
                     <td>${s.customer_phone}</td>
-                    <td>${s.sale_type}</td>
+                    <td><span style="background:${badgeBg}; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:bold; display:inline-block;">${s.sale_type}</span></td>
                     <td>${s.payment_method}</td>
                     <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
-                    <td>Rs. ${parseFloat(s.amount_paid).toFixed(2)}</td>
-                    <td style="color:${s.balance_due>0?'red':''}">Rs. ${parseFloat(s.balance_due).toFixed(2)}</td>
                     <td>${s.formatted_date}</td>
-                    <td><button onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px; font-size:11px;">View</button></td>
+                    <td>
+                        <button onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px 8px; font-size:11px; margin-right:4px;">View</button>
+                        <button onclick="deleteSale('${s.delete_key}')" style="background:#dc3545; padding:3px 8px; font-size:11px;">Remove</button>
+                    </td>
                 </tr>`;
             });
         }
-        function filterSalesView(type, el) { document.querySelectorAll('.analytics-grid .card').forEach(c => c.classList.remove('active-card')); if(el) el.classList.add('active-card'); renderSalesTable(); }
+
+        function filterSalesView(type, el) { 
+            document.querySelectorAll('.analytics-grid .card').forEach(c => c.classList.remove('active-card')); 
+            if(el) el.classList.add('active-card'); 
+            paymentMethodFilter = 'all';
+            renderSalesTable(); 
+        }
+
+        function filterPaymentMethod(method, cardEl) {
+            paymentMethodFilter = method;
+            renderSalesTable();
+        }
+
         function filterSalesTable() { renderSalesTable(); }
+
+        async function deleteSale(deleteKey) {
+            if(!confirm('Are you sure you want to remove this sale record?')) return;
+            const res = await fetch(`/api/sales/${encodeURIComponent(deleteKey)}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            if(res.ok) {
+                loadSales();
+                alert('Sale removed successfully!');
+            } else {
+                alert('Failed to remove sale.');
+            }
+        }
 
         function viewSale(id) {
             const s = rawSalesData.find(item => item.sale_id == id);
