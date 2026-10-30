@@ -175,7 +175,6 @@ app.delete('/api/products/:id', (req, res) => {
 
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
-    console.log("GET /api/sales called for shop_id:", shopId);
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
@@ -183,7 +182,6 @@ app.get('/api/sales', (req, res) => {
             console.error("Database error fetching sales:", err);
             return res.status(500).json({ error: err.message });
         }
-        console.log(`Found ${results ? results.length : 0} sales for shop_id ${shopId}`);
         
         const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
@@ -213,13 +211,9 @@ app.get('/api/sales', (req, res) => {
 });
 
 app.post('/api/sales', (req, res) => {
-    console.log("POST /api/sales received body:", req.body);
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, amount_paid, balance_due, items } = req.body;
     
-    if (!shop_id) {
-        console.error("Error: shop_id is missing in sales post request!");
-        return res.status(400).json({ error: 'Missing shop_id' });
-    }
+    if (!shop_id) return res.status(400).json({ error: 'Missing shop_id' });
 
     let containsRepair = false, containsProduct = false;
     if (items && Array.isArray(items)) {
@@ -241,11 +235,7 @@ app.post('/api/sales', (req, res) => {
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, amount_paid, balance_due, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, finalAmountPaid, finalBalanceDue, itemsJson],
         (err, result) => {
-            if (err) {
-                console.error("Database error inserting sale:", err);
-                return res.status(500).json({ error: err.message });
-            }
-            console.log("Sale inserted successfully with ID:", result.insertId);
+            if (err) return res.status(500).json({ error: err.message });
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     if (item.product_id && item.qty) {

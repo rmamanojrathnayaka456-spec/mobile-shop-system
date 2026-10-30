@@ -468,7 +468,6 @@
             const data = await res.json();
             if(res.ok && data.success) {
                 currentUser = data.user;
-                console.log("Logged in user data:", currentUser);
                 localStorage.setItem('pos_user', JSON.stringify(currentUser));
                 initApp();
             } else { alert(data.error || 'Login failed!'); }
@@ -485,7 +484,6 @@
             const saved = localStorage.getItem('pos_user');
             if(saved) {
                 currentUser = JSON.parse(saved);
-                console.log("Initialized with currentUser:", currentUser);
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
                 document.getElementById('userDisplay').textContent = currentUser.shop_name;
@@ -796,12 +794,9 @@
                 total_amount, amount_paid, balance_due, items: cart
             };
 
-            console.log("Sending checkout payload with shop_id:", currentUser.shop_id, payload);
-
             try {
                 const res = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const result = await res.json();
-                console.log("Checkout response:", result);
                 if(res.ok && result.success) {
                     lastSaleData = { 
                         ...payload, 
@@ -895,15 +890,10 @@
         }
 
         async function loadSales() {
-            if(!currentUser) {
-                console.warn("loadSales called but currentUser is null");
-                return;
-            }
+            if(!currentUser) return;
             try {
-                console.log("Fetching sales for shop_id:", currentUser.shop_id);
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
                 rawSalesData = await res.json();
-                console.log("Received raw sales data:", rawSalesData);
                 
                 if (!Array.isArray(rawSalesData)) {
                     rawSalesData = [];
@@ -1161,7 +1151,6 @@
             const tbody = document.getElementById('consignmentTable');
             if(!tbody) return;
             tbody.innerHTML = externalItemsData.length === 0 ? `<tr><td colspan="9" style="text-align:center;">No consignments.</td></tr>` : '';
-            externalItemsData.loadExternalItems = true;
             externalItemsData.forEach(item => {
                 tbody.innerHTML += `<tr>
                     <td><b>#${item.item_id}</b></td>
@@ -1170,7 +1159,7 @@
                     <td>${item.item_name}</td>
                     <td>${item.imei || '-'}</td>
                     <td>Rs. ${parseFloat(item.cost_price).toFixed(2)}</td>
-                    <td>Rs. ${parseFloat(item.expected_price).Error ? 0 : parseFloat(item.expected_price).toFixed(2)}</td>
+                    <td>Rs. ${parseFloat(item.expected_price || 0).toFixed(2)}</td>
                     <td><b>${item.status}</b></td>
                     <td><button onclick="markConsignmentSold(${item.item_id})" style="background:#28a745; padding:3px; font-size:11px;">Sold</button></td>
                 </tr>`;
