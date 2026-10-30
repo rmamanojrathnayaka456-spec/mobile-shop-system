@@ -70,6 +70,7 @@ db.query(`
     )
 `);
 
+// Reset and Recreate sales table cleanly to fix status 500 error
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
