@@ -181,11 +181,10 @@ app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         
-        const formatted = (results || []).map((row, index) => {
-            const realId = row.sale_id || (index + 1);
+        const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             const pad = (n) => String(n).padStart(2, '0');
             const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
@@ -197,9 +196,9 @@ app.get('/api/sales', (req, res) => {
 
             return {
                 ...row,
-                sale_id: realId,
+                sale_id: row.sale_id, // Permanent Sale ID from database primary key
                 items: parsedItems,
-                delete_key: sqlDateTime,
+                delete_key: row.sale_id,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
                 amount_paid: row.amount_paid !== null ? parseFloat(row.amount_paid) : parseFloat(row.total_amount || 0),
@@ -269,9 +268,9 @@ app.put('/api/sales/pay-credit/:id', (req, res) => {
 });
 
 app.delete('/api/sales/:id', (req, res) => {
-    const deleteKey = decodeURIComponent(req.params.id);
+    const saleId = req.params.id;
     const shopId = req.query.shop_id;
-    db.query('DELETE FROM sales WHERE created_at = ? AND shop_id = ? LIMIT 1', [deleteKey, shopId], (err) => {
+    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
     });

@@ -148,7 +148,7 @@
                         <h4 style="margin: 0 0 5px 0; color: #e65100;">🔄 Exchange Phone</h4>
                         <input type="text" id="exModel" placeholder="Old Phone Model" style="margin-bottom:3px;">
                         <input type="number" id="exValue" placeholder="Exchange Value (Rs.)" step="0.01" style="margin-bottom:5px;">
-                        <button type="button" onclick="addExchangeToCart()" style="background: #ffr9800; color:#000;">Add Exchange</button>
+                        <button type="button" onclick="addExchangeToCart()" style="background: #ff9800; color:#000;">Add Exchange</button>
                     </div>
                 </div>
                 <div>
@@ -247,7 +247,21 @@
                 </div>
             </div>
 
-            <input type="text" id="searchSales" placeholder="Search Sales by Sale ID (#1), Customer Name, Phone, Type (Product/Repair)..." onkeyup="filterSalesTable()" style="margin-bottom: 15px;">
+            <!-- Date Filter & Search Bar -->
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 3px;">Filter by Specific Date:</label>
+                    <input type="date" id="filterDateInput" onchange="filterSalesTable()" style="margin:0;">
+                </div>
+                <div style="flex: 3; min-width: 300px;">
+                    <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 3px;">Search Sales:</label>
+                    <input type="text" id="searchSales" placeholder="Search by Sale ID (#1), Customer Name, Phone..." onkeyup="filterSalesTable()" style="margin:0;">
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button type="button" onclick="clearDateFilter()" style="background:#6c757d; padding: 10px 15px; margin:0; height: 42px;">Clear Date</button>
+                </div>
+            </div>
+
             <table>
                 <thead>
                     <tr>
@@ -903,19 +917,20 @@
             const tbody = document.getElementById('salesTable');
             if(!tbody) return;
             tbody.innerHTML = '';
+            
             const query = (document.getElementById('searchSales').value || '').toLowerCase().trim();
+            const selectedDate = document.getElementById('filterDateInput').value; // e.g. YYYY-MM-DD
 
             const filtered = rawSalesData.filter(s => {
                 if(paymentMethodFilter !== 'all' && s.payment_method !== paymentMethodFilter) return false;
+                if(selectedDate && s.date_only !== selectedDate) return false;
+
                 if(!query) return true;
                 const matchId = s.sale_id.toString().includes(query);
                 const matchCust = s.customer_name && s.customer_name.toLowerCase().includes(query);
                 const matchPhone = s.customer_phone && s.customer_phone.includes(query);
                 const matchType = s.sale_type && s.sale_type.toLowerCase().includes(query);
-                const matchDate = s.date_only && s.date_only.includes(query);
-                const matchMonth = s.month_only && s.month_only.includes(query);
-                const matchYear = s.date_only && s.date_only.startsWith(query);
-                return matchId || matchCust || matchPhone || matchType || matchDate || matchMonth || matchYear;
+                return matchId || matchCust || matchPhone || matchType;
             });
 
             if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No matching sales found.</td></tr>`; return; }
@@ -935,7 +950,7 @@
                     <td>${s.formatted_date}</td>
                     <td>
                         <button onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px 8px; font-size:11px; margin-right:4px;">View</button>
-                        <button onclick="deleteSale('${s.delete_key}')" style="background:#dc3545; padding:3px 8px; font-size:11px;">Remove</button>
+                        <button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px 8px; font-size:11px;">Remove</button>
                     </td>
                 </tr>`;
             });
@@ -945,6 +960,7 @@
             document.querySelectorAll('.analytics-grid .card').forEach(c => c.classList.remove('active-card')); 
             if(el) el.classList.add('active-card'); 
             paymentMethodFilter = 'all';
+            document.getElementById('filterDateInput').value = '';
             renderSalesTable(); 
         }
 
@@ -955,9 +971,14 @@
 
         function filterSalesTable() { renderSalesTable(); }
 
-        async function deleteSale(deleteKey) {
-            if(!confirm('Are you sure you want to remove this sale record?')) return;
-            const res = await fetch(`/api/sales/${encodeURIComponent(deleteKey)}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+        function clearDateFilter() {
+            document.getElementById('filterDateInput').value = '';
+            renderSalesTable();
+        }
+
+        async function deleteSale(saleId) {
+            if(!confirm(`Are you sure you want to remove Sale #${saleId}?`)) return;
+            const res = await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
             if(res.ok) {
                 loadSales();
                 alert('Sale removed successfully!');
