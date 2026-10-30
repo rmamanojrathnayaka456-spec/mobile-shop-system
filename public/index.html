@@ -513,6 +513,23 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('inactive'));
             document.getElementById(`tab${tabNum}`).classList.add('active');
             if(btn) btn.classList.remove('inactive');
+
+            // Clear billing search data when leaving Tab 2
+            if(tabNum !== 2) {
+                document.getElementById('billingSearch').value = '';
+                document.getElementById('customDropdownList').style.display = 'none';
+                document.getElementById('billingProductWarranty').value = '';
+                document.getElementById('costPriceDisplay').value = '';
+                document.getElementById('originalPrice').value = '';
+                document.getElementById('billingPrice').value = '';
+                document.getElementById('billingDiscountDisplay').value = '0.00';
+                document.getElementById('billingImei').value = '';
+                document.getElementById('billingImeiGroup').style.display = 'none';
+                selectedBillingValue = '';
+                selectedOriginalPrice = 0;
+                selectedCostPrice = 0;
+            }
+
             if(tabNum === 2) { loadInventory(); loadRepairs(); }
             else if(tabNum === 3) loadInventory();
             else if(tabNum === 4) loadSales();
