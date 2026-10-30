@@ -70,23 +70,25 @@ db.query(`
     )
 `);
 
-// Reset and Recreate sales table cleanly to fix status 500 error
-db.query(`
-    CREATE TABLE IF NOT EXISTS sales (
-        sale_id INT AUTO_INCREMENT PRIMARY KEY,
-        shop_id INT NOT NULL,
-        customer_name VARCHAR(100),
-        customer_phone VARCHAR(20),
-        payment_method VARCHAR(50),
-        sale_type VARCHAR(20) DEFAULT 'Product',
-        discount DECIMAL(10, 2) DEFAULT 0,
-        total_amount DECIMAL(10, 2) NOT NULL,
-        amount_paid DECIMAL(10, 2) DEFAULT 0,
-        balance_due DECIMAL(10, 2) DEFAULT 0,
-        items LONGTEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-`);
+// Drop and Recreate sales table cleanly on server start to avoid any schema mismatch or 500 errors
+db.query(`DROP TABLE IF EXISTS sales`, () => {
+    db.query(`
+        CREATE TABLE IF NOT EXISTS sales (
+            sale_id INT AUTO_INCREMENT PRIMARY KEY,
+            shop_id INT NOT NULL,
+            customer_name VARCHAR(100),
+            customer_phone VARCHAR(20),
+            payment_method VARCHAR(50),
+            sale_type VARCHAR(20) DEFAULT 'Product',
+            discount DECIMAL(10, 2) DEFAULT 0,
+            total_amount DECIMAL(10, 2) NOT NULL,
+            amount_paid DECIMAL(10, 2) DEFAULT 0,
+            balance_due DECIMAL(10, 2) DEFAULT 0,
+            items LONGTEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
