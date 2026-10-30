@@ -125,7 +125,7 @@
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
                     <input type="text" id="billingSearch" placeholder="Type ID, Name or Scan..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #007bff;">
                     <div style="position: relative;">
-                        <div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 180px; overflow-y: auto; background: var(--input-bg); border: 2px solid #007bff; z-index: 99; border-radius: 4px;"></div>
+                        <div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 200px; overflow-y: auto; background: var(--input-bg); border: 2px solid #007bff; z-index: 99; border-radius: 4px;"></div>
                     </div>
                     <label style="margin-top: 10px; display: block;">Warranty:</label><input type="text" id="billingProductWarranty" style="font-weight:bold; color:#007bff;" disabled>
                     <div id="billingImeiGroup" style="display:none; margin-top: 5px;"><label style="font-weight:bold; color:#e65100;">IMEI:</label><input type="text" id="billingImei" style="border: 2px solid #e65100; font-weight:bold;"></div>
@@ -512,16 +512,48 @@
             }
         }
 
+        // Updated Billing Search with Brand, Stock & Color Warnings
         function handleBillingSearch() {
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
-            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
+            const filtered = allProducts.filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                (p.product_code && p.product_code.toLowerCase().includes(query)) || 
+                (p.brand && p.brand.toLowerCase().includes(query)) || 
+                (p.imei && p.imei.toLowerCase().includes(query))
+            );
             const container = document.getElementById('customDropdownList');
             container.innerHTML = '';
             if(filtered.length === 0) { container.style.display = 'none'; return; }
+
             filtered.forEach(p => {
                 const div = document.createElement('div');
-                div.style.padding = '8px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid var(--border-color)';
-                div.textContent = `#${p.product_code} - ${p.name} - Rs. ${p.selling_price}`;
+                div.style.padding = '10px'; 
+                div.style.cursor = 'pointer'; 
+                div.style.borderBottom = '1px solid var(--border-color)';
+                
+                let stockBadge = `Stock: ${p.stock}`;
+                let textColor = 'inherit';
+                let bgTint = 'transparent';
+
+                if(p.stock <= 0) {
+                    stockBadge = 'OUT OF STOCK (0)';
+                    textColor = '#dc3545';
+                    bgTint = 'rgba(220,53,69,0.12)';
+                } else if(p.stock <= 2) {
+                    stockBadge = `LOW STOCK (${p.stock})`;
+                    textColor = '#e0a800';
+                    bgTint = 'rgba(255,193,7,0.12)';
+                }
+
+                div.style.backgroundColor = bgTint;
+                div.innerHTML = `
+                    <div style="font-weight:bold; color:var(--text-color);">#${p.product_code} - ${p.name}</div>
+                    <div style="font-size:12px; color:#6c757d; display:flex; justify-content:space-between; margin-top:3px;">
+                        <span>Brand: <b>${p.brand || 'N/A'}</b> | Price: <b>Rs. ${parseFloat(p.selling_price).toFixed(2)}</b></span>
+                        <span style="color:${textColor}; font-weight:bold;">${stockBadge}</span>
+                    </div>
+                `;
+
                 div.onclick = () => {
                     selectedBillingValue = 'prod_' + p.product_id;
                     document.getElementById('billingSearch').value = p.name;
@@ -573,7 +605,7 @@
             const p = allProducts.find(item => item.product_id == pId);
             const price = parseFloat(document.getElementById('billingPrice').value);
             const qty = parseInt(document.getElementById('billingQty').value) || 1;
-            if(!p || p.stock < qty) return alert('Out of stock or not selected!');
+            if(!p || p.stock < qty) return alert('Out of stock or insufficient stock available!');
             cart.push({ type: 'product', product_id: p.product_id, name: p.name, price, qty, subtotal: price * qty, discount: (selectedOriginalPrice - price) * qty });
             renderCart();
         }
@@ -709,7 +741,6 @@
         }
         function filterCreditSales() { loadCreditSales(); }
 
-        // Customer History Tab 6
         function filterCustomerHistory() {
             const query = (document.getElementById('searchCustomerHistory').value || '').toLowerCase().trim();
             const tbody = document.getElementById('custSalesTable');
