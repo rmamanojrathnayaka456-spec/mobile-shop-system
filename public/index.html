@@ -50,10 +50,12 @@
         .card.active-card { border-color: #28a745 !important; background: rgba(40, 167, 69, 0.1); }
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
 
+        /* Print styling to ensure single page and proper white receipt background */
         @media print {
             body * { visibility: hidden; }
             #receiptModal, #receiptModal * { visibility: visible; }
-            #receiptModal { position: absolute; left: 0; top: 0; width: 100%; background: white !important; }
+            #receiptModal { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: white !important; display: flex !important; align-items: center; justify-content: center; z-index: 9999; }
+            #receiptModal > div { box-shadow: none !important; max-height: 100vh !important; width: 100% !important; border: none !important; }
             #receiptModal button { display: none !important; }
         }
     </style>
@@ -306,29 +308,29 @@
         </div>
     </div>
 
-    <!-- Receipt Modal (Styled Exactly Like Your Screenshot) -->
+    <!-- Receipt Modal (Forced White Background & Black Text for Clear Visibility) -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:white; color:#333; padding:25px; border-radius:8px; width:480px; max-height:90vh; overflow-y:auto; box-shadow:0 8px 25px rgba(0,0,0,0.3); font-family:Arial, sans-serif;">
+        <div style="background:#ffffff; color:#333333; padding:25px; border-radius:8px; width:480px; max-height:90vh; overflow-y:auto; box-shadow:0 8px 25px rgba(0,0,0,0.3); font-family:Arial, sans-serif;">
             <h3 style="color:#28a745; text-align:center; margin-top:0; margin-bottom:20px;">Sale Completed Successfully!</h3>
             
-            <div style="border:1px solid #ddd; border-radius:6px; padding:15px; background:#fff;">
+            <div style="border:1px solid #ddd; border-radius:6px; padding:15px; background:#ffffff; color:#333333;">
                 <div style="text-align:center; border-bottom:2px solid #007bff; padding-bottom:10px; margin-bottom:15px;">
                     <h2 id="receiptShopName" style="color:#007bff; margin:0 0 5px 0; font-size:22px;">SHA MOBILE</h2>
                     <div id="receiptShopContact" style="font-size:13px; color:#555;">Contact: 0756017464 / 0726656433</div>
                     <div style="font-size:11px; color:#777; font-weight:bold; margin-top:3px; letter-spacing:0.5px;">OFFICIAL SALES RECEIPT</div>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; font-size:12px; background:#f9f9f9; padding:8px; border-radius:4px; margin-bottom:15px; border:1px solid #eee;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; background:#f9f9f9; color:#333; padding:8px; border-radius:4px; margin-bottom:15px; border:1px solid #eee;">
                     <div><b>Date:</b> <span id="receiptDate">10/30/2026, 8:35:20 PM</span></div>
                     <div><b>Phone:</b> <span id="receiptPhone">0726656435</span></div>
                 </div>
-                <div style="font-size:12px; margin-bottom:10px; padding:0 3px;">
+                <div style="font-size:12px; margin-bottom:10px; padding:0 3px; color:#333;">
                     <b>Customer:</b> <span id="receiptCustomer">MANOJ</span>
                 </div>
 
                 <div style="font-size:11px; color:#666; font-weight:bold; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">Purchased Items</div>
                 
-                <table style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size:13px;">
+                <table style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size:13px; background:#ffffff; color:#333333;">
                     <thead>
                         <tr style="background:#007bff; color:white;">
                             <th style="padding:8px; border:1px solid #007bff; text-align:left;">Description</th>
@@ -336,12 +338,12 @@
                             <th style="padding:8px; border:1px solid #007bff; text-align:right; width:100px;">Total (Rs.)</th>
                         </tr>
                     </thead>
-                    <tbody id="receiptItemsTableBody">
+                    <tbody id="receiptItemsTableBody" style="background:#ffffff; color:#333333;">
                         <!-- Items rendered dynamically -->
                     </tbody>
                 </table>
 
-                <div style="border-top:1px dashed #ccc; padding-top:10px; font-size:13px;">
+                <div style="border-top:1px dashed #ccc; padding-top:10px; font-size:13px; color:#333;">
                     <div id="receiptDiscountRow" style="display:flex; justify-content:space-between; margin-bottom:5px; color:#dc3545; font-weight:bold;">
                         <span>Total Discount:</span>
                         <span id="receiptDiscountVal">- Rs. 150.00</span>
@@ -754,14 +756,14 @@
 
                 itemsHtml += `
                     <tr>
-                        <td style="padding:8px; border:1px solid #ddd; vertical-align:top;">
-                            <div style="font-weight:bold; color:#333;">${i.name}</div>
+                        <td style="padding:8px; border:1px solid #ddd; vertical-align:top; background:#ffffff; color:#333333;">
+                            <div style="font-weight:bold; color:#333333;">${i.name}</div>
                             ${warrantyTxt}
                             ${imeiTxt}
                             ${origTxt}
                         </td>
-                        <td style="padding:8px; border:1px solid #ddd; text-align:center; vertical-align:top;">${i.qty}</td>
-                        <td style="padding:8px; border:1px solid #ddd; text-align:right; vertical-align:top; font-weight:bold;">Rs. ${parseFloat(i.subtotal).toFixed(2)}</td>
+                        <td style="padding:8px; border:1px solid #ddd; text-align:center; vertical-align:top; background:#ffffff; color:#333333;">${i.qty}</td>
+                        <td style="padding:8px; border:1px solid #ddd; text-align:right; vertical-align:top; font-weight:bold; background:#ffffff; color:#333333;">Rs. ${parseFloat(i.subtotal).toFixed(2)}</td>
                     </tr>
                 `;
             });
@@ -783,7 +785,6 @@
             document.getElementById('receiptChangeVal').textContent = `Rs. ${changeDue.toFixed(2)}`;
             document.getElementById('receiptMethodVal').textContent = sale.payment_method;
 
-            // Generate plain text version for copy/WhatsApp
             let plain = `================================\n    ${sale.branch.toUpperCase()}\n    Contact: ${sale.branch_phone}\n    OFFICIAL SALES RECEIPT\n================================\n`;
             plain += `Date: ${sale.formatted_date}\nCustomer: ${sale.customer_name} (${sale.customer_phone})\n--------------------------------\n`;
             sale.items.forEach(i => {
