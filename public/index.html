@@ -515,7 +515,7 @@
             if(btn) btn.classList.remove('inactive');
             if(tabNum === 2) { loadInventory(); loadRepairs(); }
             else if(tabNum === 3) loadInventory();
-            else if(tabNum === 4) loadSales();
+            else if(tabNum === 4) loadSales(); // Loads sales when Tab 4 is opened
             else if(tabNum === 5) { loadRepairs(); loadTakenRepairItems(); }
             else if(tabNum === 6) { loadSales(); }
             else if(tabNum === 8) loadCreditSales();
@@ -875,42 +875,51 @@
         }
 
         async function loadSales() {
-            const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
-            rawSalesData = await res.json();
-            let daily = 0, monthly = 0, repair = 0;
-            let cashSum = 0, cardSum = 0, bankSum = 0, kokoSum = 0;
-
-            const now = new Date();
-            const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-            const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-
-            rawSalesData.forEach(s => {
-                if(s.month_only === thisMonth) {
-                    monthly += parseFloat(s.total_amount || 0);
+            try {
+                const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
+                rawSalesData = await res.json();
+                
+                if (!Array.isArray(rawSalesData)) {
+                    rawSalesData = [];
                 }
-                if(s.date_only === today) {
-                    daily += parseFloat(s.total_amount || 0);
-                    if(s.sale_type === 'Repair') repair += parseFloat(s.total_amount || 0);
 
-                    const amt = parseFloat(s.total_amount || 0);
-                    if(s.payment_method === 'Cash') cashSum += amt;
-                    else if(s.payment_method === 'Card') cardSum += amt;
-                    else if(s.payment_method === 'Bank Transfer') bankSum += amt;
-                    else if(s.payment_method === 'Koko') kokoSum += amt;
-                }
-            });
+                let daily = 0, monthly = 0, repair = 0;
+                let cashSum = 0, cardSum = 0, bankSum = 0, kokoSum = 0;
 
-            document.getElementById('dailySalesAmt').textContent = `Rs. ${daily.toFixed(2)}`;
-            document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthly.toFixed(2)}`;
-            document.getElementById('repairSalesAmt').textContent = `Rs. ${repair.toFixed(2)}`;
-            document.getElementById('totalTransactions').textContent = rawSalesData.length;
+                const now = new Date();
+                const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+                const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
-            document.getElementById('eodCash').textContent = `Rs. ${cashSum.toFixed(2)}`;
-            document.getElementById('eodCard').textContent = `Rs. ${cardSum.toFixed(2)}`;
-            document.getElementById('eodBank').textContent = `Rs. ${bankSum.toFixed(2)}`;
-            document.getElementById('eodKoko').textContent = `Rs. ${kokoSum.toFixed(2)}`;
+                rawSalesData.forEach(s => {
+                    if(s.month_only === thisMonth) {
+                        monthly += parseFloat(s.total_amount || 0);
+                    }
+                    if(s.date_only === today) {
+                        daily += parseFloat(s.total_amount || 0);
+                        if(s.sale_type === 'Repair') repair += parseFloat(s.total_amount || 0);
 
-            renderSalesTable();
+                        const amt = parseFloat(s.total_amount || 0);
+                        if(s.payment_method === 'Cash') cashSum += amt;
+                        else if(s.payment_method === 'Card') cardSum += amt;
+                        else if(s.payment_method === 'Bank Transfer') bankSum += amt;
+                        else if(s.payment_method === 'Koko') kokoSum += amt;
+                    }
+                });
+
+                document.getElementById('dailySalesAmt').textContent = `Rs. ${daily.toFixed(2)}`;
+                document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthly.toFixed(2)}`;
+                document.getElementById('repairSalesAmt').textContent = `Rs. ${repair.toFixed(2)}`;
+                document.getElementById('totalTransactions').textContent = rawSalesData.length;
+
+                document.getElementById('eodCash').textContent = `Rs. ${cashSum.toFixed(2)}`;
+                document.getElementById('eodCard').textContent = `Rs. ${cardSum.toFixed(2)}`;
+                document.getElementById('eodBank').textContent = `Rs. ${bankSum.toFixed(2)}`;
+                document.getElementById('eodKoko').textContent = `Rs. ${kokoSum.toFixed(2)}`;
+
+                renderSalesTable();
+            } catch (err) {
+                console.error("Error loading sales:", err);
+            }
         }
 
         function renderSalesTable() {
@@ -919,7 +928,7 @@
             tbody.innerHTML = '';
             
             const query = (document.getElementById('searchSales').value || '').toLowerCase().trim();
-            const selectedDate = document.getElementById('filterDateInput').value; // e.g. YYYY-MM-DD
+            const selectedDate = document.getElementById('filterDateInput').value;
 
             const filtered = rawSalesData.filter(s => {
                 if(paymentMethodFilter !== 'all' && s.payment_method !== paymentMethodFilter) return false;
