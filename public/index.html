@@ -177,10 +177,10 @@
             <h3>3. Stock Inventory</h3>
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" onclick="switchStockSubTab('all', this)">All Stock</button>
-                <button class="sub-tab-btn" onclick="switchStockSubTab('low', this)">Low Stock (<=2)</button>
+                <button class="sub-tab-btn" onclick="switchStockSubTab('low', this)">Low Stock (&lt;=2)</button>
                 <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">Out of Stock</button>
             </div>
-            <input type="text" id="searchStock" placeholder="Search inventory..." onkeyup="filterStock()" style="margin-bottom: 15px;">
+            <input type="text" id="searchStock" placeholder="Search by ID Code (#065 or 65), Name, Brand, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px;">
             <table>
                 <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
                 <tbody id="inventoryTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody>
@@ -190,17 +190,13 @@
         <!-- Tab 4 -->
         <div id="tab4" class="section">
             <h3 id="salesHeaderTitle">4. Sales History & EOD Report</h3>
-            <div style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px;">
-                <h4 style="margin-top:0; color:#28a745;">🔥 Top Selling Items This Month</h4>
-                <div id="topSellingContainer" style="font-size: 13px;">Calculating...</div>
-            </div>
             <div class="analytics-grid">
                 <div class="card" onclick="filterSalesView('daily', this)"><h4>Daily Sales</h4><p id="dailySalesAmt">Rs. 0.00</p></div>
                 <div class="card" onclick="filterSalesView('monthly', this)"><h4>Monthly Sales</h4><p id="monthlySalesAmt">Rs. 0.00</p></div>
                 <div class="card" onclick="filterSalesView('repair', this)"><h4>Repair Sales</h4><p id="repairSalesAmt">Rs. 0.00</p></div>
                 <div class="card active-card" onclick="filterSalesView('all', this)"><h4>Total Transactions</h4><p id="totalTransactions">0</p></div>
             </div>
-            <input type="text" id="searchSales" placeholder="Search sales history..." onkeyup="filterSalesTable()" style="margin-bottom: 15px;">
+            <input type="text" id="searchSales" placeholder="Search sales by ID, Customer, or Date (YYYY-MM-DD, MM, YYYY)..." onkeyup="filterSalesTable()" style="margin-bottom: 15px;">
             <table>
                 <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total</th><th>Paid</th><th>Due</th><th>Date & Time</th><th>Action</th></tr></thead>
                 <tbody id="salesTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
@@ -246,14 +242,14 @@
             </div>
         </div>
 
-        <!-- Tab 6 -->
+        <!-- Tab 6: Customers -->
         <div id="tab6" class="section">
             <h3>6. Customer Purchase & Repair History</h3>
             <input type="text" id="searchCustomerHistory" placeholder="Type customer name or phone..." onkeyup="filterCustomerHistory()" style="margin-bottom: 15px;">
-            <h4>🛍️ Sales</h4>
+            <h4>🛍️ Sales History</h4>
             <table>
                 <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Payment</th><th>Total</th><th>Date</th><th>Action</th></tr></thead>
-                <tbody id="custSalesTable"><tr><td colspan="8" style="text-align:center;">Search above.</td></tr></tbody>
+                <tbody id="custSalesTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above to search.</td></tr></tbody>
             </table>
         </div>
 
@@ -387,6 +383,7 @@
             else if(tabNum === 3) loadInventory();
             else if(tabNum === 4) loadSales();
             else if(tabNum === 5) { loadRepairs(); loadTakenRepairItems(); }
+            else if(tabNum === 6) { loadSales(); }
             else if(tabNum === 8) loadCreditSales();
             else if(tabNum === 9) loadExternalItems();
         }
@@ -412,19 +409,42 @@
             if(currentStockFilter === 'out') filtered = products.filter(p => p.stock <= 0);
             else if(currentStockFilter === 'low') filtered = products.filter(p => p.stock > 0 && p.stock <= 2);
 
-            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No products.</td></tr>`; return; }
+            const query = (document.getElementById('searchStock').value || '').toLowerCase().trim();
+            if(query) {
+                filtered = filtered.filter(p => {
+                    const codeMatch = p.product_code && (p.product_code.toLowerCase().includes(query) || p.product_code.replace(/^0+/, '').includes(query.replace(/^0+/, '')));
+                    const nameMatch = p.name && p.name.toLowerCase().includes(query);
+                    const brandMatch = p.brand && p.brand.toLowerCase().includes(query);
+                    const imeiMatch = p.imei && p.imei.toLowerCase().includes(query);
+                    const idMatch = p.product_id && p.product_id.toString() === query;
+                    return codeMatch || nameMatch || brandMatch || imeiMatch || idMatch;
+                });
+            }
+
+            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No products found.</td></tr>`; return; }
             filtered.forEach(p => {
+                let stockStyle = '';
+                if(p.stock <= 0) stockStyle = 'color: #dc3545; font-weight: bold; background: rgba(220,53,69,0.1);';
+                else if(p.stock <= 2) stockStyle = 'color: #ffc107; font-weight: bold; background: rgba(255,193,7,0.1);';
+
                 tbody.innerHTML += `<tr>
-                    <td><b>#${p.product_code || p.product_id}</b></td><td>${p.name}</td><td>${p.brand || '-'}</td>
-                    <td>${p.category || '-'}</td><td>${p.color || '-'}</td><td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
-                    <td>${p.stock}</td><td>${p.imei || '-'}</td>
+                    <td><b>#${p.product_code || p.product_id}</b></td>
+                    <td>${p.name}</td>
+                    <td>${p.brand || '-'}</td>
+                    <td>${p.category || '-'}</td>
+                    <td>${p.color || '-'}</td>
+                    <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
+                    <td style="${stockStyle}">${p.stock} ${p.stock<=0?'(Out of Stock)':(p.stock<=2?'(Low Stock)':'' )}</td>
+                    <td>${p.imei || '-'}</td>
                     <td>
                         <button onclick="printExistingBarcode('${p.name}', '${p.product_code}', ${p.selling_price})" style="background:#17a2b8; padding:3px; font-size:11px;">Barcode</button>
-                        <button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:3px; font-size:11px;">Delete</button>
+                        <button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:3px; font-size:11px;">Remove</button>
                     </td>
                 </tr>`;
             });
         }
+
+        function filterStock() { renderInventory(allProducts); }
 
         function switchStockSubTab(type, btn) {
             currentStockFilter = type;
@@ -470,7 +490,7 @@
         }
 
         async function deleteProduct(id) {
-            if(!confirm('Delete?')) return;
+            if(!confirm('Are you sure you want to remove this product?')) return;
             await fetch(`/api/products/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
             loadInventory();
         }
@@ -605,20 +625,16 @@
             const now = new Date();
             const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-            const itemCounts = {};
 
             rawSalesData.forEach(s => {
-                if(s.month_only === thisMonth && s.items) {
+                if(s.month_only === thisMonth) {
                     monthly += parseFloat(s.total_amount || 0);
-                    s.items.forEach(i => { if(i.name) itemCounts[i.name] = (itemCounts[i.name] || 0) + (i.qty || 1); });
                 }
                 if(s.date_only === today) {
                     daily += parseFloat(s.total_amount || 0);
                     if(s.sale_type === 'Repair') repair += parseFloat(s.total_amount || 0);
                 }
             });
-            const top = Object.entries(itemCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
-            document.getElementById('topSellingContainer').innerHTML = top.length === 0 ? 'No sales yet.' : top.map(([n, q], idx) => `<div><b>#${idx+1} ${n}</b> — Sold: ${q}</div>`).join('');
             document.getElementById('dailySalesAmt').textContent = `Rs. ${daily.toFixed(2)}`;
             document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthly.toFixed(2)}`;
             document.getElementById('repairSalesAmt').textContent = `Rs. ${repair.toFixed(2)}`;
@@ -630,15 +646,31 @@
             const tbody = document.getElementById('salesTable');
             if(!tbody) return;
             tbody.innerHTML = '';
-            const query = document.getElementById('searchSales').value.toLowerCase().trim();
-            const filtered = rawSalesData.filter(s => !query || s.sale_id.toString().includes(query) || s.customer_name.toLowerCase().includes(query));
-            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No sales.</td></tr>`; return; }
+            const query = (document.getElementById('searchSales').value || '').toLowerCase().trim();
+            const filtered = rawSalesData.filter(s => {
+                if(!query) return true;
+                const matchId = s.sale_id.toString().includes(query);
+                const matchCust = s.customer_name && s.customer_name.toLowerCase().includes(query);
+                const matchPhone = s.customer_phone && s.customer_phone.includes(query);
+                const matchDate = s.date_only && s.date_only.includes(query);
+                const matchMonth = s.month_only && s.month_only.includes(query);
+                const matchYear = s.date_only && s.date_only.startsWith(query);
+                return matchId || matchCust || matchPhone || matchDate || matchMonth || matchYear;
+            });
+
+            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No matching sales found.</td></tr>`; return; }
             filtered.forEach(s => {
                 tbody.innerHTML += `<tr>
-                    <td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td>
-                    <td>${s.sale_type}</td><td>${s.payment_method}</td><td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
-                    <td>Rs. ${parseFloat(s.amount_paid).toFixed(2)}</td><td style="color:${s.balance_due>0?'red':''}">Rs. ${parseFloat(s.balance_due).toFixed(2)}</td>
-                    <td>${s.formatted_date}</td><td><button onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px; font-size:11px;">View</button></td>
+                    <td><b>#${s.sale_id}</b></td>
+                    <td>${s.customer_name}</td>
+                    <td>${s.customer_phone}</td>
+                    <td>${s.sale_type}</td>
+                    <td>${s.payment_method}</td>
+                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
+                    <td>Rs. ${parseFloat(s.amount_paid).toFixed(2)}</td>
+                    <td style="color:${s.balance_due>0?'red':''}">Rs. ${parseFloat(s.balance_due).toFixed(2)}</td>
+                    <td>${s.formatted_date}</td>
+                    <td><button onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px; font-size:11px;">View</button></td>
                 </tr>`;
             });
         }
@@ -677,6 +709,38 @@
         }
         function filterCreditSales() { loadCreditSales(); }
 
+        // Customer History Tab 6
+        function filterCustomerHistory() {
+            const query = (document.getElementById('searchCustomerHistory').value || '').toLowerCase().trim();
+            const tbody = document.getElementById('custSalesTable');
+            if(!tbody) return;
+            if(!query) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Type customer name or phone above to search.</td></tr>`;
+                return;
+            }
+            const filtered = rawSalesData.filter(s => 
+                (s.customer_name && s.customer_name.toLowerCase().includes(query)) || 
+                (s.customer_phone && s.customer_phone.includes(query))
+            );
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No history found for this customer.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = '';
+            filtered.forEach(s => {
+                tbody.innerHTML += `<tr>
+                    <td><b>#${s.sale_id}</b></td>
+                    <td>${s.customer_name}</td>
+                    <td>${s.customer_phone}</td>
+                    <td>${s.sale_type}</td>
+                    <td>${s.payment_method}</td>
+                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
+                    <td>${s.formatted_date}</td>
+                    <td><button onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px; font-size:11px;">View</button></td>
+                </tr>`;
+            });
+        }
+
         async function loadRepairs() {
             const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
             allRepairs = await res.json();
@@ -688,7 +752,7 @@
                     <td><b>#${r.repair_id}</b></td><td>${r.customer_name}</td><td>${r.customer_phone}</td>
                     <td>${r.device_model}</td><td>${r.issue_description}</td><td>Rs. ${parseFloat(r.advance_cost).toFixed(2)}</td>
                     <td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td><td>${r.status}</td>
-                    <td><button onclick="deleteRepair(${r.repair_id})" style="background:#dc3545; padding:3px;">Delete</button></td>
+                    <td><button onclick="deleteRepair(${r.repair_id})" style="background:#dc3545; padding:3px;">Remove</button></td>
                 </tr>`;
             });
         }
@@ -707,7 +771,7 @@
             if(res.ok) { document.getElementById('repairForm').reset(); loadRepairs(); alert('Repair added!'); }
         }
         async function deleteRepair(id) {
-            if(!confirm('Delete?')) return;
+            if(!confirm('Remove this repair?')) return;
             await fetch(`/api/repairs/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
             loadRepairs();
         }
@@ -722,7 +786,7 @@
                     <td><b>#${idx+1}</b></td><td>${item.item_name}</td><td>${item.serial}</td>
                     <td>${item.customer_name}</td><td>${item.customer_phone}</td><td>${item.problem}</td>
                     <td>Rs. ${item.estimated_cost.toFixed(2)}</td><td>${item.status}</td>
-                    <td><button onclick="takenRepairItemsData.splice(${idx},1);localStorage.setItem('taken_repairs_${currentUser.shop_id}',JSON.stringify(takenRepairItemsData));loadTakenRepairItems();" style="background:#dc3545; padding:2px;">X</button></td>
+                    <td><button onclick="takenRepairItemsData.splice(${idx},1);localStorage.setItem('taken_repairs_${currentUser.shop_id}',JSON.stringify(takenRepairItemsData));loadTakenRepairItems();" style="background:#dc3545; padding:2px;">Remove</button></td>
                 </tr>`;
             });
         }
@@ -751,13 +815,33 @@
             tbody.innerHTML = externalItemsData.length === 0 ? `<tr><td colspan="9" style="text-align:center;">No consignments.</td></tr>` : '';
             externalItemsData.forEach(item => {
                 tbody.innerHTML += `<tr>
-                    <td><b>#${item.item_id}</b></td><td>${item.target_shop_name}</td><td>${item.target_shop_phone}</td>
-                    <td>${item.item_name}</td><td>${item.imei || '-'}</td><td>Rs. ${parseFloat(item.cost_price).toFixed(2)}</td>
-                    <td>Rs. ${parseFloat(item.expected_price).toFixed(2)}</td><td><b>${item.status}</b></td>
-                    <td><button onclick="fetch('/api/external-items/${item.item_id}',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'Sold'})}).then(()=>loadExternalItems())" style="background:#28a745; padding:3px; font-size:11px;">Sold</button></td>
+                    <td><b>#${item.item_id}</b></td>
+                    <td>${item.target_shop_name}</td>
+                    <td>${item.target_shop_phone}</td>
+                    <td>${item.item_name}</td>
+                    <td>${item.imei || '-'}</td>
+                    <td>Rs. ${parseFloat(item.cost_price).toFixed(2)}</td>
+                    <td>Rs. ${parseFloat(item.expected_price).toFixed(2)}</td>
+                    <td><b>${item.status}</b></td>
+                    <td><button onclick="markConsignmentSold(${item.item_id})" style="background:#28a745; padding:3px; font-size:11px;">Sold</button></td>
                 </tr>`;
             });
         }
+
+        async function markConsignmentSold(itemId) {
+            const res = await fetch(`/api/external-items/${itemId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'Sold' })
+            });
+            if(res.ok) {
+                loadExternalItems();
+                alert('Consignment marked as Sold!');
+            } else {
+                alert('Failed to update status.');
+            }
+        }
+
         async function addConsignmentItem(e) {
             e.preventDefault();
             const data = {
