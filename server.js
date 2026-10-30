@@ -187,7 +187,6 @@ app.get('/api/sales', (req, res) => {
         const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             const pad = (n) => String(n).padStart(2, '0');
-            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
             let parsedItems = [];
             try {
@@ -196,7 +195,7 @@ app.get('/api/sales', (req, res) => {
 
             return {
                 ...row,
-                sale_id: row.sale_id, // Permanent Sale ID from database primary key
+                sale_id: row.sale_id,
                 items: parsedItems,
                 delete_key: row.sale_id,
                 sale_type: row.sale_type || 'Product',
@@ -340,26 +339,6 @@ app.delete('/api/external-items/:id', (req, res) => {
     db.query('DELETE FROM external_shop_items WHERE item_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
-    });
-});
-
-app.post('/api/restore', async (req, res) => {
-    const { shop_id, products, sales, repairs } = req.body;
-    db.query('DELETE FROM products WHERE shop_id = ?', [shop_id], () => {
-        db.query('DELETE FROM sales WHERE shop_id = ?', [shop_id], () => {
-            db.query('DELETE FROM repairs WHERE shop_id = ?', [shop_id], () => {
-                if (products) products.forEach(p => {
-                    db.query('INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, p.product_code, p.name, p.brand, p.color, p.category, p.cost_price, p.selling_price, p.stock, p.imei], () => {});
-                });
-                if (sales) sales.forEach(s => {
-                    db.query('INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, amount_paid, balance_due, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, s.customer_name, s.customer_phone, s.payment_method, s.sale_type, s.discount, s.total_amount, s.amount_paid, s.balance_due, JSON.stringify(s.items)], () => {});
-                });
-                if (repairs) repairs.forEach(r => {
-                    db.query('INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, r.customer_name, r.customer_phone, r.device_model, r.issue_description, r.advance_cost, r.total_cost, r.status], () => {});
-                });
-                res.json({ success: true, message: 'Restored' });
-            });
-        });
     });
 });
 

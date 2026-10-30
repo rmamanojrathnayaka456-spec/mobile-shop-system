@@ -515,7 +515,7 @@
             if(btn) btn.classList.remove('inactive');
             if(tabNum === 2) { loadInventory(); loadRepairs(); }
             else if(tabNum === 3) loadInventory();
-            else if(tabNum === 4) loadSales(); // Loads sales when Tab 4 is opened
+            else if(tabNum === 4) loadSales();
             else if(tabNum === 5) { loadRepairs(); loadTakenRepairItems(); }
             else if(tabNum === 6) { loadSales(); }
             else if(tabNum === 8) loadCreditSales();
@@ -801,7 +801,9 @@
                     branch_phone: currentUser.shop_phone || '0756017464/0726656433' 
                 };
                 showReceiptModal(lastSaleData);
-                cart = []; renderCart(); loadInventory(); loadSales(); loadCreditSales();
+                cart = []; renderCart(); loadInventory(); await loadSales(); loadCreditSales();
+            } else {
+                alert(result.error || 'Checkout failed!');
             }
         }
 
