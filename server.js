@@ -85,11 +85,7 @@ db.query(`
         items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`, () => {
-    db.query("ALTER TABLE sales ADD COLUMN amount_paid DECIMAL(10, 2) DEFAULT 0", () => {});
-    db.query("ALTER TABLE sales ADD COLUMN balance_due DECIMAL(10, 2) DEFAULT 0", () => {});
-    db.query("ALTER TABLE sales ADD COLUMN items LONGTEXT", () => {});
-});
+`);
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -182,7 +178,10 @@ app.get('/api/sales', (req, res) => {
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error("Database error fetching sales:", err);
+            return res.status(500).json({ error: err.message });
+        }
         
         const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
@@ -203,8 +202,8 @@ app.get('/api/sales', (req, res) => {
                 amount_paid: row.amount_paid !== null ? parseFloat(row.amount_paid) : parseFloat(row.total_amount || 0),
                 balance_due: row.balance_due !== null ? parseFloat(row.balance_due) : 0,
                 formatted_date: cDate.toLocaleString(),
-                date_only: cDate.toLocaleDateString('en-CA'),
-                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
+                date_only: `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())}`,
+                month_only: `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}`
             };
         });
         res.json(formatted);
@@ -234,7 +233,10 @@ app.post('/api/sales', (req, res) => {
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, amount_paid, balance_due, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, finalAmountPaid, finalBalanceDue, itemsJson],
         (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) {
+                console.error("Database error inserting sale:", err);
+                return res.status(500).json({ error: err.message });
+            }
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     if (item.product_id && item.qty) {

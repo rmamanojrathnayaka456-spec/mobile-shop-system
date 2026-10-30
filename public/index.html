@@ -790,20 +790,30 @@
                 payment_method, discount: cart.reduce((sum, i) => sum + (i.discount || 0), 0),
                 total_amount, amount_paid, balance_due, items: cart
             };
-            const res = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            const result = await res.json();
-            if(res.ok && result.success) {
-                lastSaleData = { 
-                    ...payload, 
-                    sale_id: result.sale_id,
-                    formatted_date: new Date().toLocaleString(),
-                    branch: currentUser.shop_name, 
-                    branch_phone: currentUser.shop_phone || '0756017464/0726656433' 
-                };
-                showReceiptModal(lastSaleData);
-                cart = []; renderCart(); loadInventory(); await loadSales(); loadCreditSales();
-            } else {
-                alert(result.error || 'Checkout failed!');
+
+            try {
+                const res = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const result = await res.json();
+                if(res.ok && result.success) {
+                    lastSaleData = { 
+                        ...payload, 
+                        sale_id: result.sale_id,
+                        formatted_date: new Date().toLocaleString(),
+                        branch: currentUser.shop_name, 
+                        branch_phone: currentUser.shop_phone || '0756017464/0726656433' 
+                    };
+                    showReceiptModal(lastSaleData);
+                    cart = []; 
+                    renderCart(); 
+                    loadInventory(); 
+                    await loadSales(); 
+                    loadCreditSales();
+                } else {
+                    alert(result.error || 'Checkout failed!');
+                }
+            } catch(ex) {
+                console.error("Checkout error:", ex);
+                alert("Network error during checkout.");
             }
         }
 
@@ -877,6 +887,7 @@
         }
 
         async function loadSales() {
+            if(!currentUser) return;
             try {
                 const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
                 rawSalesData = await res.json();
@@ -991,7 +1002,7 @@
             if(!confirm(`Are you sure you want to remove Sale #${saleId}?`)) return;
             const res = await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
             if(res.ok) {
-                loadSales();
+                await loadSales();
                 alert('Sale removed successfully!');
             } else {
                 alert('Failed to remove sale.');
@@ -1006,12 +1017,13 @@
         }
 
         async function loadCreditSales() {
+            if(!currentUser) return;
             const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
             const sales = await res.json();
             const tbody = document.getElementById('creditSalesTable');
             if(!tbody) return;
             tbody.innerHTML = '';
-            const credits = sales.filter(s => parseFloat(s.balance_due) > 0);
+            const credits = (sales || []).filter(s => parseFloat(s.balance_due) > 0);
             if(credits.length === 0) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No credit sales.</td></tr>`; return; }
             credits.forEach(s => {
                 tbody.innerHTML += `<tr>
@@ -1062,6 +1074,7 @@
         }
 
         async function loadRepairs() {
+            if(!currentUser) return;
             const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
             allRepairs = await res.json();
             const tbody = document.getElementById('repairsTable');
@@ -1097,6 +1110,7 @@
         }
 
         function loadTakenRepairItems() {
+            if(!currentUser) return;
             takenRepairItemsData = JSON.parse(localStorage.getItem(`taken_repairs_${currentUser.shop_id}`) || '[]');
             const tbody = document.getElementById('takenRepairTable');
             if(!tbody) return;
@@ -1128,6 +1142,7 @@
         }
 
         async function loadExternalItems() {
+            if(!currentUser) return;
             const res = await fetch(`/api/external-items?shop_id=${currentUser.shop_id}`);
             externalItemsData = await res.json();
             const tbody = document.getElementById('consignmentTable');
@@ -1171,7 +1186,7 @@
                 item_name: document.getElementById('consItemName').value.trim(),
                 imei: document.getElementById('consItemImei').value.trim(),
                 cost_price: document.getElementById('consCostPrice').value,
-                expected_price: document.getElementById('consExpectedPrice').value
+                expected_price: document.getElementById('consExpectedPrice.value')
             };
             const res = await fetch('/api/external-items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             if(res.ok) { document.getElementById('consignmentForm').reset(); loadExternalItems(); alert('Consignment recorded!'); }
