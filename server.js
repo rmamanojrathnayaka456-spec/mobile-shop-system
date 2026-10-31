@@ -173,7 +173,6 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 app.get('/api/sales', (req, res) => {
-    // Ensure table exists first so it never fails on Render cloud DB
     db.query(`
         CREATE TABLE IF NOT EXISTS sales (
             sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -189,20 +188,15 @@ app.get('/api/sales', (req, res) => {
             items LONGTEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    `, (createErr) => {
-        if (createErr) {
-            console.error("Error creating sales table:", createErr);
-        }
-
+    `, () => {
         db.query('SELECT * FROM sales ORDER BY created_at DESC', (err, results) => {
             if (err) {
                 console.error("Database error fetching sales:", err);
-                // Return empty array instead of 500 crash so frontend won't break
                 return res.json([]);
             }
             
             const list = Array.isArray(results) ? results : [];
-            const formatted = list.map((row) => {
+            const formatted = list.map((row, index) => {
                 const cDate = row.created_at ? new Date(row.created_at) : new Date();
                 const pad = (n) => String(n).padStart(2, '0');
 
@@ -211,7 +205,8 @@ app.get('/api/sales', (req, res) => {
                     parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []);
                 } catch (e) { parsedItems = []; }
 
-                const actualId = row.sale_id !== undefined ? row.sale_id : (row.id !== undefined ? row.id : 1);
+                // Use the exact sale_id from database table row properly
+                const actualId = row.sale_id !== undefined && row.sale_id !== null ? row.sale_id : (row.id !== undefined && row.id !== null ? row.id : (list.length - index));
 
                 return {
                     ...row,
