@@ -22,7 +22,55 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto create required tables on start
+// 1. Auto Create All Required Tables Safely on Startup
+db.query(`
+    CREATE TABLE IF NOT EXISTS shops (
+        shop_id INT AUTO_INCREMENT PRIMARY KEY,
+        shop_name VARCHAR(100) NOT NULL,
+        shop_phone VARCHAR(50) DEFAULT '',
+        status VARCHAR(20) DEFAULT 'ACTIVE'
+    )
+`, () => {
+    db.query("ALTER TABLE shops ADD COLUMN shop_phone VARCHAR(50) DEFAULT ''", () => {});
+    for (let i = 1; i <= 10; i++) {
+        db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [i, `Shop ${i}`]);
+    }
+});
+
+db.query(`
+    CREATE TABLE IF NOT EXISTS users (
+        user_id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(50) NOT NULL,
+        shop_id INT NOT NULL
+    )
+`, () => {
+    const defaultUsers = [
+        ['system01', 'sysKey@01', 1], ['system02', 'mobPass@02', 2], ['system03', 'shopPin@03', 3],
+        ['system04', 'posCode@04', 4], ['system05', 'storeKey@05', 5], ['system06', 'branch@06', 6],
+        ['system07', 'login@07', 7], ['system08', 'access@08', 8], ['system09', 'secure@09', 9], ['system10', 'admin@10', 10]
+    ];
+    defaultUsers.forEach(user => {
+        db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password)`, user);
+    });
+});
+
+db.query(`
+    CREATE TABLE IF NOT EXISTS products (
+        product_id INT AUTO_INCREMENT PRIMARY KEY,
+        shop_id INT NOT NULL,
+        product_code VARCHAR(10),
+        name VARCHAR(100) NOT NULL,
+        brand VARCHAR(50),
+        color VARCHAR(50),
+        category VARCHAR(50),
+        cost_price DECIMAL(10, 2),
+        selling_price DECIMAL(10, 2) NOT NULL DEFAULT 0,
+        stock INT DEFAULT 1,
+        imei VARCHAR(50)
+    )
+`);
+
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,16 +86,105 @@ db.query(`
         items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`, () => {});
+`);
 
+db.query(`
+    CREATE TABLE IF NOT EXISTS repairs (
+        repair_id INT AUTO_INCREMENT PRIMARY KEY,
+        shop_id INT NOT NULL,
+        customer_name VARCHAR(100),
+        customer_phone VARCHAR(20),
+        device_model VARCHAR(100),
+        issue_description TEXT,
+        advance_cost DECIMAL(10, 2) DEFAULT 0,
+        total_cost DECIMAL(10, 2) NOT NULL,
+        status VARCHAR(50) DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+db.query(`
+    CREATE TABLE IF NOT EXISTS external_shop_items (
+        item_id INT AUTO_INCREMENT PRIMARY KEY,
+        shop_id INT NOT NULL,
+        target_shop_name VARCHAR(100),
+        target_shop_phone VARCHAR(50),
+        item_name VARCHAR(255),
+        imei VARCHAR(100),
+        cost_price DECIMAL(10,2),
+        expected_price DECIMAL(10,2),
+        status VARCHAR(50) DEFAULT 'Given',
+        given_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        sold_date TIMESTAMP NULL
+    )
+`);
+
+// 2. Authentication Route
+app.post('/api/login', (req, res) => {
+    const { username, password, custom_shop_name, shop_phone } = req.body;
+    db.query(`
+        SELECT u.*, s.shop_name, s.shop_phone, s.status 
+        FROM users u 
+        JOIN shops s ON u.shop_id = s.shop_id 
+        WHERE u.username = ? AND u.password = ?
+    `, [username, password], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (results.length === 0) return res.status(401).json({ error: 'Invalid username or password' });
+        
+        const user = results[0];
+        if (user.status !== 'ACTIVE') return res.status(403).json({ error: 'Account Locked.' });
+
+        const finalShopName = custom_shop_name && custom_shop_name.trim() !== '' ? custom_shop_name.trim() : user.shop_name;
+        const finalShopPhone = shop_phone && shop_phone.trim() !== '' ? shop_phone.trim() : (user.shop_phone || '');
+
+        db.query('UPDATE shops SET shop_name = ?, shop_phone = ? WHERE shop_id = ?', [finalShopName, finalShopPhone, user.shop_id], () => {
+            user.shop_name = finalShopName;
+            user.shop_phone = finalShopPhone;
+            res.json({ success: true, user });
+        });
+    });
+});
+
+// 3. Products Routes
+app.get('/api/products', (req, res) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [shopId], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results || []);
+    });
+});
+
+app.post('/api/products', (req, res) => {
+    const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
+    db.query(
+        'INSERT INTO products (shop_id, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [shop_id || 1, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
+        (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            const pId = result.insertId;
+            const product_code = pId.toString().padStart(3, '0');
+            db.query('UPDATE products SET product_code = ? WHERE product_id = ?', [product_code, pId], () => {
+                res.json({ message: 'Product added successfully', product_id: pId, product_code });
+            });
+        }
+    );
+});
+
+app.delete('/api/products/:id', (req, res) => {
+    db.query('DELETE FROM products WHERE product_id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Deleted' });
+    });
+});
+
+// 4. Sales Routes
 app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
         if (err) {
             console.error("Database error fetching sales:", err);
-            return res.status(500).json({ error: err.message });
+            return res.json([]);
         }
         
-        console.log("-> Sales fetched from database count:", results ? results.length : 0);
         const list = Array.isArray(results) ? results : [];
         const formatted = list.map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
@@ -82,8 +219,6 @@ app.get('/api/sales', (req, res) => {
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, amount_paid, balance_due, items } = req.body;
     
-    if (!shop_id) return res.status(400).json({ error: 'Missing shop_id' });
-
     let containsRepair = false, containsProduct = false;
     if (items && Array.isArray(items)) {
         items.forEach(item => {
@@ -102,13 +237,16 @@ app.post('/api/sales', (req, res) => {
 
     db.query(
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, amount_paid, balance_due, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, finalAmountPaid, finalBalanceDue, itemsJson],
+        [shop_id || 1, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, finalAmountPaid, finalBalanceDue, itemsJson],
         (err, result) => {
-            if (err) {
-                console.error("Error inserting sale:", err);
-                return res.status(500).json({ error: err.message });
+            if (err) return res.status(500).json({ error: err.message });
+            if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                    if (item.product_id && item.qty) {
+                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ?', [item.qty, item.product_id]);
+                    }
+                });
             }
-            console.log("-> Sale successfully added with ID:", result.insertId);
             res.json({ success: true, sale_id: result.insertId });
         }
     );
@@ -122,8 +260,78 @@ app.delete('/api/sales/:id', (req, res) => {
     });
 });
 
-// Basic tables for products/repairs so app loads cleanly
-db.query(`CREATE TABLE IF NOT EXISTS products (product_id INT AUTO_INCREMENT PRIMARY KEY, shop_id INT NOT NULL, product_code VARCHAR(10), name VARCHAR(100) NOT NULL, brand VARCHAR(50), color VARCHAR(50), category VARCHAR(50), cost_price DECIMAL(10, 2), selling_price DECIMAL(10, 2) NOT NULL DEFAULT 0, stock INT DEFAULT 1, imei VARCHAR(50))`, () => {});
-db.query(`CREATE TABLE IF NOT EXISTS repairs (repair_id INT AUTO_INCREMENT PRIMARY KEY, shop_id INT NOT NULL, customer_name VARCHAR(100), customer_phone VARCHAR(20), device_model VARCHAR(100), issue_description TEXT, advance_cost DECIMAL(10, 2) DEFAULT 0, total_cost DECIMAL(10, 2) NOT NULL, status VARCHAR(50) DEFAULT 'Pending', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`, () => {});
+app.put('/api/sales/pay-credit/:id', (req, res) => {
+    const saleId = req.params.id;
+    const { paid_amount } = req.body;
+    
+    db.query('SELECT * FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err, results) => {
+        if (err || !results || results.length === 0) return res.status(404).json({ error: 'Sale not found' });
+        const sale = results[0];
+        const newPaid = parseFloat(sale.amount_paid || 0) + parseFloat(paid_amount);
+        const newDue = Math.max(0, parseFloat(sale.total_amount) - newPaid);
+
+        db.query('UPDATE sales SET amount_paid = ?, balance_due = ? WHERE sale_id = ? OR id = ?', [newPaid, newDue, saleId, saleId], (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ success: true, new_paid: newPaid, new_due: newDue });
+        });
+    });
+});
+
+// 5. Repairs Routes
+app.get('/api/repairs', (req, res) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+        if (err) return res.json([]);
+        res.json(results || []);
+    });
+});
+
+app.post('/api/repairs', (req, res) => {
+    const { shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost } = req.body;
+    db.query(
+        'INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [shop_id || 1, customer_name, customer_phone, device_model, issue_description, advance_cost || 0, total_cost],
+        (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Repair added', repair_id: result.insertId });
+        }
+    );
+});
+
+app.delete('/api/repairs/:id', (req, res) => {
+    db.query('DELETE FROM repairs WHERE repair_id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Deleted' });
+    });
+});
+
+// 6. External Items / Consignments Routes
+app.get('/api/external-items', (req, res) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT * FROM external_shop_items WHERE shop_id = ? ORDER BY item_id DESC', [shopId], (err, results) => {
+        if (err) return res.json([]);
+        res.json(results || []);
+    });
+});
+
+app.post('/api/external-items', (req, res) => {
+    const { shop_id, target_shop_name, target_shop_phone, item_name, imei, cost_price, expected_price } = req.body;
+    db.query(
+        'INSERT INTO external_shop_items (shop_id, target_shop_name, target_shop_phone, item_name, imei, cost_price, expected_price, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [shop_id || 1, target_shop_name, target_shop_phone, item_name, imei || '', cost_price || 0, expected_price || 0, 'Given'],
+        (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, item_id: result.insertId });
+        }
+    );
+});
+
+app.put('/api/external-items/:id', (req, res) => {
+    const { status } = req.body;
+    db.query('UPDATE external_shop_items SET status = ?, sold_date = CURRENT_TIMESTAMP WHERE item_id = ?', [status, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
