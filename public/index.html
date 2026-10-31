@@ -118,28 +118,53 @@
 
             <form id="productForm" onsubmit="addProduct(event)">
                 <input type="hidden" id="pCategory" value="Brand New Phone">
-                <label id="lblModel">Model Name:</label><input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra" required>
                 
-                <label>Select Brand:</label>
-                <input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple (Type to auto-add)" onblur="rememberBrand(this.value)">
-                <datalist id="brandList">
-                    <option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"><option value="JBL"><option value="Huawei"><option value="Realme">
-                </datalist>
-
-                <label>Select Colour:</label>
-                <input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue (Type to auto-add)" onblur="rememberColor(this.value)">
-                <datalist id="colorList">
-                    <option value="Black"><option value="Blue"><option value="White"><option value="Red"><option value="Gold"><option value="Silver"><option value="Green">
-                </datalist>
-
-                <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
-                <input type="text" id="pWarranty" list="warrantyList" placeholder="Select or Type Warranty (e.g. 6 Months, No Warranty)">
-                <datalist id="warrantyList"><option value="No Warranty"><option value="1 Week"><option value="2 Weeks"><option value="1 Month"><option value="3 Months"><option value="6 Months"><option value="1 Year"></datalist>
+                <label id="lblModel">Model Name:</label>
+                <input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra" required>
                 
-                <label>Cost Price (Rs.):</label><input type="number" id="pCost" placeholder="0.00" step="0.01">
-                <label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01" required>
-                <label>Stock Quantity:</label><input type="number" id="pStock" value="1" required>
-                <div id="imeiGroup"><label>IMEI Number / Serial:</label><input type="text" id="pImei" placeholder="Enter IMEI or Serial Number"></div>
+                <!-- Dynamic Brand Group -->
+                <div id="groupBrand" style="display: block;">
+                    <label>Select Brand:</label>
+                    <input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple (Type to auto-add)" onblur="rememberBrand(this.value)">
+                    <datalist id="brandList">
+                        <option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"><option value="Huawei"><option value="Realme"><option value="Nokia"><option value="JBL">
+                    </datalist>
+                </div>
+
+                <!-- Dynamic Colour Group -->
+                <div id="groupColor" style="display: block;">
+                    <label>Select Colour:</label>
+                    <input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue (Type to auto-add)" onblur="rememberColor(this.value)">
+                    <datalist id="colorList">
+                        <option value="Black"><option value="Blue"><option value="White"><option value="Red"><option value="Gold"><option value="Silver"><option value="Green">
+                    </datalist>
+                </div>
+
+                <!-- Dynamic Warranty Group -->
+                <div id="groupWarranty" style="display: block;">
+                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
+                    <input type="text" id="pWarranty" list="warrantyList" placeholder="Select or Type Warranty (e.g. 6 Months, No Warranty)">
+                    <datalist id="warrantyList"><option value="No Warranty"><option value="1 Week"><option value="2 Weeks"><option value="1 Month"><option value="3 Months"><option value="6 Months"><option value="1 Year"></datalist>
+                </div>
+                
+                <label>Cost Price (Rs.):</label>
+                <input type="number" id="pCost" placeholder="0.00" step="0.01">
+                
+                <!-- Selling Price Group (Hidden for Repair Parts) -->
+                <div id="groupSellingPrice" style="display: block;">
+                    <label>Selling Price (Rs.):</label>
+                    <input type="number" id="pPrice" placeholder="0.00" step="0.01">
+                </div>
+
+                <label>Stock Quantity:</label>
+                <input type="number" id="pStock" value="1" required>
+
+                <!-- IMEI Group -->
+                <div id="imeiGroup" style="display: block;">
+                    <label>IMEI Number / Serial:</label>
+                    <input type="text" id="pImei" placeholder="Enter IMEI or Serial Number">
+                </div>
+
                 <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product & Print Barcode</button>
             </form>
         </div>
@@ -482,14 +507,39 @@
             document.getElementById('categoryTitle').textContent = titleText;
             document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            const imeiGroup = document.getElementById('imeiGroup');
+
             const lblModel = document.getElementById('lblModel');
-            if(cat === 'Accessory' || cat === 'Karaoke Box' || cat === 'Repair Part') {
-                lblModel.textContent = cat === 'Repair Part' ? 'Part Name:' : 'Name:'; 
+            const groupBrand = document.getElementById('groupBrand');
+            const groupColor = document.getElementById('groupColor');
+            const groupWarranty = document.getElementById('groupWarranty');
+            const groupSellingPrice = document.getElementById('groupSellingPrice');
+            const imeiGroup = document.getElementById('imeiGroup');
+
+            // Reset visibility
+            groupBrand.style.display = 'block';
+            groupColor.style.display = 'block';
+            groupWarranty.style.display = 'block';
+            groupSellingPrice.style.display = 'block';
+            imeiGroup.style.display = 'block';
+
+            if(cat === 'Brand New Phone' || cat === 'Used Phone') {
+                lblModel.textContent = 'Model Name:';
+            } else if(cat === 'Button Phone') {
+                lblModel.textContent = 'Phone Model Name:';
+                // Button phones usually don't need complex smart brand dropdowns, but keeping brand/color or simplifying:
+            } else if(cat === 'Accessory') {
+                lblModel.textContent = 'Accessory Name:';
                 imeiGroup.style.display = 'none';
-            } else {
-                lblModel.textContent = 'Model Name:'; 
-                imeiGroup.style.display = 'block';
+            } else if(cat === 'Repair Part') {
+                lblModel.textContent = 'Repair Part Name:';
+                groupBrand.style.display = 'none'; // Repair parts don't need brand select option
+                groupColor.style.display = 'none'; // No colour needed
+                groupWarranty.style.display = 'none'; // No warranty
+                groupSellingPrice.style.display = 'none'; // NO SELLING PRICE FOR REPAIR PARTS
+                imeiGroup.style.display = 'none';
+            } else if(cat === 'Karaoke Box') {
+                lblModel.textContent = 'Karaoke Box Name:';
+                imeiGroup.style.display = 'none';
             }
         }
 
@@ -600,18 +650,30 @@
 
         async function addProduct(e) {
             e.preventDefault();
+            const cat = document.getElementById('pCategory').value;
             const baseName = document.getElementById('pName').value.trim();
-            const warranty = document.getElementById('pWarranty').value.trim() || 'No Warranty';
-            const finalName = `${baseName} [Warranty: ${warranty}]`;
             const stockQty = parseInt(document.getElementById('pStock').value) || 1;
-            const price = document.getElementById('pPrice').value;
+            
+            let finalName = baseName;
+            let price = 0;
+            let warranty = 'No Warranty';
+
+            if(cat === 'Repair Part') {
+                price = parseFloat(document.getElementById('pCost').value) || 0; // Repair parts use cost or 0 selling price
+            } else {
+                warranty = document.getElementById('pWarranty').value.trim() || 'No Warranty';
+                finalName = `${baseName} [Warranty: ${warranty}]`;
+                price = document.getElementById('pPrice').value;
+            }
 
             const data = {
                 shop_id: currentUser.shop_id, name: finalName,
-                brand: document.getElementById('pBrand').value, color: document.getElementById('pColor').value,
-                category: document.getElementById('pCategory').value, cost_price: document.getElementById('pCost').value,
-                selling_price: price, stock: stockQty, imei: document.getElementById('pImei').value || 'N/A'
+                brand: cat === 'Repair Part' ? 'Repair Part' : document.getElementById('pBrand').value, 
+                color: cat === 'Repair Part' ? '-' : document.getElementById('pColor').value,
+                category: cat, cost_price: document.getElementById('pCost').value,
+                selling_price: price, stock: stockQty, imei: cat === 'Repair Part' ? 'N/A' : (document.getElementById('pImei').value || 'N/A')
             };
+
             const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             const result = await res.json();
             if(res.ok) {
