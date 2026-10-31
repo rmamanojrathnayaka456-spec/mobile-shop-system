@@ -61,7 +61,7 @@
         @media print {
             body * { visibility: hidden; }
             .printable, .printable * { visibility: visible; }
-            .printable { position: absolute; left: 0; top: 0; width: 80mm; font-family: Arial, sans-serif; font-size: 12px; color: #000 !important; background: #fff !important; }
+            .printable { position: absolute; left: 0; top: 0; width: 80mm; font-family: 'Courier New', Courier, monospace !important; font-size: 12px; color: #000 !important; background: #fff !important; }
             #printHideBtn, #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
         }
     </style>
@@ -112,23 +112,34 @@
                 <button type="button" class="cat-btn" onclick="setCategory('Used Phone', '1. Add New Product / Used Phone', this)">Used Phones</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Button Phone', '1. Add New Product / Button Phone', this)">Button / Feature Phones</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Accessory', '1. Add New Product / Accessory', this)">Accessories</button>
+                <button type="button" class="cat-btn" onclick="setCategory('Repair Part', '1. Add New Product / Repair Part', this)">Repair Parts</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Karaoke Box', '1. Add New Product / Karaoke Box', this)">Karaoke Box</button>
             </div>
 
             <form id="productForm" onsubmit="addProduct(event)">
                 <input type="hidden" id="pCategory" value="Brand New Phone">
                 <label id="lblModel">Model Name:</label><input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra" required>
-                <label>Select Brand:</label><input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple">
-                <datalist id="brandList"><option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"><option value="JBL"></datalist>
-                <label>Select Colour:</label><input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue">
-                <datalist id="colorList"><option value="Black"><option value="Blue"><option value="White"><option value="Red"></datalist>
+                
+                <label>Select Brand:</label>
+                <input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple (Type to auto-add)" onblur="rememberBrand(this.value)">
+                <datalist id="brandList">
+                    <option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"><option value="JBL"><option value="Huawei"><option value="Realme">
+                </datalist>
+
+                <label>Select Colour:</label>
+                <input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue (Type to auto-add)" onblur="rememberColor(this.value)">
+                <datalist id="colorList">
+                    <option value="Black"><option value="Blue"><option value="White"><option value="Red"><option value="Gold"><option value="Silver"><option value="Green">
+                </datalist>
+
                 <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
                 <input type="text" id="pWarranty" list="warrantyList" placeholder="Select or Type Warranty (e.g. 6 Months, No Warranty)">
                 <datalist id="warrantyList"><option value="No Warranty"><option value="1 Week"><option value="2 Weeks"><option value="1 Month"><option value="3 Months"><option value="6 Months"><option value="1 Year"></datalist>
+                
                 <label>Cost Price (Rs.):</label><input type="number" id="pCost" placeholder="0.00" step="0.01">
                 <label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01" required>
                 <label>Stock Quantity:</label><input type="number" id="pStock" value="1" required>
-                <div id="imeiGroup"><label>IMEI Number:</label><input type="text" id="pImei" placeholder="Enter IMEI"></div>
+                <div id="imeiGroup"><label>IMEI Number / Serial:</label><input type="text" id="pImei" placeholder="Enter IMEI or Serial Number"></div>
                 <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product & Print Barcode</button>
             </form>
         </div>
@@ -441,6 +452,30 @@
             if(btn) btn.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
         }
 
+        function rememberBrand(val) {
+            val = val.trim();
+            if(!val) return;
+            const list = document.getElementById('brandList');
+            const exists = Array.from(list.options).some(opt => opt.value.toLowerCase() === val.toLowerCase());
+            if(!exists) {
+                const opt = document.createElement('option');
+                opt.value = val;
+                list.appendChild(opt);
+            }
+        }
+
+        function rememberColor(val) {
+            val = val.trim();
+            if(!val) return;
+            const list = document.getElementById('colorList');
+            const exists = Array.from(list.options).some(opt => opt.value.toLowerCase() === val.toLowerCase());
+            if(!exists) {
+                const opt = document.createElement('option');
+                opt.value = val;
+                list.appendChild(opt);
+            }
+        }
+
         function setCategory(cat, titleText, btn) {
             document.getElementById('productForm').reset();
             document.getElementById('pCategory').value = cat;
@@ -449,10 +484,12 @@
             btn.classList.add('active');
             const imeiGroup = document.getElementById('imeiGroup');
             const lblModel = document.getElementById('lblModel');
-            if(cat === 'Accessory' || cat === 'Karaoke Box') {
-                lblModel.textContent = 'Name:'; imeiGroup.style.display = 'none';
+            if(cat === 'Accessory' || cat === 'Karaoke Box' || cat === 'Repair Part') {
+                lblModel.textContent = cat === 'Repair Part' ? 'Part Name:' : 'Name:'; 
+                imeiGroup.style.display = 'none';
             } else {
-                lblModel.textContent = 'Model Name:'; imeiGroup.style.display = 'block';
+                lblModel.textContent = 'Model Name:'; 
+                imeiGroup.style.display = 'block';
             }
         }
 
@@ -573,7 +610,7 @@
                 shop_id: currentUser.shop_id, name: finalName,
                 brand: document.getElementById('pBrand').value, color: document.getElementById('pColor').value,
                 category: document.getElementById('pCategory').value, cost_price: document.getElementById('pCost').value,
-                selling_price: price, stock: stockQty, imei: document.getElementById('pImei').value
+                selling_price: price, stock: stockQty, imei: document.getElementById('pImei').value || 'N/A'
             };
             const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             const result = await res.json();
@@ -801,52 +838,51 @@
             }
         }
 
-        // --- HTML RECEIPT ---
+        // --- THERMAL POS TEXT RECEIPT ---
         function generateAutoMessage(sale) {
-            let htmlMsg = `
-                <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333333; line-height: 1.4; background: #ffffff; padding: 10px;">
-                    <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 12px;">
-                        <h2 style="margin: 0; color: #007bff; font-size: 18px;">${sale.branch.toUpperCase()}</h2>
-                        ${sale.branch_phone ? `<div style="font-size: 12px; color: #666; margin-top: 3px;">Contact: ${sale.branch_phone}</div>` : ''}
-                        <div style="font-size: 10px; text-transform: uppercase; color: #888; margin-top: 4px; font-weight: bold;">Official Sales Receipt</div>
-                    </div>
-                    <div style="background: #f8f9fa; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; color: #333;">
-                        <div><b>Date:</b> ${new Date().toLocaleString()}</div>
-                        <div><b>Customer:</b> ${sale.customer_name} | <b>Phone:</b> ${sale.customer_phone}</div>
-                    </div>
-                    <div style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: #555; margin-bottom: 5px;">Purchased Items</div>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; background: #ffffff; color: #333333;">
-                        <thead><tr style="background: #007bff; color: #ffffff;"><th style="padding: 6px; border: 1px solid #ddd; text-align:left;">Description</th><th style="padding: 6px; border: 1px solid #ddd; text-align:center;">Qty</th><th style="padding: 6px; border: 1px solid #ddd; text-align:right;">Total (Rs.)</th></tr></thead>
-                        <tbody>`;
-            sale.items.forEach(item => {
-                let discLine = (item.original_price && item.original_price > item.price) ? `<div style="color: #666; font-size: 11px;">Original: <span style="text-decoration: line-through;">Rs. ${item.original_price.toFixed(2)}</span></div>` : '';
-                let imeiLine = (item.imei && item.imei !== 'N/A') ? `<div style="color: #d97706; font-size: 11px; font-weight: bold;">IMEI: ${item.imei}</div>` : '';
-                htmlMsg += `<tr style="background: #ffffff; color: #333333;">
-                    <td style="padding: 8px; border: 1px solid #ddd; background: #ffffff; color: #333333;">
-                        <b style="color: #000; font-size: 13px;">${item.name}</b><br>
-                        <span style="color:#007bff; font-size:11px; font-weight:bold;">Warranty: ${item.warranty}</span>
-                        ${imeiLine}
-                        ${discLine}
-                    </td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align:center; background: #ffffff; color: #333333; vertical-align: top;">${item.qty}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align:right; background: #ffffff; color: #333333; vertical-align: top;">Rs. ${item.subtotal.toFixed(2)}</td>
-                </tr>`;
-            });
-            htmlMsg += `</tbody></table>
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px; color: #333;">
-                        ${sale.total_discount > 0 ? `<div style="display: flex; justify-content: space-between; color: #dc3545; font-weight: bold; margin-bottom: 4px;"><span>Total Discount:</span> <span>- Rs. ${sale.total_discount.toFixed(2)}</span></div>` : ''}
-                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #007bff; border-top: 1px dashed #ccc; padding-top: 4px;"><span>Total Payable:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Amount Paid:</span> <span>Rs. ${sale.amount_paid.toFixed(2)}</span></div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 2px; color: #28a745; font-weight: bold;"><span>Change Due:</span> <span>Rs. ${sale.change_due.toFixed(2)}</span></div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px dashed #ccc; padding-top: 4px;"><span>Payment Method:</span> <b>${sale.payment_method}</b></div>
-                    </div>
-                    <div style="text-align: center; font-size: 11px; color: #777; border-top: 1px dashed #ddd; padding-top: 8px; margin-top: 10px;">Thank you for your business!</div>
-                </div>`;
+            let shopName = (sale.branch || "SHA MOBILE").toUpperCase();
+            let contact = sale.branch_phone || "0712345678";
+            let dateStr = new Date().toLocaleString();
+            let custName = (sale.customer_name || "CASH CUSTOMER").toUpperCase();
+            let custPhone = sale.customer_phone || "N/A";
 
-            let txt = `================================\n    ${sale.branch.toUpperCase()}\n================================\nCustomer: ${sale.customer_name}\nPhone: ${sale.customer_phone}\n--------------------------------\n`;
-            sale.items.forEach(i => { txt += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n  Warranty: ${i.warranty}\n`; });
-            txt += `--------------------------------\nTOTAL: Rs. ${sale.total_amount.toFixed(2)}\nPayment: ${sale.payment_method}\n================================`;
+            let txt = `================================\n`;
+            txt += `          ${shopName}\n`;
+            txt += `    Contact: ${contact}\n`;
+            txt += `================================\n`;
+            txt += `   INVOICE / PURCHASE RECEIPT\n`;
+            txt += `--------------------------------\n`;
+            txt += `Date: ${dateStr}\n`;
+            txt += `Customer Name : ${custName}\n`;
+            txt += `Customer Phone: ${custPhone}\n`;
+            txt += `--------------------------------\n`;
+            txt += `PURCHASED ITEMS:\n`;
+
+            sale.items.forEach(item => {
+                txt += `- ${item.name} (Qty: ${item.qty})\n`;
+                txt += `  Warranty   : ${item.warranty || 'No Warranty'}\n`;
+                txt += `  IMEI       : ${item.imei || 'N/A'}\n`;
+                if (item.original_price && item.original_price > item.price) {
+                    txt += `  Original   : Rs. ${item.original_price.toFixed(2)}\n`;
+                }
+                txt += `  Total      : Rs. ${item.subtotal.toFixed(2)}\n`;
+            });
+
+            txt += `--------------------------------\n`;
+            if (sale.total_discount > 0) {
+                txt += `TOTAL DISCOUNT : Rs. ${sale.total_discount.toFixed(2)}\n`;
+            }
+            txt += `TOTAL PAYABLE  : Rs. ${sale.total_amount.toFixed(2)}\n`;
+            txt += `AMOUNT PAID    : Rs. ${sale.amount_paid.toFixed(2)}\n`;
+            txt += `CHANGE DUE     : Rs. ${sale.change_due.toFixed(2)}\n`;
+            txt += `Payment Method : ${sale.payment_method}\n`;
+            txt += `================================\n`;
+            txt += `    Thank you for your business!\n`;
+            txt += `================================`;
+
             rawReceiptPlaintext = txt;
+
+            let htmlMsg = `<pre style="font-family: 'Courier New', Courier, monospace; font-size: 13px; background: #000; color: #00ff00; padding: 15px; border-radius: 6px; line-height: 1.4; margin: 0; text-align: left; white-space: pre-wrap; word-break: break-all;">${txt}</pre>`;
 
             document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';
