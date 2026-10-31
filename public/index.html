@@ -48,7 +48,6 @@
         .card.active-card { border-color: #28a745 !important; background: rgba(40, 167, 69, 0.1); }
         .card h4 { margin: 0 0 10px 0; font-size: 14px; opacity: 0.8; }
         .card p { font-size: 18px; font-weight: bold; color: #007bff; margin: 0; }
-        .eod-box { transition: transform 0.2s; }
         .badge-prod { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .badge-rep { background: #17a2b8; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .badge-exch { background: #fd7e14; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
@@ -358,10 +357,10 @@
 
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:white; color:#333; padding:20px; border-radius:8px; width:450px; max-width:95%;">
+        <div class="printable" style="background:white; color:#333; padding:20px; border-radius:8px; width:450px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="color:#28a745; margin-top:0; text-align:center;" id="receiptModalTitle">Sale Completed Successfully!</h3>
             <div id="receiptBoxContainer"></div>
-            <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
+            <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
                 <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">Print Bill</button>
                 <button onclick="copyReceiptText()" style="background:#007bff; flex:1;">Copy</button>
                 <button onclick="sendWhatsAppMessage()" style="background:#25d366; flex:1;">WhatsApp</button>
@@ -635,17 +634,18 @@
             container.innerHTML = '';
             if(!query) { container.style.display = 'none'; return; }
 
-            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.brand && p.brand.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
             if(filtered.length === 0) { container.style.display = 'none'; return; }
 
             filtered.forEach(p => {
                 const parsed = parseProductItem(p.name);
+                const brandStr = p.brand ? `[${p.brand}] ` : '';
                 const div = document.createElement('div');
                 div.style.padding = '8px 12px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid var(--border-color)';
-                div.textContent = `#${p.product_code} - ${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
+                div.textContent = `#${p.product_code} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
                 div.onclick = () => {
                     selectedBillingValue = 'prod_' + p.product_id;
-                    document.getElementById('billingSearch').value = parsed.name;
+                    document.getElementById('billingSearch').value = `${brandStr}${parsed.name}`;
                     container.style.display = 'none';
                     selectBillingProductById(selectedBillingValue);
                 };
@@ -694,9 +694,10 @@
             const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
             if(!p || p.stock < qty) return alert('Not enough stock!');
             const parsed = parseProductItem(p.name);
+            const brandStr = p.brand ? `[${p.brand}] ` : '';
 
             cart.push({
-                type: 'product', product_id: p.product_id, name: parsed.name, warranty: selectedProductWarranty,
+                type: 'product', product_id: p.product_id, name: `${brandStr}${parsed.name}`, warranty: selectedProductWarranty,
                 price, qty, subtotal: price * qty, imei: document.getElementById('billingImei').value.trim()
             });
             renderCart(); clearBillingFields();
@@ -741,17 +742,48 @@
             }
         }
 
+        // --- HTML RECEIPT ---
         function generateAutoMessage(sale) {
-            let msg = `================================\n    ${sale.branch.toUpperCase()}\n================================\nCustomer: ${sale.customer_name}\nPhone: ${sale.customer_phone}\n--------------------------------\n`;
-            sale.items.forEach(i => { msg += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n  Warranty: ${i.warranty}\n`; });
-            msg += `--------------------------------\nTOTAL: Rs. ${sale.total_amount.toFixed(2)}\nPayment: ${sale.payment_method}\n================================`;
-            rawReceiptPlaintext = msg;
-            document.getElementById('receiptBoxContainer').innerHTML = `<pre style="font-family:monospace; font-size:12px;">${msg}</pre>`;
+            let htmlMsg = `
+                <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.4;">
+                    <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 12px;">
+                        <h2 style="margin: 0; color: #007bff; font-size: 18px;">${sale.branch.toUpperCase()}</h2>
+                        ${sale.branch_phone ? `<div style="font-size: 12px; color: #666; margin-top: 3px;">Contact: ${sale.branch_phone}</div>` : ''}
+                        <div style="font-size: 10px; text-transform: uppercase; color: #888; margin-top: 4px; font-weight: bold;">Official Sales Receipt</div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px;">
+                        <div><b>Date:</b> ${new Date().toLocaleString()}</div>
+                        <div><b>Customer:</b> ${sale.customer_name} | <b>Phone:</b> ${sale.customer_phone}</div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px;">
+                        <thead><tr style="background: #e9ecef;"><th style="padding: 6px; border: 1px solid #ddd;">Description</th><th style="padding: 6px; border: 1px solid #ddd; text-align:center;">Qty</th><th style="padding: 6px; border: 1px solid #ddd; text-align:right;">Total</th></tr></thead>
+                        <tbody>`;
+            sale.items.forEach(item => {
+                htmlMsg += `<tr>
+                    <td style="padding: 6px; border: 1px solid #ddd;"><b>${item.name}</b><br><span style="color:#007bff; font-size:11px;">Warranty: ${item.warranty}</span></td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align:center;">${item.qty}</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align:right;">Rs. ${item.subtotal.toFixed(2)}</td>
+                </tr>`;
+            });
+            htmlMsg += `</tbody></table>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px;">
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #007bff;"><span>Total Payable:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Payment Method:</span> <b>${sale.payment_method}</b></div>
+                    </div>
+                    <div style="text-align: center; font-size: 11px; color: #777; border-top: 1px dashed #ddd; padding-top: 8px; margin-top: 10px;">Thank you for your business!</div>
+                </div>`;
+
+            let txt = `================================\n    ${sale.branch.toUpperCase()}\n================================\nCustomer: ${sale.customer_name}\nPhone: ${sale.customer_phone}\n--------------------------------\n`;
+            sale.items.forEach(i => { txt += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n  Warranty: ${i.warranty}\n`; });
+            txt += `--------------------------------\nTOTAL: Rs. ${sale.total_amount.toFixed(2)}\nPayment: ${sale.payment_method}\n================================`;
+            rawReceiptPlaintext = txt;
+
+            document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
         function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
-        function copyReceiptText() { navigator.clipboard.writeText(rawReceiptPlaintext); alert('Copied!'); }
+        function copyReceiptText() { navigator.clipboard.writeText(rawReceiptPlaintext); alert('Copied to clipboard!'); }
         function sendWhatsAppMessage() { window.open(`https://wa.me/?text=${encodeURIComponent(rawReceiptPlaintext)}`, '_blank'); }
 
         // --- SALES HISTORY & REMOVE ---
