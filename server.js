@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// 1. Auto Create All Required Tables Safely on Startup
+// Auto create tables and sample data if empty
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,7 +31,6 @@ db.query(`
         status VARCHAR(20) DEFAULT 'ACTIVE'
     )
 `, () => {
-    db.query("ALTER TABLE shops ADD COLUMN shop_phone VARCHAR(50) DEFAULT ''", () => {});
     for (let i = 1; i <= 10; i++) {
         db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [i, `Shop ${i}`]);
     }
@@ -86,7 +85,17 @@ db.query(`
         items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`);
+`, () => {
+    db.query('SELECT COUNT(*) as cnt FROM sales', (err, rows) => {
+        if (!err && rows && rows[0].cnt === 0) {
+            const sampleItems = JSON.stringify([{ name: 'Test Mobile Phone [Warranty: 6 Months]', qty: 1, subtotal: 25000.00 }]);
+            db.query(
+                'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, total_amount, amount_paid, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [1, 'Sample Customer', '0771234567', 'Cash', 'Product', 25000.00, 25000.00, sampleItems]
+            );
+        }
+    });
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -119,7 +128,7 @@ db.query(`
     )
 `);
 
-// 2. Authentication Route
+// API Routes
 app.post('/api/login', (req, res) => {
     const { username, password, custom_shop_name, shop_phone } = req.body;
     db.query(`
@@ -145,10 +154,8 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// 3. Products Routes
 app.get('/api/products', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -177,7 +184,6 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// 4. Sales Routes
 app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
         if (err) {
@@ -277,10 +283,8 @@ app.put('/api/sales/pay-credit/:id', (req, res) => {
     });
 });
 
-// 5. Repairs Routes
 app.get('/api/repairs', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.json([]);
         res.json(results || []);
     });
@@ -305,10 +309,8 @@ app.delete('/api/repairs/:id', (req, res) => {
     });
 });
 
-// 6. External Items / Consignments Routes
 app.get('/api/external-items', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM external_shop_items WHERE shop_id = ? ORDER BY item_id DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM external_shop_items WHERE shop_id = ? ORDER BY item_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.json([]);
         res.json(results || []);
     });
