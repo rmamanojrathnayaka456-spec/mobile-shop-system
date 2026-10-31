@@ -641,9 +641,10 @@
                 const isLow = p.stock > 0 && p.stock <= 2;
                 
                 const div = document.createElement('div');
-                div.style.padding = '10px 12px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid #ddd'; div.style.color = '#333333'; div.style.background = isOut ? 'rgba(255, 0, 0, 0.1)' : (isLow ? 'rgba(255, 152, 0, 0.15)' : '#ffffff');
+                // Force pure white background and clean dark text so it's always readable even in dark mode
+                div.style.padding = '10px 12px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid #ddd'; div.style.color = '#333333'; div.style.background = isOut ? '#ffebee' : (isLow ? '#fff3e0' : '#ffffff');
                 div.onmouseover = () => div.style.background = '#f1f1f1';
-                div.onmouseout = () => div.style.background = isOut ? 'rgba(255, 0, 0, 0.1)' : (isLow ? 'rgba(255, 152, 0, 0.15)' : '#ffffff');
+                div.onmouseout = () => div.style.background = isOut ? '#ffebee' : (isLow ? '#fff3e0' : '#ffffff');
                 
                 div.innerHTML = `<b>#${p.product_code || p.product_id}</b> - ${brandStr}${parsed.name} <span style="color:#007bff;">[Warranty: ${parsed.warranty}]</span> - <b>Rs. ${p.selling_price}</b> <span style="font-weight:bold; color:${isOut ? '#dc3545' : (isLow ? '#d97706' : '#28a745')}">[Stock: ${p.stock}]</span> ${isLow ? '<span style="background:#ff9800; color:white; padding:1px 5px; border-radius:3px; font-size:10px;">LOW</span>' : (isOut ? '<span style="background:#dc3545; color:white; padding:1px 5px; border-radius:3px; font-size:10px;">OUT</span>' : '')}`;
                 
@@ -712,6 +713,7 @@
             const val = selectedBillingValue;
             const price = parseFloat(document.getElementById('billingPrice').value);
             const qty = parseInt(document.getElementById('billingQty').value) || 1;
+            const origPrice = selectedOriginalPrice;
             if(!val || isNaN(price)) return alert('Select a valid product!');
             const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
             if(!p || p.stock < qty) return alert('Not enough stock!');
@@ -720,7 +722,7 @@
 
             cart.push({
                 type: 'product', product_id: p.product_id, name: `${brandStr}${parsed.name}`, warranty: selectedProductWarranty,
-                price, qty, subtotal: price * qty, imei: document.getElementById('billingImei').value.trim()
+                price, original_price: origPrice, qty, subtotal: price * qty, imei: document.getElementById('billingImei').value.trim()
             });
             renderCart(); clearBillingFields();
         }
@@ -760,7 +762,8 @@
                 body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, items: cart })
             });
             if(res.ok) {
-                lastSaleData = { customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, total_discount: 0, amount_paid: parseFloat(document.getElementById('amountPaid').value), change_due: parseFloat(document.getElementById('changeDue').value), items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
+                let totalDiscount = cart.reduce((sum, i) => sum + Math.max(0, (i.original_price || i.price) - i.price) * i.qty, 0);
+                lastSaleData = { customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, total_discount: totalDiscount, amount_paid: parseFloat(document.getElementById('amountPaid').value), change_due: parseFloat(document.getElementById('changeDue').value), items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
                 generateAutoMessage(lastSaleData);
                 cart = []; renderCart(); loadInventory(); loadSales();
                 document.getElementById('custName').value = '';
@@ -781,20 +784,31 @@
                         <div><b>Date:</b> ${new Date().toLocaleString()}</div>
                         <div><b>Customer:</b> ${sale.customer_name} | <b>Phone:</b> ${sale.customer_phone}</div>
                     </div>
+                    <div style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: #555; margin-bottom: 5px;">Purchased Items</div>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; background: #ffffff; color: #333333;">
-                        <thead><tr style="background: #007bff; color: #ffffff;"><th style="padding: 6px; border: 1px solid #ddd; text-align:left;">Description</th><th style="padding: 6px; border: 1px solid #ddd; text-align:center;">Qty</th><th style="padding: 6px; border: 1px solid #ddd; text-align:right;">Total</th></tr></thead>
+                        <thead><tr style="background: #007bff; color: #ffffff;"><th style="padding: 6px; border: 1px solid #ddd; text-align:left;">Description</th><th style="padding: 6px; border: 1px solid #ddd; text-align:center;">Qty</th><th style="padding: 6px; border: 1px solid #ddd; text-align:right;">Total (Rs.)</th></tr></thead>
                         <tbody>`;
             sale.items.forEach(item => {
+                let discLine = (item.original_price && item.original_price > item.price) ? `<div style="color: #666; font-size: 11px;">Original: <span style="text-decoration: line-through;">Rs. ${item.original_price.toFixed(2)}</span></div>` : '';
+                let imeiLine = (item.imei && item.imei !== 'N/A') ? `<div style="color: #d97706; font-size: 11px; font-weight: bold;">IMEI: ${item.imei}</div>` : '';
                 htmlMsg += `<tr style="background: #ffffff; color: #333333;">
-                    <td style="padding: 8px; border: 1px solid #ddd; background: #ffffff; color: #333333;"><b>${item.name}</b><br><span style="color:#007bff; font-size:11px; font-weight:bold;">Warranty: ${item.warranty}</span></td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align:center; background: #ffffff; color: #333333;">${item.qty}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align:right; background: #ffffff; color: #333333;">Rs. ${item.subtotal.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; background: #ffffff; color: #333333;">
+                        <b style="color: #000; font-size: 13px;">${item.name}</b><br>
+                        <span style="color:#007bff; font-size:11px; font-weight:bold;">Warranty: ${item.warranty}</span>
+                        ${imeiLine}
+                        ${discLine}
+                    </td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align:center; background: #ffffff; color: #333333; vertical-align: top;">${item.qty}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align:right; background: #ffffff; color: #333333; vertical-align: top;">Rs. ${item.subtotal.toFixed(2)}</td>
                 </tr>`;
             });
             htmlMsg += `</tbody></table>
                     <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px; color: #333;">
-                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #007bff;"><span>Total Payable:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Payment Method:</span> <b>${sale.payment_method}</b></div>
+                        ${sale.total_discount > 0 ? `<div style="display: flex; justify-content: space-between; color: #dc3545; font-weight: bold; margin-bottom: 4px;"><span>Total Discount:</span> <span>- Rs. ${sale.total_discount.toFixed(2)}</span></div>` : ''}
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #007bff; border-top: 1px dashed #ccc; padding-top: 4px;"><span>Total Payable:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Amount Paid:</span> <span>Rs. ${sale.amount_paid.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 2px; color: #28a745; font-weight: bold;"><span>Change Due:</span> <span>Rs. ${sale.change_due.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px dashed #ccc; padding-top: 4px;"><span>Payment Method:</span> <b>${sale.payment_method}</b></div>
                     </div>
                     <div style="text-align: center; font-size: 11px; color: #777; border-top: 1px dashed #ddd; padding-top: 8px; margin-top: 10px;">Thank you for your business!</div>
                 </div>`;
