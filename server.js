@@ -172,40 +172,66 @@ app.delete('/api/products/:id', (req, res) => {
         res.json({ message: 'Deleted' });
     });
 });
-
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
-        if (err) {
-            console.error("Database error fetching sales:", err);
-            return res.status(500).json({ error: err.message });
+    // Ensure table exists first so it never fails on Render cloud DB
+    db.query(`
+        CREATE TABLE IF NOT EXISTS sales (
+            sale_id INT AUTO_INCREMENT PRIMARY KEY,
+            shop_id INT NOT NULL,
+            customer_name VARCHAR(100),
+            customer_phone VARCHAR(20),
+            payment_method VARCHAR(50),
+            sale_type VARCHAR(20) DEFAULT 'Product',
+            discount DECIMAL(10, 2) DEFAULT 0,
+            total_amount DECIMAL(10, 2) NOT NULL,
+            amount_paid DECIMAL(10, 2) DEFAULT 0,
+            balance_due DECIMAL(10, 2) DEFAULT 0,
+            items LONGTEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `, (createErr) => {
+        if (createErr) {
+            console.error("Error creating sales table:", createErr);
         }
-        
-        const formatted = (results || []).map((row) => {
-            const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            const pad = (n) => String(n).padStart(2, '0');
 
-            let parsedItems = [];
-            try {
-                parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []);
-            } catch (e) { parsedItems = []; }
+        db.query('SELECT * FROM sales ORDER BY created_at DESC', (err, results) => {
+            if (err) {
+                console.error("Database error fetching sales:", err);
+                // Return empty array instead of 500 crash so frontend won't break
+                return res.json([]);
+            }
+            
+            const list = Array.isArray(results) ? results : [];
+            const formatted = list.map((row) => {
+                const cDate = row.created_at ? new Date(row.created_at) : new Date();
+                const pad = (n) => String(n).padStart(2, '0');
 
-            return {
-                ...row,
-                sale_id: row.sale_id,
-                items: parsedItems,
-                delete_key: row.sale_id,
-                sale_type: row.sale_type || 'Product',
-                discount: row.discount || 0,
-                amount_paid: row.amount_paid !== null ? parseFloat(row.amount_paid) : parseFloat(row.total_amount || 0),
-                balance_due: row.balance_due !== null ? parseFloat(row.balance_due) : 0,
-                formatted_date: cDate.toLocaleString(),
-                date_only: `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())}`,
-                month_only: `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}`
-            };
+                let parsedItems = [];
+                try {
+                    parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []);
+                } catch (e) { parsedItems = []; }
+
+                const actualId = row.sale_id !== undefined ? row.sale_id : (row.id !== undefined ? row.id : 1);
+
+                return {
+                    ...row,
+                    sale_id: actualId,
+                    items: parsedItems,
+                    delete_key: actualId,
+                    sale_type: row.sale_type || 'Product',
+                    discount: row.discount || 0,
+                    amount_paid: row.amount_paid !== null ? parseFloat(row.amount_paid) : parseFloat(row.total_amount || 0),
+                    balance_due: row.balance_due !== null ? parseFloat(row.balance_due) : 0,
+                    formatted_date: cDate.toLocaleString(),
+                    date_only: `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())}`,
+                    month_only: `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}`
+                };
+            });
+            res.json(formatted);
         });
-        res.json(formatted);
     });
 });
+
 
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, amount_paid, balance_due, items } = req.body;
