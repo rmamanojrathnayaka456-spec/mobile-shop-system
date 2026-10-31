@@ -44,7 +44,8 @@
         th, td { border: 1px solid var(--border-color); padding: 10px; text-align: left; }
         th { background: var(--table-header-bg); color: var(--table-header-color); }
         .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .card { background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); border-left: 5px solid #007bff; cursor: pointer; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); border-left: 5px solid #007bff; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
         .card.active-card { border-color: #28a745 !important; background: rgba(40, 167, 69, 0.1); }
         .card h4 { margin: 0 0 10px 0; font-size: 14px; opacity: 0.8; }
         .card p { font-size: 18px; font-weight: bold; color: #007bff; margin: 0; }
@@ -225,24 +226,44 @@
 
         <!-- Tab 4: Sales History & EOD -->
         <div id="tab4" class="section">
-            <h3 id="salesHeaderTitle">4. Sales History & EOD Report</h3>
-            <div style="background:var(--container-bg); padding:15px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap; align-items:flex-end;">
-                <div><label style="font-size:12px; font-weight:bold;">Filter by Year:</label><select id="filterYear" onchange="applySalesFilters()" style="width:120px;"><option value="">All Years</option></select></div>
-                <div><label style="font-size:12px; font-weight:bold;">Filter by Month:</label><select id="filterMonth" onchange="applySalesFilters()" style="width:140px;"><option value="">All Months</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
-                <div><label style="font-size:12px; font-weight:bold;">Filter by Payment Method:</label><select id="filterPaymentMethod" onchange="applySalesFilters()" style="width:150px;"><option value="">All Methods</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Installment">Installment</option><option value="Koko">Koko</option><option value="Credit">Credit</option></select></div>
-                <div><label style="font-size:12px; font-weight:bold;">Filter by Exact Date:</label><input type="date" id="filterExactDate" onchange="applySalesFilters()" style="width:160px; padding:8px;"></div>
-                <button type="button" onclick="resetSalesFilters()" style="width:auto; padding:9px 15px; background:#6c757d; margin-top:5px;">Reset Filters</button>
+            <h3 id="salesHeaderTitle" style="border-left: 4px solid #007bff; padding-left: 10px; margin-bottom: 20px;">4. Sales History & EOD Report</h3>
+            
+            <!-- Professional Filter Control Panel -->
+            <div style="background:var(--container-bg); padding:20px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:20px; display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px; align-items:flex-end; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Filter by Year:</label><select id="filterYear" onchange="applySalesFilters()"><option value="">All Years</option></select></div>
+                <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Filter by Month:</label><select id="filterMonth" onchange="applySalesFilters()"><option value="">All Months</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Payment Method:</label><select id="filterPaymentMethod" onchange="applySalesFilters()"><option value="">All Methods</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Installment">Installment</option><option value="Koko">Koko</option><option value="Credit">Credit</option></select></div>
+                <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Exact Date:</label><input type="date" id="filterExactDate" onchange="applySalesFilters()" style="padding:9px;"></div>
+                <div><button type="button" onclick="resetSalesFilters()" style="background:#6c757d; padding:10px; font-weight:bold; width:100%;">🔄 Reset Filters</button></div>
             </div>
+
+            <!-- Professional Analytics Cards -->
             <div class="analytics-grid">
-                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #007bff;"><h4>Total Transactions</h4><p id="totalTransactions">0</p></div>
-                <div class="card" id="cardDaily" onclick="filterSalesView('daily', this)"><h4>Daily Sales (Today)</h4><p id="dailySalesAmt">Rs. 0.00</p></div>
-                <div class="card" id="cardMonthly" onclick="filterSalesView('monthly', this)"><h4>Monthly Sales (This Month)</h4><p id="monthlySalesAmt">Rs. 0.00</p></div>
-                <div class="card" id="cardRepair" onclick="filterSalesView('repair', this)" style="border-left-color: #17a2b8;"><h4>Repair Sales (Today)</h4><p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p></div>
+                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #007bff;">
+                    <h4>Total Transactions</h4><p id="totalTransactions" style="color: #007bff;">0</p>
+                </div>
+                <div class="card" id="cardDaily" onclick="filterSalesView('daily', this)" style="border-left-color: #28a745;">
+                    <h4>Daily Sales (Today)</h4><p id="dailySalesAmt" style="color: #28a745;">Rs. 0.00</p>
+                </div>
+                <div class="card" id="cardMonthly" onclick="filterSalesView('monthly', this)" style="border-left-color: #ffc107;">
+                    <h4>Monthly Sales (This Month)</h4><p id="monthlySalesAmt" style="color: #d39e00;">Rs. 0.00</p>
+                </div>
+                <div class="card" id="cardRepair" onclick="filterSalesView('repair', this)" style="border-left-color: #17a2b8;">
+                    <h4>Repair Sales (Today)</h4><p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p>
+                </div>
             </div>
-            <input type="text" id="searchSales" placeholder="Search Sales by ID, Customer Name, Phone, Type..." onkeyup="applySalesFilters()" style="margin-bottom: 15px; border: 2px solid #007bff; font-weight: bold;">
+
+            <!-- Search Bar -->
+            <input type="text" id="searchSales" placeholder="🔍 Search Sales by ID, Customer Name, Phone, Type..." onkeyup="applySalesFilters()" style="margin-bottom: 15px; border: 2px solid #007bff; font-weight: bold; padding: 12px; border-radius: 6px;">
+            
+            <!-- Sales Table -->
             <table>
-                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
-                <tbody id="salesTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
+                <thead>
+                    <tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr>
+                </thead>
+                <tbody id="salesTable">
+                    <tr><td colspan="8" style="text-align:center;">Loading sales records...</td></tr>
+                </tbody>
             </table>
         </div>
 
@@ -897,7 +918,7 @@
             }
         }
 
-        // --- PROFESSIONAL HTML RECEIPT (CLEAN WHITE BACKGROUND, NO TOTALS TABLE) ---
+        // --- PROFESSIONAL HTML RECEIPT ---
         function generateAutoReceiptHTML(sale) {
             let shopName = (sale.branch || "SHA MOBILE").toUpperCase();
             let contact = sale.branch_phone || "0720641351";
@@ -1293,13 +1314,13 @@
 
         async function processExchange(e) {
             e.preventDefault();
-            val = parseFloat(document.getElementById('exValuation').value) || 0;
+            const valuation = parseFloat(document.getElementById('exValuation').value) || 0;
             await fetch('/api/sales', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     shop_id: currentUser.shop_id, customer_name: document.getElementById('exCustName').value, customer_phone: document.getElementById('exCustPhone').value,
-                    payment_method: 'Exchange Allowance', total_amount: -val,
-                    items: [{ type: 'exchange', name: `Trade-In: ${document.getElementById('exPhoneModel').value}`, subtotal: -val, qty: 1 }]
+                    payment_method: 'Exchange Allowance', total_amount: -valuation,
+                    items: [{ type: 'exchange', name: `Trade-In: ${document.getElementById('exPhoneModel').value}`, subtotal: -valuation, qty: 1 }]
                 })
             });
             alert('Exchange recorded!'); document.getElementById('exchangeForm').reset(); loadSales(); loadInventory();
