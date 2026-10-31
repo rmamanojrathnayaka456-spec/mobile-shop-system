@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Shops & System Accounts with shop_phone support
+// Auto Create Tables
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -46,16 +46,9 @@ db.query(`
     )
 `, () => {
     const defaultUsers = [
-        ['system01', 'sysKey@01', 1],
-        ['system02', 'mobPass@02', 2],
-        ['system03', 'shopPin@03', 3],
-        ['system04', 'posCode@04', 4],
-        ['system05', 'storeKey@05', 5],
-        ['system06', 'branch@06', 6],
-        ['system07', 'login@07', 7],
-        ['system08', 'access@08', 8],
-        ['system09', 'secure@09', 9],
-        ['system10', 'admin@10', 10]
+        ['system01', 'sysKey@01', 1], ['system02', 'mobPass@02', 2], ['system03', 'shopPin@03', 3],
+        ['system04', 'posCode@04', 4], ['system05', 'storeKey@05', 5], ['system06', 'branch@06', 6],
+        ['system07', 'login@07', 7], ['system08', 'access@08', 8], ['system09', 'secure@09', 9], ['system10', 'admin@10', 10]
     ];
     defaultUsers.forEach(user => {
         db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password)`, user);
@@ -110,7 +103,7 @@ db.query(`
     )
 `);
 
-// Login API with Shop Name & Shop Phone Update
+// Login API
 app.post('/api/login', (req, res) => {
     const { username, password, custom_shop_name, shop_phone } = req.body;
     db.query(`
@@ -123,9 +116,7 @@ app.post('/api/login', (req, res) => {
         if (results.length === 0) return res.status(401).json({ error: 'Invalid username or password' });
         
         const user = results[0];
-        if (user.status !== 'ACTIVE') {
-            return res.status(403).json({ error: 'Account Locked. Please contact administrator to renew subscription.' });
-        }
+        if (user.status !== 'ACTIVE') return res.status(403).json({ error: 'Account Locked.' });
 
         const finalShopName = custom_shop_name && custom_shop_name.trim() !== '' ? custom_shop_name.trim() : user.shop_name;
         const finalShopPhone = shop_phone && shop_phone.trim() !== '' ? shop_phone.trim() : (user.shop_phone || '');
@@ -138,18 +129,9 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Admin Route to Lock / Unlock Shops
-app.post('/api/admin/toggle-lock', (req, res) => {
-    const { shop_id, status } = req.body;
-    db.query('UPDATE shops SET status = ? WHERE shop_id = ?', [status, shop_id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: `Shop #${shop_id} status updated to ${status}` });
-    });
-});
-
 // Products APIs
 app.get('/api/products', (req, res) => {
-    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id], (err, results) => {
+    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -159,7 +141,7 @@ app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
     db.query(
         'INSERT INTO products (shop_id, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [shop_id, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
+        [shop_id || 1, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             const pId = result.insertId;
@@ -172,7 +154,7 @@ app.post('/api/products', (req, res) => {
 });
 
 app.delete('/api/products/:id', (req, res) => {
-    db.query('DELETE FROM products WHERE product_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
+    db.query('DELETE FROM products WHERE product_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id || 1], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
@@ -185,7 +167,7 @@ app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
         if (err) {
             console.error("Database error fetching sales:", err);
-            return res.json([]); // Return empty array instead of 500 crash
+            return res.json([]);
         }
         
         const list = Array.isArray(results) ? results : [];
@@ -214,56 +196,53 @@ app.get('/api/sales', (req, res) => {
     });
 });
 
-// Sales APIs
-app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
-        if (err) {
-            console.error("Database error fetching sales:", err);
-            return res.json([]);
-        }
-        
-        let list = Array.isArray(results) ? results : [];
-
-        // If no sales exist for this shop, insert a sample test sale automatically so history is never blank
-        if (list.length === 0) {
-            const sampleItems = JSON.stringify([{ name: 'Test Mobile Phone [Warranty: 6 Months]', qty: 1, subtotal: 25000.00 }]);
-            db.query(
-                'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, total_amount, amount_paid, balance_due, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [shopId, 'Sample Customer', '0771234567', 'Cash', 'Product', 25000.00, 25000.00, 0.00, sampleItems],
-                () => {}
-            );
-        }
-
-        const formatted = list.map((row) => {
-            const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            let parsedItems = [];
-            try {
-                parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []);
-            } catch (e) { parsedItems = []; }
-
-            return {
-                ...row,
-                sale_id: row.sale_id,
-                items: parsedItems,
-                delete_key: row.sale_id,
-                sale_type: row.sale_type || 'Product',
-                discount: row.discount || 0,
-                amount_paid: row.amount_paid !== null ? parseFloat(row.amount_paid) : parseFloat(row.total_amount || 0),
-                balance_due: row.balance_due !== null ? parseFloat(row.balance_due) : 0,
-                formatted_date: cDate.toLocaleString(),
-                date_only: cDate.toLocaleDateString('en-CA'),
-                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
-            };
+app.post('/api/sales', (req, res) => {
+    const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, amount_paid, balance_due, items } = req.body;
+    
+    let containsRepair = false;
+    let containsProduct = false;
+    if (items && Array.isArray(items)) {
+        items.forEach(item => {
+            if (item.type === 'repair') containsRepair = true;
+            if (item.type === 'product' || item.type === 'exchange' || !item.type) containsProduct = true;
         });
-        res.json(formatted);
-    });
+    }
+    
+    let sale_type = 'Product';
+    if (containsRepair && containsProduct) sale_type = 'Mixed';
+    else if (containsRepair) sale_type = 'Repair';
+
+    const finalShopId = shop_id || 1;
+    const finalAmountPaid = amount_paid !== undefined ? amount_paid : total_amount;
+    const finalBalanceDue = balance_due !== undefined ? balance_due : 0;
+    const itemsJson = JSON.stringify(items || []);
+
+    db.query(
+        'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, amount_paid, balance_due, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [finalShopId, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, finalAmountPaid, finalBalanceDue, itemsJson],
+        (err, result) => {
+            if (err) {
+                console.error("Database error inserting sale:", err);
+                return res.status(500).json({ error: err.message });
+            }
+
+            if (items && Array.isArray(items)) {
+                items.forEach(item => {
+                    if (item.type === 'product' && item.product_id) {
+                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, finalShopId]);
+                    } else if (item.type === 'repair' && item.repair_id) {
+                        db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ? AND shop_id = ?', [item.repair_id, finalShopId]);
+                    }
+                });
+            }
+            res.json({ message: 'Sale recorded', sale_id: result.insertId });
+        }
+    );
 });
 
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
-    const shopId = req.query.shop_id;
+    const shopId = req.query.shop_id || 1;
     
     db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -273,7 +252,7 @@ app.delete('/api/sales/:id', (req, res) => {
 
 // Repairs APIs
 app.get('/api/repairs', (req, res) => {
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -283,7 +262,7 @@ app.post('/api/repairs', (req, res) => {
     const { shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost } = req.body;
     db.query(
         'INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost || 0, total_cost],
+        [shop_id || 1, customer_name, customer_phone, device_model, issue_description, advance_cost || 0, total_cost],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Repair added', repair_id: result.insertId });
@@ -292,37 +271,38 @@ app.post('/api/repairs', (req, res) => {
 });
 
 app.put('/api/repairs/:id', (req, res) => {
-    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.body.shop_id], (err) => {
+    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.body.shop_id || 1], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Updated' });
     });
 });
 
 app.delete('/api/repairs/:id', (req, res) => {
-    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
+    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id || 1], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
 });
 
-// Data Restore API for MySQL Database
+// Data Restore API
 app.post('/api/restore', async (req, res) => {
     const { shop_id, products, sales, repairs } = req.body;
+    const targetShop = shop_id || 1;
     
-    db.query('DELETE FROM products WHERE shop_id = ?', [shop_id], (err) => {
+    db.query('DELETE FROM products WHERE shop_id = ?', [targetShop], (err) => {
         if (err) return res.status(500).json({ success: false, error: err.message });
         
-        db.query('DELETE FROM sales WHERE shop_id = ?', [shop_id], (err2) => {
+        db.query('DELETE FROM sales WHERE shop_id = ?', [targetShop], (err2) => {
             if (err2) return res.status(500).json({ success: false, error: err2.message });
             
-            db.query('DELETE FROM repairs WHERE shop_id = ?', [shop_id], (err3) => {
+            db.query('DELETE FROM repairs WHERE shop_id = ?', [targetShop], (err3) => {
                 if (err3) return res.status(500).json({ success: false, error: err3.message });
 
                 if (products && products.length > 0) {
                     products.forEach(p => {
                         db.query(
                             'INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                            [shop_id, p.product_code, p.name, p.brand, p.color, p.category, p.cost_price, p.selling_price, p.stock, p.imei],
+                            [targetShop, p.product_code, p.name, p.brand, p.color, p.category, p.cost_price, p.selling_price, p.stock, p.imei],
                             () => {}
                         );
                     });
@@ -332,7 +312,7 @@ app.post('/api/restore', async (req, res) => {
                     sales.forEach(s => {
                         db.query(
                             'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, amount_paid, balance_due, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                            [shop_id, s.customer_name, s.customer_phone, s.payment_method, s.sale_type || 'Product', s.discount || 0, s.total_amount, s.amount_paid || s.total_amount, s.balance_due || 0, JSON.stringify(s.items || [])],
+                            [targetShop, s.customer_name, s.customer_phone, s.payment_method, s.sale_type || 'Product', s.discount || 0, s.total_amount, s.amount_paid || s.total_amount, s.balance_due || 0, JSON.stringify(s.items || [])],
                             () => {}
                         );
                     });
@@ -342,7 +322,7 @@ app.post('/api/restore', async (req, res) => {
                     repairs.forEach(r => {
                         db.query(
                             'INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                            [shop_id, r.customer_name, r.customer_phone, r.device_model, r.issue_description, r.advance_cost || 0, r.total_cost, r.status || 'Pending'],
+                            [targetShop, r.customer_name, r.customer_phone, r.device_model, r.issue_description, r.advance_cost || 0, r.total_cost, r.status || 'Pending'],
                             () => {}
                         );
                     });
