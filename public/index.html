@@ -56,6 +56,7 @@
         .out-of-stock { background-color: rgba(255, 0, 0, 0.15) !important; color: #d9534f; font-weight: bold; }
         .low-stock-row { background-color: rgba(255, 152, 0, 0.1) !important; }
         .low-stock-badge { background: #ff9800; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 5px; }
+        .out-stock-badge { background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 5px; }
         .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; page-break-inside: avoid; }
         @media print {
             body * { visibility: hidden; }
@@ -250,7 +251,7 @@
                             <label>Balance Due (Rs.):</label><input type="number" id="repBillBalance" disabled style="font-weight:bold; color:#28a745; background:#e8f4fd;">
                             <label>Payment Method:</label>
                             <select id="repBillPaymentMethod"><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Koko">Koko Payment</option></select>
-                            <label>Amount Paid (Rs.):</label><input type="number" id="repBillAmountPaid" step="0.01" oninput="calculateRepChangeDue()" style="border: 2px solid #28a745; font-weight: bold;">
+                            <label>Amount Paid (Rs.):</label><input type="number" id="repBillAmountPaid" step="0.01" oninput="calculateRepChangeDue()" style="border: 2px solid #007bff; font-weight: bold;">
                             <label>Change Due (Rs.):</label><input type="number" id="repBillChangeDue" value="0.00" disabled style="font-weight:bold; color:#28a745;">
                             <button type="button" onclick="completeRepairCheckout()" style="background:#28a745; margin-top:15px; padding:12px;">Complete Repair & Print Bill</button>
                         </div>
@@ -525,7 +526,7 @@
                 const parsed = parseProductItem(p.name);
                 tbody.innerHTML += `<tr class="${isOut ? 'out-of-stock' : (isLow ? 'low-stock-row' : '')}">
                     <td><b>#${p.product_code || p.product_id}</b></td>
-                    <td>${parsed.name} ${isLow ? '<span class="low-stock-badge">LOW</span>' : ''}</td>
+                    <td>${parsed.name} ${isLow ? '<span class="low-stock-badge">LOW</span>' : (isOut ? '<span class="out-stock-badge">OUT</span>' : '')}</td>
                     <td>${p.brand || '-'}</td><td>${p.category || '-'}</td><td>${p.color || '-'}</td>
                     <td><span style="color:#007bff; font-weight:bold;">${parsed.warranty}</span></td>
                     <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
@@ -636,11 +637,16 @@
             items.forEach(p => {
                 const parsed = parseProductItem(p.name);
                 const brandStr = p.brand ? `[${p.brand}] ` : '';
+                const isOut = p.stock <= 0;
+                const isLow = p.stock > 0 && p.stock <= 2;
+                
                 const div = document.createElement('div');
-                div.style.padding = '10px 12px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid #ddd'; div.style.color = '#333333'; div.style.background = '#ffffff';
+                div.style.padding = '10px 12px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid #ddd'; div.style.color = '#333333'; div.style.background = isOut ? 'rgba(255, 0, 0, 0.1)' : (isLow ? 'rgba(255, 152, 0, 0.15)' : '#ffffff');
                 div.onmouseover = () => div.style.background = '#f1f1f1';
-                div.onmouseout = () => div.style.background = '#ffffff';
-                div.innerHTML = `<b>#${p.product_code || p.product_id}</b> - ${brandStr}${parsed.name} <span style="color:#007bff;">[Warranty: ${parsed.warranty}]</span> - <b>Rs. ${p.selling_price}</b> [Stock: ${p.stock}]`;
+                div.onmouseout = () => div.style.background = isOut ? 'rgba(255, 0, 0, 0.1)' : (isLow ? 'rgba(255, 152, 0, 0.15)' : '#ffffff');
+                
+                div.innerHTML = `<b>#${p.product_code || p.product_id}</b> - ${brandStr}${parsed.name} <span style="color:#007bff;">[Warranty: ${parsed.warranty}]</span> - <b>Rs. ${p.selling_price}</b> <span style="font-weight:bold; color:${isOut ? '#dc3545' : (isLow ? '#d97706' : '#28a745')}">[Stock: ${p.stock}]</span> ${isLow ? '<span style="background:#ff9800; color:white; padding:1px 5px; border-radius:3px; font-size:10px;">LOW</span>' : (isOut ? '<span style="background:#dc3545; color:white; padding:1px 5px; border-radius:3px; font-size:10px;">OUT</span>' : '')}`;
+                
                 div.onclick = () => {
                     selectedBillingValue = 'prod_' + p.product_id;
                     document.getElementById('billingSearch').value = `${brandStr}${parsed.name}`;
@@ -664,7 +670,6 @@
             renderDropdownList(allProducts);
         }
 
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             const searchInput = document.getElementById('billingSearch');
             const dropdown = document.getElementById('customDropdownList');
@@ -758,7 +763,6 @@
                 lastSaleData = { customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, total_discount: 0, amount_paid: parseFloat(document.getElementById('amountPaid').value), change_due: parseFloat(document.getElementById('changeDue').value), items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
                 generateAutoMessage(lastSaleData);
                 cart = []; renderCart(); loadInventory(); loadSales();
-                // Clear customer inputs after successful sale
                 document.getElementById('custName').value = '';
                 document.getElementById('custPhone').value = '';
             }
