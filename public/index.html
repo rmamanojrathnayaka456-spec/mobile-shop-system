@@ -143,7 +143,7 @@
                     </div>
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
                     <input type="text" id="billingSearch" autocomplete="off" placeholder="Type ID, Name, Brand, IMEI..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #007bff;">
-                    <div style="position: relative;"><div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 180px; overflow-y: auto; background: var(--input-bg); border: 2px solid #007bff; z-index: 99; border-radius: 4px;"></div></div>
+                    <div style="position: relative;"><div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 200px; overflow-y: auto; background: #ffffff; color: #333333; border: 2px solid #007bff; z-index: 999; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);"></div></div>
                     
                     <label style="margin-top: 10px; display: block;">Product / Item Warranty:</label>
                     <input type="text" id="billingProductWarranty" style="font-weight:bold; color:#007bff;" disabled>
@@ -641,8 +641,10 @@
                 const parsed = parseProductItem(p.name);
                 const brandStr = p.brand ? `[${p.brand}] ` : '';
                 const div = document.createElement('div');
-                div.style.padding = '8px 12px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid var(--border-color)';
-                div.textContent = `#${p.product_code} - ${brandStr}${parsed.name} [Warranty: ${parsed.warranty}] - Rs. ${p.selling_price} [Stock: ${p.stock}]`;
+                div.style.padding = '10px 12px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid #ddd'; div.style.color = '#333333'; div.style.background = '#ffffff';
+                div.onmouseover = () => div.style.background = '#f1f1f1';
+                div.onmouseout = () => div.style.background = '#ffffff';
+                div.innerHTML = `<b>#${p.product_code || p.product_id}</b> - ${brandStr}${parsed.name} <span style="color:#007bff;">[Warranty: ${parsed.warranty}]</span> - <b>Rs. ${p.selling_price}</b> [Stock: ${p.stock}]`;
                 div.onclick = () => {
                     selectedBillingValue = 'prod_' + p.product_id;
                     document.getElementById('billingSearch').value = `${brandStr}${parsed.name}`;
@@ -745,28 +747,28 @@
         // --- HTML RECEIPT ---
         function generateAutoMessage(sale) {
             let htmlMsg = `
-                <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.4;">
+                <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333333; line-height: 1.4; background: #ffffff; padding: 10px;">
                     <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 12px;">
                         <h2 style="margin: 0; color: #007bff; font-size: 18px;">${sale.branch.toUpperCase()}</h2>
                         ${sale.branch_phone ? `<div style="font-size: 12px; color: #666; margin-top: 3px;">Contact: ${sale.branch_phone}</div>` : ''}
                         <div style="font-size: 10px; text-transform: uppercase; color: #888; margin-top: 4px; font-weight: bold;">Official Sales Receipt</div>
                     </div>
-                    <div style="background: #f8f9fa; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px;">
+                    <div style="background: #f8f9fa; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; color: #333;">
                         <div><b>Date:</b> ${new Date().toLocaleString()}</div>
                         <div><b>Customer:</b> ${sale.customer_name} | <b>Phone:</b> ${sale.customer_phone}</div>
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px;">
-                        <thead><tr style="background: #e9ecef;"><th style="padding: 6px; border: 1px solid #ddd;">Description</th><th style="padding: 6px; border: 1px solid #ddd; text-align:center;">Qty</th><th style="padding: 6px; border: 1px solid #ddd; text-align:right;">Total</th></tr></thead>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; background: #ffffff; color: #333333;">
+                        <thead><tr style="background: #007bff; color: #ffffff;"><th style="padding: 6px; border: 1px solid #ddd; text-align:left;">Description</th><th style="padding: 6px; border: 1px solid #ddd; text-align:center;">Qty</th><th style="padding: 6px; border: 1px solid #ddd; text-align:right;">Total</th></tr></thead>
                         <tbody>`;
             sale.items.forEach(item => {
-                htmlMsg += `<tr>
-                    <td style="padding: 6px; border: 1px solid #ddd;"><b>${item.name}</b><br><span style="color:#007bff; font-size:11px;">Warranty: ${item.warranty}</span></td>
-                    <td style="padding: 6px; border: 1px solid #ddd; text-align:center;">${item.qty}</td>
-                    <td style="padding: 6px; border: 1px solid #ddd; text-align:right;">Rs. ${item.subtotal.toFixed(2)}</td>
+                htmlMsg += `<tr style="background: #ffffff; color: #333333;">
+                    <td style="padding: 8px; border: 1px solid #ddd; background: #ffffff; color: #333333;"><b>${item.name}</b><br><span style="color:#007bff; font-size:11px; font-weight:bold;">Warranty: ${item.warranty}</span></td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align:center; background: #ffffff; color: #333333;">${item.qty}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align:right; background: #ffffff; color: #333333;">Rs. ${item.subtotal.toFixed(2)}</td>
                 </tr>`;
             });
             htmlMsg += `</tbody></table>
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px;">
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px; color: #333;">
                         <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #007bff;"><span>Total Payable:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
                         <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Payment Method:</span> <b>${sale.payment_method}</b></div>
                     </div>
