@@ -895,7 +895,7 @@
             }
         }
 
-        // --- PROFESSIONAL HTML RECEIPT (ALWAYS WHITE BACKGROUND) ---
+        // --- PROFESSIONAL HTML RECEIPT (FORCED WHITE BACKGROUND) ---
         function generateAutoReceiptHTML(sale) {
             let shopName = (sale.branch || "SHA MOBILE").toUpperCase();
             let contact = sale.branch_phone || "0720641351";
@@ -908,75 +908,79 @@
                 let origPriceHtml = (item.original_price && item.original_price > item.price) ? `<br><span style="color:#d9534f; text-decoration:line-through; font-size:11px;">Original: Rs. ${item.original_price.toFixed(2)}</span>` : '';
                 itemsHtml += `
                     <tr>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #333333;">
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #333333; background: #ffffff !important;">
                             <b>${item.name}</b><br>
                             <span style="color: #0284c7; font-size: 11px;">Warranty: ${item.warranty || 'No Warranty'}</span><br>
                             <span style="color: #d97706; font-size: 11px;">IMEI: ${item.imei || 'N/A'}</span>
                             ${origPriceHtml}
                         </td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center; color: #333333;">${item.qty}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #333333;">Rs. ${item.subtotal.toFixed(2)}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center; color: #333333; background: #ffffff !important;">${item.qty}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #333333; background: #ffffff !important;">Rs. ${item.subtotal.toFixed(2)}</td>
                     </tr>
                 `;
             });
 
             let discountRow = sale.total_discount > 0 ? `
                 <tr>
-                    <td colspan="2" style="padding: 6px; text-align: right; color: #dc3545; font-weight: bold;">Total Discount:</td>
-                    <td style="padding: 6px; text-align: right; color: #dc3545; font-weight: bold;">- Rs. ${sale.total_discount.toFixed(2)}</td>
+                    <td colspan="2" style="padding: 6px; text-align: right; color: #dc3545; font-weight: bold; background: #ffffff !important;">Total Discount:</td>
+                    <td style="padding: 6px; text-align: right; color: #dc3545; font-weight: bold; background: #ffffff !important;">- Rs. ${sale.total_discount.toFixed(2)}</td>
                 </tr>
             ` : '';
 
             let htmlReceipt = `
-                <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 10px;">
-                    <h2 style="margin: 0; color: #007bff; font-size: 20px;">${shopName}</h2>
-                    <div style="font-size: 13px; color: #555555;">Contact: ${contact}</div>
-                    <div style="font-size: 11px; font-weight: bold; color: #777777; margin-top: 3px;">OFFICIAL SALES RECEIPT</div>
-                </div>
-                
-                <div style="font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; color: #333333;">
-                    <div><b>Date:</b> ${dateStr}</div>
-                </div>
-                <div style="font-size: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 8px; color: #333333;">
-                    <div><b>Customer:</b> ${custName}</div>
-                    <div><b>Phone:</b> ${custPhone}</div>
-                </div>
+                <div style="background: #ffffff !important; color: #333333 !important; padding: 5px;">
+                    <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 10px; background: #ffffff !important;">
+                        <h2 style="margin: 0; color: #007bff; font-size: 20px;">${shopName}</h2>
+                        <div style="font-size: 13px; color: #555555;">Contact: ${contact}</div>
+                        <div style="font-size: 11px; font-weight: bold; color: #777777; margin-top: 3px;">OFFICIAL SALES RECEIPT</div>
+                    </div>
+                    
+                    <div style="font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; color: #333333; background: #ffffff !important;">
+                        <div><b>Date:</b> ${dateStr}</div>
+                    </div>
+                    <div style="font-size: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 8px; color: #333333; background: #ffffff !important;">
+                        <div><b>Customer:</b> ${custName}</div>
+                        <div><b>Phone:</b> ${custPhone}</div>
+                    </div>
 
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; background: #ffffff !important;">
-                    <thead>
-                        <tr style="background: #007bff; color: white;">
-                            <th style="padding: 8px; text-align: left;">Description</th>
-                            <th style="padding: 8px; text-align: center; width: 40px;">Qty</th>
-                            <th style="padding: 8px; text-align: right; width: 90px;">Total (Rs.)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${itemsHtml}
-                    </tbody>
-                </table>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; background: #ffffff !important;">
+                        <thead>
+                            <tr style="background: #007bff !important; color: white !important;">
+                                <th style="padding: 8px; text-align: left; background: #007bff !important; color: white !important;">Description</th>
+                                <th style="padding: 8px; text-align: center; width: 40px; background: #007bff !important; color: white !important;">Qty</th>
+                                <th style="padding: 8px; text-align: right; width: 90px; background: #007bff !important; color: white !important;">Total (Rs.)</th>
+                            </tr>
+                        </thead>
+                        <tbody style="background: #ffffff !important;">
+                            ${itemsHtml}
+                        </tbody>
+                    </table>
 
-                <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 5px; color: #333333;">
-                    ${discountRow}
-                    <tr>
-                        <td colspan="2" style="padding: 6px; text-align: right; font-weight: bold; color: #007bff;">Total Payable:</td>
-                        <td style="padding: 6px; text-align: right; font-weight: bold; color: #007bff;">Rs. ${sale.total_amount.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" style="padding: 6px; text-align: right; color: #333333;">Amount Paid:</td>
-                        <td style="padding: 6px; text-align: right; color: #333333;">Rs. ${sale.amount_paid.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" style="padding: 6px; text-align: right; color: #28a745; font-weight: bold;">Change Due:</td>
-                        <td style="padding: 6px; text-align: right; color: #28a745; font-weight: bold;">Rs. ${sale.change_due.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" style="padding: 6px; text-align: right; color: #333333;">Payment Method:</td>
-                        <td style="padding: 6px; text-align: right; font-weight: bold; color: #333333;">${sale.payment_method}</td>
-                    </tr>
-                </table>
+                    <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 5px; color: #333333; background: #ffffff !important;">
+                        <tbody style="background: #ffffff !important;">
+                            ${discountRow}
+                            <tr>
+                                <td colspan="2" style="padding: 6px; text-align: right; font-weight: bold; color: #007bff; background: #ffffff !important;">Total Payable:</td>
+                                <td style="padding: 6px; text-align: right; font-weight: bold; color: #007bff; background: #ffffff !important;">Rs. ${sale.total_amount.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding: 6px; text-align: right; color: #333333; background: #ffffff !important;">Amount Paid:</td>
+                                <td style="padding: 6px; text-align: right; color: #333333; background: #ffffff !important;">Rs. ${sale.amount_paid.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding: 6px; text-align: right; color: #28a745; font-weight: bold; background: #ffffff !important;">Change Due:</td>
+                                <td style="padding: 6px; text-align: right; color: #28a745; font-weight: bold; background: #ffffff !important;">Rs. ${sale.change_due.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding: 6px; text-align: right; color: #333333; background: #ffffff !important;">Payment Method:</td>
+                                <td style="padding: 6px; text-align: right; font-weight: bold; color: #333333; background: #ffffff !important;">${sale.payment_method}</td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-                <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666666;">
-                    Thank you for your business!
+                    <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666666; background: #ffffff !important;">
+                        Thank you for your business!
+                    </div>
                 </div>
             `;
 
