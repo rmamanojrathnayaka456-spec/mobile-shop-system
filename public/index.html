@@ -143,8 +143,10 @@
                         <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">Camera Scanner</button>
                     </div>
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
-                    <input type="text" id="billingSearch" autocomplete="off" placeholder="Type ID, Name, Brand, IMEI..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #007bff;">
-                    <div style="position: relative;"><div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 200px; overflow-y: auto; background: #ffffff; color: #333333; border: 2px solid #007bff; z-index: 999; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);"></div></div>
+                    <input type="text" id="billingSearch" autocomplete="off" placeholder="🔍 Type ID, Name, Brand, IMEI or Scan..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #007bff; padding: 12px; font-size: 15px; border-radius: 6px;">
+                    <div style="position: relative;">
+                        <div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: #ffffff; color: #111827; border: 2px solid #007bff; z-index: 999; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);"></div>
+                    </div>
                     
                     <label style="margin-top: 10px; display: block;">Product / Item Warranty:</label>
                     <input type="text" id="billingProductWarranty" style="font-weight:bold; color:#007bff;" disabled>
@@ -628,7 +630,7 @@
             }
         }
 
-        // --- BILLING / POS ---
+        // --- PROFESSIONAL BILLING SEARCH DROPDOWN ---
         function renderDropdownList(items) {
             const container = document.getElementById('customDropdownList');
             container.innerHTML = '';
@@ -636,21 +638,49 @@
 
             items.forEach(p => {
                 const parsed = parseProductItem(p.name);
-                const brandStr = p.brand ? `[${p.brand}] ` : '';
+                const brandStr = p.brand ? `<span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:bold; margin-right:5px;">${p.brand}</span>` : '';
                 const isOut = p.stock <= 0;
                 const isLow = p.stock > 0 && p.stock <= 2;
                 
                 const div = document.createElement('div');
-                // Force pure white background and clean dark text so it's always readable even in dark mode
-                div.style.padding = '10px 12px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid #ddd'; div.style.color = '#333333'; div.style.background = isOut ? '#ffebee' : (isLow ? '#fff3e0' : '#ffffff');
-                div.onmouseover = () => div.style.background = '#f1f1f1';
-                div.onmouseout = () => div.style.background = isOut ? '#ffebee' : (isLow ? '#fff3e0' : '#ffffff');
+                div.style.padding = '12px 15px';
+                div.style.cursor = 'pointer';
+                div.style.borderBottom = '1px solid #f0f0f0';
+                div.style.color = '#111827';
+                div.style.background = isOut ? '#fef2f2' : (isLow ? '#fffbeb' : '#ffffff');
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.alignItems = 'center';
+                div.style.transition = 'background 0.15s ease';
+
+                div.onmouseover = () => div.style.background = isOut ? '#fee2e2' : (isLow ? '#fef3c7' : '#f8fafc');
+                div.onmouseout = () => div.style.background = isOut ? '#fef2f2' : (isLow ? '#fffbeb' : '#ffffff');
                 
-                div.innerHTML = `<b>#${p.product_code || p.product_id}</b> - ${brandStr}${parsed.name} <span style="color:#007bff;">[Warranty: ${parsed.warranty}]</span> - <b>Rs. ${p.selling_price}</b> <span style="font-weight:bold; color:${isOut ? '#dc3545' : (isLow ? '#d97706' : '#28a745')}">[Stock: ${p.stock}]</span> ${isLow ? '<span style="background:#ff9800; color:white; padding:1px 5px; border-radius:3px; font-size:10px;">LOW</span>' : (isOut ? '<span style="background:#dc3545; color:white; padding:1px 5px; border-radius:3px; font-size:10px;">OUT</span>' : '')}`;
+                div.innerHTML = `
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <span style="font-weight: 700; color: #2563eb; margin-right: 8px;">#${p.product_code || p.product_id}</span>
+                            ${brandStr}
+                            <span style="font-weight: 600; font-size: 14px; color: #1f2937;">${parsed.name}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #4b5563;">
+                            Warranty: <span style="color: #0284c7; font-weight: 600;">${parsed.warranty}</span> | 
+                            IMEI: <span style="color: #d97706; font-weight: 600;">${p.imei || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div style="text-align: right; margin-left: 10px;">
+                        <div style="font-weight: 700; color: #059669; font-size: 14px;">Rs. ${parseFloat(p.selling_price).toFixed(2)}</div>
+                        <div style="font-size: 11px; margin-top: 2px;">
+                            <span style="padding: 2px 6px; border-radius: 4px; font-weight: bold; background: ${isOut ? '#dc2626' : (isLow ? '#d97706' : '#10b981')}; color: white;">
+                                Stock: ${p.stock} ${isOut ? 'OUT' : (isLow ? 'LOW' : '')}
+                            </span>
+                        </div>
+                    </div>
+                `;
                 
                 div.onclick = () => {
                     selectedBillingValue = 'prod_' + p.product_id;
-                    document.getElementById('billingSearch').value = `${brandStr}${parsed.name}`;
+                    document.getElementById('billingSearch').value = `${p.brand ? '[' + p.brand + '] ' : ''}${parsed.name}`;
                     container.style.display = 'none';
                     selectBillingProductById(selectedBillingValue);
                 };
