@@ -249,7 +249,7 @@
                     <h4>Monthly Sales (This Month)</h4><p id="monthlySalesAmt" style="color: #d39e00;">Rs. 0.00</p>
                 </div>
                 <div class="card" id="cardRepair" onclick="filterSalesView('repair', this)" style="border-left-color: #17a2b8;">
-                    <h4>Repair Sales (Today)</h4><p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p>
+                    <h4>Repair Sales (All Time)</h4><p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p>
                 </div>
             </div>
 
@@ -1023,7 +1023,9 @@
         async function loadSales() {
             const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
             rawSalesData = await res.json();
-            populateYearDropdown(); applySalesFilters();
+            populateYearDropdown(); 
+            updateAnalyticsCards(rawSalesData); // Update cards with full data
+            applySalesFilters();
         }
 
         function populateYearDropdown() {
@@ -1061,7 +1063,7 @@
                 // Card Filters
                 if(currentSalesCardFilter === 'daily' && s.date_only !== todayStr) return false;
                 if(currentSalesCardFilter === 'monthly' && s.month_only !== thisMonthStr) return false;
-                if(currentSalesCardFilter === 'repair' && (s.date_only !== todayStr || s.sale_type !== 'Repair')) return false;
+                if(currentSalesCardFilter === 'repair' && s.sale_type !== 'Repair') return false;
 
                 if(query) {
                     return s.sale_id.toString().includes(query) || (s.customer_name || '').toLowerCase().includes(query) || (s.customer_phone || '').toLowerCase().includes(query);
@@ -1069,7 +1071,6 @@
                 return true;
             });
             renderSalesTable(filtered);
-            updateAnalyticsCards(rawSalesData);
         }
 
         function resetSalesFilters() {
@@ -1085,18 +1086,20 @@
         }
 
         function updateAnalyticsCards(sales) {
-            let daily = 0, monthly = 0, repair = 0;
+            let daily = 0, monthly = 0, repairTotal = 0;
             const now = new Date();
             const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
             sales.forEach(s => {
-                if(s.date_only === todayStr) { daily += parseFloat(s.total_amount || 0); if(s.sale_type === 'Repair') repair += parseFloat(s.total_amount || 0); }
-                if(s.month_only === thisMonthStr) monthly += parseFloat(s.total_amount || 0);
+                const amt = parseFloat(s.total_amount || 0);
+                if(s.date_only === todayStr) { daily += amt; }
+                if(s.month_only === thisMonthStr) { monthly += amt; }
+                if(s.sale_type === 'Repair') { repairTotal += amt; }
             });
             document.getElementById('dailySalesAmt').textContent = `Rs. ${daily.toFixed(2)}`;
             document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthly.toFixed(2)}`;
-            document.getElementById('repairSalesAmt').textContent = `Rs. ${repair.toFixed(2)}`;
+            document.getElementById('repairSalesAmt').textContent = `Rs. ${repairTotal.toFixed(2)}`;
             document.getElementById('totalTransactions').textContent = sales.length;
         }
 
