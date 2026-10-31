@@ -229,14 +229,15 @@
             <div style="background:var(--container-bg); padding:15px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap; align-items:flex-end;">
                 <div><label style="font-size:12px; font-weight:bold;">Filter by Year:</label><select id="filterYear" onchange="applySalesFilters()" style="width:120px;"><option value="">All Years</option></select></div>
                 <div><label style="font-size:12px; font-weight:bold;">Filter by Month:</label><select id="filterMonth" onchange="applySalesFilters()" style="width:140px;"><option value="">All Months</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                <div><label style="font-size:12px; font-weight:bold;">Filter by Payment Method:</label><select id="filterPaymentMethod" onchange="applySalesFilters()" style="width:150px;"><option value="">All Methods</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Installment">Installment</option><option value="Koko">Koko</option><option value="Credit">Credit</option></select></div>
                 <div><label style="font-size:12px; font-weight:bold;">Filter by Exact Date:</label><input type="date" id="filterExactDate" onchange="applySalesFilters()" style="width:160px; padding:8px;"></div>
                 <button type="button" onclick="resetSalesFilters()" style="width:auto; padding:9px 15px; background:#6c757d; margin-top:5px;">Reset Filters</button>
             </div>
             <div class="analytics-grid">
+                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #007bff;"><h4>Total Transactions</h4><p id="totalTransactions">0</p></div>
                 <div class="card" id="cardDaily" onclick="filterSalesView('daily', this)"><h4>Daily Sales (Today)</h4><p id="dailySalesAmt">Rs. 0.00</p></div>
                 <div class="card" id="cardMonthly" onclick="filterSalesView('monthly', this)"><h4>Monthly Sales (This Month)</h4><p id="monthlySalesAmt">Rs. 0.00</p></div>
                 <div class="card" id="cardRepair" onclick="filterSalesView('repair', this)" style="border-left-color: #17a2b8;"><h4>Repair Sales (Today)</h4><p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p></div>
-                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #007bff;"><h4>Total Transactions</h4><p id="totalTransactions">0</p></div>
             </div>
             <input type="text" id="searchSales" placeholder="Search Sales by ID, Customer Name, Phone, Type..." onkeyup="applySalesFilters()" style="margin-bottom: 15px; border: 2px solid #007bff; font-weight: bold;">
             <table>
@@ -415,6 +416,7 @@
         let allParts = [];
         let allConsignments = [];
         let currentStockFilter = 'all';
+        let currentSalesCardFilter = 'all';
         let html5QrcodeScanner = null;
         let lastSaleData = null;
         let currentBarcodeData = null;
@@ -1011,16 +1013,35 @@
             years.forEach(y => { yearSelect.innerHTML += `<option value="${y}">${y}</option>`; });
         }
 
+        function filterSalesView(type, cardElement) {
+            currentSalesCardFilter = type;
+            document.querySelectorAll('.analytics-grid .card').forEach(c => c.classList.remove('active-card'));
+            if(cardElement) cardElement.classList.add('active-card');
+            applySalesFilters();
+        }
+
         function applySalesFilters() {
             const yearVal = document.getElementById('filterYear').value;
             const monthVal = document.getElementById('filterMonth').value;
+            const methodVal = document.getElementById('filterPaymentMethod').value;
             const dateVal = document.getElementById('filterExactDate').value;
             const query = document.getElementById('searchSales').value.toLowerCase().trim();
+
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
             let filtered = rawSalesData.filter(s => {
                 if(yearVal && s.year_only !== yearVal) return false;
                 if(monthVal && (!s.month_only || s.month_only.slice(-2) !== monthVal)) return false;
+                if(methodVal && s.payment_method !== methodVal) return false;
                 if(dateVal && s.date_only !== dateVal) return false;
+
+                // Card Filters
+                if(currentSalesCardFilter === 'daily' && s.date_only !== todayStr) return false;
+                if(currentSalesCardFilter === 'monthly' && s.month_only !== thisMonthStr) return false;
+                if(currentSalesCardFilter === 'repair' && (s.date_only !== todayStr || s.sale_type !== 'Repair')) return false;
+
                 if(query) {
                     return s.sale_id.toString().includes(query) || (s.customer_name || '').toLowerCase().includes(query) || (s.customer_phone || '').toLowerCase().includes(query);
                 }
@@ -1031,7 +1052,14 @@
         }
 
         function resetSalesFilters() {
-            document.getElementById('filterYear').value = ''; document.getElementById('filterMonth').value = ''; document.getElementById('filterExactDate').value = ''; document.getElementById('searchSales').value = '';
+            document.getElementById('filterYear').value = '';
+            document.getElementById('filterMonth').value = '';
+            document.getElementById('filterPaymentMethod').value = '';
+            document.getElementById('filterExactDate').value = '';
+            document.getElementById('searchSales').value = '';
+            currentSalesCardFilter = 'all';
+            document.querySelectorAll('.analytics-grid .card').forEach(c => c.classList.remove('active-card'));
+            document.getElementById('cardAll').classList.add('active-card');
             applySalesFilters();
         }
 
@@ -1265,13 +1293,13 @@
 
         async function processExchange(e) {
             e.preventDefault();
-            const valuation = parseFloat(document.getElementById('exValuation').value) || 0;
+            val = parseFloat(document.getElementById('exValuation').value) || 0;
             await fetch('/api/sales', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     shop_id: currentUser.shop_id, customer_name: document.getElementById('exCustName').value, customer_phone: document.getElementById('exCustPhone').value,
-                    payment_method: 'Exchange Allowance', total_amount: -valuation,
-                    items: [{ type: 'exchange', name: `Trade-In: ${document.getElementById('exPhoneModel').value}`, subtotal: -valuation, qty: 1 }]
+                    payment_method: 'Exchange Allowance', total_amount: -val,
+                    items: [{ type: 'exchange', name: `Trade-In: ${document.getElementById('exPhoneModel').value}`, subtotal: -val, qty: 1 }]
                 })
             });
             alert('Exchange recorded!'); document.getElementById('exchangeForm').reset(); loadSales(); loadInventory();
