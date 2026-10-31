@@ -895,7 +895,7 @@
             }
         }
 
-        // --- PROFESSIONAL HTML RECEIPT (FORCED WHITE BACKGROUND) ---
+        // --- PROFESSIONAL HTML RECEIPT (CLEAN WHITE BACKGROUND, NO TOTALS TABLE) ---
         function generateAutoReceiptHTML(sale) {
             let shopName = (sale.branch || "SHA MOBILE").toUpperCase();
             let contact = sale.branch_phone || "0720641351";
@@ -921,10 +921,10 @@
             });
 
             let discountRow = sale.total_discount > 0 ? `
-                <tr>
-                    <td colspan="2" style="padding: 6px; text-align: right; color: #dc3545; font-weight: bold; background: #ffffff !important;">Total Discount:</td>
-                    <td style="padding: 6px; text-align: right; color: #dc3545; font-weight: bold; background: #ffffff !important;">- Rs. ${sale.total_discount.toFixed(2)}</td>
-                </tr>
+                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #dc3545; font-weight: bold;">
+                    <span>Total Discount:</span>
+                    <span>- Rs. ${sale.total_discount.toFixed(2)}</span>
+                </div>
             ` : '';
 
             let htmlReceipt = `
@@ -956,27 +956,25 @@
                         </tbody>
                     </table>
 
-                    <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 5px; color: #333333; background: #ffffff !important;">
-                        <tbody style="background: #ffffff !important;">
-                            ${discountRow}
-                            <tr>
-                                <td colspan="2" style="padding: 6px; text-align: right; font-weight: bold; color: #007bff; background: #ffffff !important;">Total Payable:</td>
-                                <td style="padding: 6px; text-align: right; font-weight: bold; color: #007bff; background: #ffffff !important;">Rs. ${sale.total_amount.toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td colspan="2" style="padding: 6px; text-align: right; color: #333333; background: #ffffff !important;">Amount Paid:</td>
-                                <td style="padding: 6px; text-align: right; color: #333333; background: #ffffff !important;">Rs. ${sale.amount_paid.toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td colspan="2" style="padding: 6px; text-align: right; color: #28a745; font-weight: bold; background: #ffffff !important;">Change Due:</td>
-                                <td style="padding: 6px; text-align: right; color: #28a745; font-weight: bold; background: #ffffff !important;">Rs. ${sale.change_due.toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td colspan="2" style="padding: 6px; text-align: right; color: #333333; background: #ffffff !important;">Payment Method:</td>
-                                <td style="padding: 6px; text-align: right; font-weight: bold; color: #333333; background: #ffffff !important;">${sale.payment_method}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 8px; background: #ffffff !important;">
+                        ${discountRow}
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; font-weight: bold; color: #007bff;">
+                            <span>Total Payable:</span>
+                            <span>Rs. ${sale.total_amount.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;">
+                            <span>Amount Paid:</span>
+                            <span>Rs. ${sale.amount_paid.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; font-weight: bold; color: #28a745;">
+                            <span>Change Due:</span>
+                            <span>Rs. ${sale.change_due.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;">
+                            <span>Payment Method:</span>
+                            <span style="font-weight: bold;">${sale.payment_method}</span>
+                        </div>
+                    </div>
 
                     <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666666; background: #ffffff !important;">
                         Thank you for your business!
