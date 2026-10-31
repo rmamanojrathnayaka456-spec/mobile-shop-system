@@ -189,14 +189,14 @@ app.get('/api/sales', (req, res) => {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `, () => {
-        db.query('SELECT * FROM sales ORDER BY created_at DESC', (err, results) => {
+        db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
             if (err) {
                 console.error("Database error fetching sales:", err);
                 return res.json([]);
             }
             
             const list = Array.isArray(results) ? results : [];
-            const formatted = list.map((row, index) => {
+            const formatted = list.map((row) => {
                 const cDate = row.created_at ? new Date(row.created_at) : new Date();
                 const pad = (n) => String(n).padStart(2, '0');
 
@@ -205,12 +205,12 @@ app.get('/api/sales', (req, res) => {
                     parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []);
                 } catch (e) { parsedItems = []; }
 
-                // Use the exact sale_id from database table row properly
-                const actualId = row.sale_id !== undefined && row.sale_id !== null ? row.sale_id : (row.id !== undefined && row.id !== null ? row.id : (list.length - index));
+                const actualId = row.sale_id !== undefined && row.sale_id !== null ? row.sale_id : row.id;
 
                 return {
                     ...row,
                     sale_id: actualId,
+                    id: actualId,
                     items: parsedItems,
                     delete_key: actualId,
                     sale_type: row.sale_type || 'Product',
@@ -227,6 +227,17 @@ app.get('/api/sales', (req, res) => {
     });
 });
 
+app.delete('/api/sales/:id', (req, res) => {
+    const saleId = req.params.id;
+    // Safely delete using both sale_id or id columns to prevent any mismatch
+    db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err, result) => {
+        if (err) {
+            console.error("Database error deleting sale:", err);
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ success: true, message: 'Removed successfully' });
+    });
+});
 
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, amount_paid, balance_due, items } = req.body;

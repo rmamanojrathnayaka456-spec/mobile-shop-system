@@ -1025,16 +1025,36 @@
             renderSalesTable();
         }
 
-        async function deleteSale(saleId) {
-            if(!confirm(`Are you sure you want to remove Sale #${saleId}?`)) return;
-            const res = await fetch(`/api/sales/${saleId}`, { method: 'DELETE' });
-            if(res.ok) {
-                await loadSales();
-                alert('Sale removed successfully!');
-            } else {
-                alert('Failed to remove sale.');
-            }
+       async function deleteSale(saleId) {
+    if(!confirm(`Are you sure you want to remove Sale #${saleId}?`)) return;
+    try {
+        const res = await fetch(`/api/sales/${saleId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if(res.ok && data.success) {
+            await loadSales();
+            alert('Sale removed successfully!');
+        } else {
+            alert(data.error || 'Failed to remove sale.');
         }
+    } catch(ex) {
+        console.error("Delete error:", ex);
+        alert('Network error while deleting sale.');
+    }
+}
+
+function viewSale(id) {
+    const s = rawSalesData.find(item => item.sale_id == id || item.id == id);
+    if(!s) {
+        alert('Sale details not found!');
+        return;
+    }
+    lastSaleData = { 
+        ...s, 
+        branch: currentUser ? currentUser.shop_name : 'SHA MOBILE', 
+        branch_phone: currentUser && currentUser.shop_phone ? currentUser.shop_phone : '0756017464 / 0726656433' 
+    };
+    showReceiptModal(lastSaleData);
+}
 
         function viewSale(id) {
             const s = rawSalesData.find(item => item.sale_id == id);
