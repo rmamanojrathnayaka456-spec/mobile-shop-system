@@ -60,9 +60,9 @@
         .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; page-break-inside: avoid; }
         @media print {
             body * { visibility: hidden; }
-            .printable, .printable * { visibility: visible; }
-            .printable { position: absolute; left: 0; top: 0; width: 80mm; font-family: 'Courier New', Courier, monospace !important; font-size: 12px; color: #000 !important; background: #fff !important; }
-            #printHideBtn, #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
+            .printable-receipt, .printable-receipt * { visibility: visible; }
+            .printable-receipt { position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; color: #000 !important; }
+            #printHideBtn { display: none !important; }
         }
     </style>
 </head>
@@ -122,7 +122,6 @@
                 <label id="lblModel">Model Name:</label>
                 <input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra" required>
                 
-                <!-- Dynamic Brand Group -->
                 <div id="groupBrand" style="display: block;">
                     <label>Select Brand:</label>
                     <input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple (Type to auto-add)" onblur="rememberBrand(this.value)">
@@ -131,7 +130,6 @@
                     </datalist>
                 </div>
 
-                <!-- Dynamic Colour Group -->
                 <div id="groupColor" style="display: block;">
                     <label>Select Colour:</label>
                     <input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue (Type to auto-add)" onblur="rememberColor(this.value)">
@@ -140,7 +138,6 @@
                     </datalist>
                 </div>
 
-                <!-- Dynamic Warranty Group -->
                 <div id="groupWarranty" style="display: block;">
                     <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
                     <input type="text" id="pWarranty" list="warrantyList" placeholder="Select or Type Warranty (e.g. 6 Months, No Warranty)">
@@ -150,7 +147,6 @@
                 <label>Cost Price (Rs.):</label>
                 <input type="number" id="pCost" placeholder="0.00" step="0.01">
                 
-                <!-- Selling Price Group (Hidden for Repair Parts) -->
                 <div id="groupSellingPrice" style="display: block;">
                     <label>Selling Price (Rs.):</label>
                     <input type="number" id="pPrice" placeholder="0.00" step="0.01">
@@ -159,7 +155,6 @@
                 <label>Stock Quantity:</label>
                 <input type="number" id="pStock" value="1" required>
 
-                <!-- IMEI Group -->
                 <div id="imeiGroup" style="display: block;">
                     <label>IMEI Number / Serial:</label>
                     <input type="text" id="pImei" placeholder="Enter IMEI or Serial Number">
@@ -396,9 +391,11 @@
 
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:white; color:#333; padding:20px; border-radius:8px; width:450px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="color:#28a745; margin-top:0; text-align:center;" id="receiptModalTitle">Sale Completed Successfully!</h3>
-            <div id="receiptBoxContainer"></div>
+        <div style="background:white; color:#333; padding:20px; border-radius:8px; width:480px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="color:#28a745; margin-top:0; text-align:center;">Sale Completed Successfully!</h3>
+            
+            <div id="receiptBoxContainer" class="printable-receipt" style="background:#fff; color:#333; padding:15px; border:1px solid #ddd; border-radius:6px; font-family: Arial, sans-serif;"></div>
+            
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
                 <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">Print Bill</button>
                 <button onclick="copyReceiptText()" style="background:#007bff; flex:1;">Copy</button>
@@ -515,7 +512,6 @@
             const groupSellingPrice = document.getElementById('groupSellingPrice');
             const imeiGroup = document.getElementById('imeiGroup');
 
-            // Reset visibility
             groupBrand.style.display = 'block';
             groupColor.style.display = 'block';
             groupWarranty.style.display = 'block';
@@ -526,16 +522,15 @@
                 lblModel.textContent = 'Model Name:';
             } else if(cat === 'Button Phone') {
                 lblModel.textContent = 'Phone Model Name:';
-                // Button phones usually don't need complex smart brand dropdowns, but keeping brand/color or simplifying:
             } else if(cat === 'Accessory') {
                 lblModel.textContent = 'Accessory Name:';
                 imeiGroup.style.display = 'none';
             } else if(cat === 'Repair Part') {
                 lblModel.textContent = 'Repair Part Name:';
-                groupBrand.style.display = 'none'; // Repair parts don't need brand select option
-                groupColor.style.display = 'none'; // No colour needed
-                groupWarranty.style.display = 'none'; // No warranty
-                groupSellingPrice.style.display = 'none'; // NO SELLING PRICE FOR REPAIR PARTS
+                groupBrand.style.display = 'none';
+                groupColor.style.display = 'none';
+                groupWarranty.style.display = 'none';
+                groupSellingPrice.style.display = 'none';
                 imeiGroup.style.display = 'none';
             } else if(cat === 'Karaoke Box') {
                 lblModel.textContent = 'Karaoke Box Name:';
@@ -659,7 +654,7 @@
             let warranty = 'No Warranty';
 
             if(cat === 'Repair Part') {
-                price = parseFloat(document.getElementById('pCost').value) || 0; // Repair parts use cost or 0 selling price
+                price = parseFloat(document.getElementById('pCost').value) || 0;
             } else {
                 warranty = document.getElementById('pWarranty').value.trim() || 'No Warranty';
                 finalName = `${baseName} [Warranty: ${warranty}]`;
@@ -893,60 +888,106 @@
             if(res.ok) {
                 let totalDiscount = cart.reduce((sum, i) => sum + Math.max(0, (i.original_price || i.price) - i.price) * i.qty, 0);
                 lastSaleData = { customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, total_discount: totalDiscount, amount_paid: parseFloat(document.getElementById('amountPaid').value), change_due: parseFloat(document.getElementById('changeDue').value), items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
-                generateAutoMessage(lastSaleData);
+                generateAutoReceiptHTML(lastSaleData);
                 cart = []; renderCart(); loadInventory(); loadSales();
                 document.getElementById('custName').value = '';
                 document.getElementById('custPhone').value = '';
             }
         }
 
-        // --- THERMAL POS TEXT RECEIPT ---
-        function generateAutoMessage(sale) {
+        // --- PROFESSIONAL HTML RECEIPT (AS REQUESTED IN IMAGE) ---
+        function generateAutoReceiptHTML(sale) {
             let shopName = (sale.branch || "SHA MOBILE").toUpperCase();
-            let contact = sale.branch_phone || "0712345678";
+            let contact = sale.branch_phone || "0720641351";
             let dateStr = new Date().toLocaleString();
             let custName = (sale.customer_name || "CASH CUSTOMER").toUpperCase();
             let custPhone = sale.customer_phone || "N/A";
 
-            let txt = `================================\n`;
-            txt += `          ${shopName}\n`;
-            txt += `    Contact: ${contact}\n`;
-            txt += `================================\n`;
-            txt += `   INVOICE / PURCHASE RECEIPT\n`;
-            txt += `--------------------------------\n`;
-            txt += `Date: ${dateStr}\n`;
-            txt += `Customer Name : ${custName}\n`;
-            txt += `Customer Phone: ${custPhone}\n`;
-            txt += `--------------------------------\n`;
-            txt += `PURCHASED ITEMS:\n`;
-
+            let itemsHtml = '';
             sale.items.forEach(item => {
-                txt += `- ${item.name} (Qty: ${item.qty})\n`;
-                txt += `  Warranty   : ${item.warranty || 'No Warranty'}\n`;
-                txt += `  IMEI       : ${item.imei || 'N/A'}\n`;
-                if (item.original_price && item.original_price > item.price) {
-                    txt += `  Original   : Rs. ${item.original_price.toFixed(2)}\n`;
-                }
-                txt += `  Total      : Rs. ${item.subtotal.toFixed(2)}\n`;
+                let origPriceHtml = (item.original_price && item.original_price > item.price) ? `<br><span style="color:#d9534f; text-decoration:line-through; font-size:11px;">Original: Rs. ${item.original_price.toFixed(2)}</span>` : '';
+                itemsHtml += `
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                            <b>${item.name}</b><br>
+                            <span style="color: #0284c7; font-size: 11px;">Warranty: ${item.warranty || 'No Warranty'}</span><br>
+                            <span style="color: #d97706; font-size: 11px;">IMEI: ${item.imei || 'N/A'}</span>
+                            ${origPriceHtml}
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.qty}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold;">Rs. ${item.subtotal.toFixed(2)}</td>
+                    </tr>
+                `;
             });
 
-            txt += `--------------------------------\n`;
-            if (sale.total_discount > 0) {
-                txt += `TOTAL DISCOUNT : Rs. ${sale.total_discount.toFixed(2)}\n`;
-            }
-            txt += `TOTAL PAYABLE  : Rs. ${sale.total_amount.toFixed(2)}\n`;
-            txt += `AMOUNT PAID    : Rs. ${sale.amount_paid.toFixed(2)}\n`;
-            txt += `CHANGE DUE     : Rs. ${sale.change_due.toFixed(2)}\n`;
-            txt += `Payment Method : ${sale.payment_method}\n`;
-            txt += `================================\n`;
-            txt += `    Thank you for your business!\n`;
-            txt += `================================`;
+            let discountRow = sale.total_discount > 0 ? `
+                <tr>
+                    <td colspan="2" style="padding: 6px; text-align: right; color: #dc3545; font-weight: bold;">Total Discount:</td>
+                    <td style="padding: 6px; text-align: right; color: #dc3545; font-weight: bold;">- Rs. ${sale.total_discount.toFixed(2)}</td>
+                </tr>
+            ` : '';
 
-            rawReceiptPlaintext = txt;
+            let htmlReceipt = `
+                <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 10px;">
+                    <h2 style="margin: 0; color: #007bff; font-size: 20px;">${shopName}</h2>
+                    <div style="font-size: 13px; color: #555;">Contact: ${contact}</div>
+                    <div style="font-size: 11px; font-weight: bold; color: #777; margin-top: 3px;">OFFICIAL SALES RECEIPT</div>
+                </div>
+                
+                <div style="font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                    <div><b>Date:</b> ${dateStr}</div>
+                </div>
+                <div style="font-size: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 8px;">
+                    <div><b>Customer:</b> ${custName}</div>
+                    <div><b>Phone:</b> ${custPhone}</div>
+                </div>
 
-            let htmlMsg = `<pre style="font-family: 'Courier New', Courier, monospace; font-size: 13px; background: #000; color: #00ff00; padding: 15px; border-radius: 6px; line-height: 1.4; margin: 0; text-align: left; white-space: pre-wrap; word-break: break-all;">${txt}</pre>`;
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px;">
+                    <thead>
+                        <tr style="background: #007bff; color: white;">
+                            <th style="padding: 8px; text-align: left;">Description</th>
+                            <th style="padding: 8px; text-align: center; width: 40px;">Qty</th>
+                            <th style="padding: 8px; text-align: right; width: 90px;">Total (Rs.)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                </table>
 
-            document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 5px;">
+                    ${discountRow}
+                    <tr>
+                        <td colspan="2" style="padding: 6px; text-align: right; font-weight: bold; color: #007bff;">Total Payable:</td>
+                        <td style="padding: 6px; text-align: right; font-weight: bold; color: #007bff;">Rs. ${sale.total_amount.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="padding: 6px; text-align: right;">Amount Paid:</td>
+                        <td style="padding: 6px; text-align: right;">Rs. ${sale.amount_paid.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="padding: 6px; text-align: right; color: #28a745; font-weight: bold;">Change Due:</td>
+                        <td style="padding: 6px; text-align: right; color: #28a745; font-weight: bold;">Rs. ${sale.change_due.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="padding: 6px; text-align: right;">Payment Method:</td>
+                        <td style="padding: 6px; text-align: right; font-weight: bold;">${sale.payment_method}</td>
+                    </tr>
+                </table>
+
+                <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666;">
+                    Thank you for your business!
+                </div>
+            `;
+
+            // Plaintext version for WhatsApp/Copy
+            rawReceiptPlaintext = `================================\n          ${shopName}\n    Contact: ${contact}\n================================\n   INVOICE / PURCHASE RECEIPT\n--------------------------------\nDate: ${dateStr}\nCustomer Name : ${custName}\nCustomer Phone: ${custPhone}\n--------------------------------\nPURCHASED ITEMS:\n`;
+            sale.items.forEach(i => {
+                rawReceiptPlaintext += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n  Warranty: ${i.warranty}\n  IMEI: ${i.imei}\n`;
+            });
+            rawReceiptPlaintext += `--------------------------------\nTOTAL PAYABLE  : Rs. ${sale.total_amount.toFixed(2)}\nAMOUNT PAID    : Rs. ${sale.amount_paid.toFixed(2)}\nCHANGE DUE     : Rs. ${sale.change_due.toFixed(2)}\nPayment Method : ${sale.payment_method}\n================================\n    Thank you for your business!\n================================`;
+
+            document.getElementById('receiptBoxContainer').innerHTML = htmlReceipt;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
@@ -1040,7 +1081,7 @@
         function viewSale(id) {
             const s = rawSalesData.find(item => item.sale_id == id);
             if(!s) return;
-            generateAutoMessage({
+            generateAutoReceiptHTML({
                 customer_name: s.customer_name, customer_phone: s.customer_phone, payment_method: s.payment_method,
                 total_amount: s.total_amount, total_discount: s.discount || 0, items: s.items || [],
                 branch: currentUser.shop_name, branch_phone: currentUser.shop_phone
