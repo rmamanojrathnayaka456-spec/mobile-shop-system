@@ -61,7 +61,7 @@
         @media print {
             body * { visibility: hidden; }
             .printable-receipt, .printable-receipt * { visibility: visible; }
-            .printable-receipt { position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; color: #000 !important; }
+            .printable-receipt { position: absolute; left: 0; top: 0; width: 100%; background: #ffffff !important; color: #333333 !important; }
             #printHideBtn { display: none !important; }
         }
     </style>
@@ -391,10 +391,10 @@
 
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:white; color:#333; padding:20px; border-radius:8px; width:480px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+        <div style="background:#ffffff; color:#333333; padding:20px; border-radius:8px; width:480px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
             <h3 style="color:#28a745; margin-top:0; text-align:center;">Sale Completed Successfully!</h3>
             
-            <div id="receiptBoxContainer" class="printable-receipt" style="background:#fff; color:#333; padding:15px; border:1px solid #ddd; border-radius:6px; font-family: Arial, sans-serif;"></div>
+            <div id="receiptBoxContainer" class="printable-receipt" style="background:#ffffff !important; color:#333333 !important; padding:15px; border:1px solid #ddd; border-radius:6px; font-family: Arial, sans-serif;"></div>
             
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
                 <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">Print Bill</button>
@@ -895,7 +895,7 @@
             }
         }
 
-        // --- PROFESSIONAL HTML RECEIPT (AS REQUESTED IN IMAGE) ---
+        // --- PROFESSIONAL HTML RECEIPT (ALWAYS WHITE BACKGROUND) ---
         function generateAutoReceiptHTML(sale) {
             let shopName = (sale.branch || "SHA MOBILE").toUpperCase();
             let contact = sale.branch_phone || "0720641351";
@@ -908,14 +908,14 @@
                 let origPriceHtml = (item.original_price && item.original_price > item.price) ? `<br><span style="color:#d9534f; text-decoration:line-through; font-size:11px;">Original: Rs. ${item.original_price.toFixed(2)}</span>` : '';
                 itemsHtml += `
                     <tr>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #333333;">
                             <b>${item.name}</b><br>
                             <span style="color: #0284c7; font-size: 11px;">Warranty: ${item.warranty || 'No Warranty'}</span><br>
                             <span style="color: #d97706; font-size: 11px;">IMEI: ${item.imei || 'N/A'}</span>
                             ${origPriceHtml}
                         </td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.qty}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold;">Rs. ${item.subtotal.toFixed(2)}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center; color: #333333;">${item.qty}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #333333;">Rs. ${item.subtotal.toFixed(2)}</td>
                     </tr>
                 `;
             });
@@ -930,19 +930,19 @@
             let htmlReceipt = `
                 <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 10px;">
                     <h2 style="margin: 0; color: #007bff; font-size: 20px;">${shopName}</h2>
-                    <div style="font-size: 13px; color: #555;">Contact: ${contact}</div>
-                    <div style="font-size: 11px; font-weight: bold; color: #777; margin-top: 3px;">OFFICIAL SALES RECEIPT</div>
+                    <div style="font-size: 13px; color: #555555;">Contact: ${contact}</div>
+                    <div style="font-size: 11px; font-weight: bold; color: #777777; margin-top: 3px;">OFFICIAL SALES RECEIPT</div>
                 </div>
                 
-                <div style="font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                <div style="font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; color: #333333;">
                     <div><b>Date:</b> ${dateStr}</div>
                 </div>
-                <div style="font-size: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 8px;">
+                <div style="font-size: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 8px; color: #333333;">
                     <div><b>Customer:</b> ${custName}</div>
                     <div><b>Phone:</b> ${custPhone}</div>
                 </div>
 
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; background: #ffffff !important;">
                     <thead>
                         <tr style="background: #007bff; color: white;">
                             <th style="padding: 8px; text-align: left;">Description</th>
@@ -955,32 +955,31 @@
                     </tbody>
                 </table>
 
-                <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 5px;">
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 5px; color: #333333;">
                     ${discountRow}
                     <tr>
                         <td colspan="2" style="padding: 6px; text-align: right; font-weight: bold; color: #007bff;">Total Payable:</td>
                         <td style="padding: 6px; text-align: right; font-weight: bold; color: #007bff;">Rs. ${sale.total_amount.toFixed(2)}</td>
                     </tr>
                     <tr>
-                        <td colspan="2" style="padding: 6px; text-align: right;">Amount Paid:</td>
-                        <td style="padding: 6px; text-align: right;">Rs. ${sale.amount_paid.toFixed(2)}</td>
+                        <td colspan="2" style="padding: 6px; text-align: right; color: #333333;">Amount Paid:</td>
+                        <td style="padding: 6px; text-align: right; color: #333333;">Rs. ${sale.amount_paid.toFixed(2)}</td>
                     </tr>
                     <tr>
                         <td colspan="2" style="padding: 6px; text-align: right; color: #28a745; font-weight: bold;">Change Due:</td>
                         <td style="padding: 6px; text-align: right; color: #28a745; font-weight: bold;">Rs. ${sale.change_due.toFixed(2)}</td>
                     </tr>
                     <tr>
-                        <td colspan="2" style="padding: 6px; text-align: right;">Payment Method:</td>
-                        <td style="padding: 6px; text-align: right; font-weight: bold;">${sale.payment_method}</td>
+                        <td colspan="2" style="padding: 6px; text-align: right; color: #333333;">Payment Method:</td>
+                        <td style="padding: 6px; text-align: right; font-weight: bold; color: #333333;">${sale.payment_method}</td>
                     </tr>
                 </table>
 
-                <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666;">
+                <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666666;">
                     Thank you for your business!
                 </div>
             `;
 
-            // Plaintext version for WhatsApp/Copy
             rawReceiptPlaintext = `================================\n          ${shopName}\n    Contact: ${contact}\n================================\n   INVOICE / PURCHASE RECEIPT\n--------------------------------\nDate: ${dateStr}\nCustomer Name : ${custName}\nCustomer Phone: ${custPhone}\n--------------------------------\nPURCHASED ITEMS:\n`;
             sale.items.forEach(i => {
                 rawReceiptPlaintext += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n  Warranty: ${i.warranty}\n  IMEI: ${i.imei}\n`;
