@@ -987,10 +987,10 @@
 
         function getStatusColor(status) {
             switch(status) {
-                case 'Pending': return '#ff9800';
-                case 'In Progress': return '#007bff';
-                case 'Completed': return '#17a2b8';
-                case 'Delivered': return '#28a745';
+                case 'Pending': return '#ff9800'; // Orange
+                case 'In Progress': return '#007bff'; // Blue
+                case 'Completed': return '#17a2b8'; // Teal
+                case 'Delivered': return '#28a745'; // Green
                 default: return '#6c757d';
             }
         }
@@ -1169,8 +1169,6 @@
                 payment_method: payment_method,
                 discount: 0,
                 total_amount: balance,
-                amount_paid: paid,
-                balance_due: change,
                 sale_type: 'Repair',
                 items: [{
                     type: 'repair',
@@ -1294,6 +1292,7 @@
             }
         }
 
+        // --- BACKUP & RESTORE FUNCTIONS ---
         async function exportDataBackup() {
             try {
                 const [prodRes, salesRes, repRes] = await Promise.all([
@@ -1568,17 +1567,7 @@
                 const res = await fetch('/api/sales', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        shop_id: currentUser.shop_id, 
-                        customer_name, 
-                        customer_phone, 
-                        payment_method, 
-                        discount: total_discount, 
-                        total_amount, 
-                        amount_paid, 
-                        balance_due: change_due, 
-                        items: cart 
-                    })
+                    body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name, customer_phone, payment_method, discount: total_discount, total_amount, items: cart })
                 });
                 if(res.ok) {
                     generateAutoMessage(lastSaleData);
@@ -1804,8 +1793,8 @@
                 payment_method: sale.payment_method,
                 total_amount: sale.total_amount,
                 total_discount: sale.discount || 0,
-                amount_paid: sale.amount_paid || sale.total_amount,
-                change_due: sale.balance_due || 0,
+                amount_paid: sale.total_amount,
+                change_due: 0,
                 items: sale.items || [],
                 branch: currentUser.shop_name || "SHA MOBILE",
                 branch_phone: currentUser.shop_phone
@@ -1975,6 +1964,7 @@
 
             displaySales.forEach((s) => {
                 const sId = s.sale_id;
+                const deleteKey = encodeURIComponent(s.delete_key || s.created_at);
                 let badgeClass = 'badge-prod';
                 let stype = s.sale_type || 'Product';
                 if(stype === 'Repair') badgeClass = 'badge-rep';
@@ -1991,17 +1981,17 @@
                     <td>
                         <div style="display:flex; gap:5px; flex-wrap:wrap;">
                             <button onclick="viewSale(${sId})" style="background:#17a2b8; padding:3px 6px; width:auto; font-size:11px;">View</button>
-                            <button onclick="deleteSale(${sId})" style="background:#dc3545; padding:3px 6px; width:auto; font-size:11px;">Remove</button>
+                            <button onclick="deleteSale('${deleteKey}')" style="background:#dc3545; padding:3px 6px; width:auto; font-size:11px;">Remove</button>
                         </div>
                     </td>
                 </tr>`;
             });
         }
 
-        async function deleteSale(saleId) {
-            if(!confirm(`Delete sale record #${saleId}?`)) return;
+        async function deleteSale(deleteKey) {
+            if(!confirm('Delete sale record?')) return;
             try {
-                const res = await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/sales/${deleteKey}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
                 if(res.ok) { loadSales(); }
             } catch(err) { console.error(err); }
         }
