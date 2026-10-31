@@ -1050,19 +1050,25 @@
             const dateVal = document.getElementById('filterExactDate').value;
             const query = document.getElementById('searchSales').value.toLowerCase().trim();
 
-            const now = new Date();
-            const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-            const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-
             let filtered = rawSalesData.filter(s => {
                 if(yearVal && s.year_only !== yearVal) return false;
                 if(monthVal && (!s.month_only || s.month_only.slice(-2) !== monthVal)) return false;
                 if(methodVal && s.payment_method !== methodVal) return false;
                 if(dateVal && s.date_only !== dateVal) return false;
 
-                // Card Filters
-                if(currentSalesCardFilter === 'daily' && s.date_only !== todayStr) return false;
-                if(currentSalesCardFilter === 'monthly' && s.month_only !== thisMonthStr) return false;
+                // Card Filters using robust date parsing
+                if(currentSalesCardFilter === 'daily') {
+                    if(!s.date_only) return false;
+                    let saleDate = new Date(s.date_only);
+                    let today = new Date();
+                    if(saleDate.toDateString() !== today.toDateString()) return false;
+                }
+                if(currentSalesCardFilter === 'monthly') {
+                    if(!s.date_only) return false;
+                    let saleDate = new Date(s.date_only);
+                    let today = new Date();
+                    if(saleDate.getFullYear() !== today.getFullYear() || saleDate.getMonth() !== today.getMonth()) return false;
+                }
                 if(currentSalesCardFilter === 'repair' && s.sale_type !== 'Repair') return false;
 
                 if(query) {
@@ -1087,16 +1093,32 @@
 
         function updateAnalyticsCards(sales) {
             let daily = 0, monthly = 0, repairTotal = 0;
-            const now = new Date();
-            const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-            const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            let today = new Date();
 
             sales.forEach(s => {
                 const amt = parseFloat(s.total_amount || 0);
-                if(s.date_only === todayStr) { daily += amt; }
-                if(s.month_only === thisMonthStr) { monthly += amt; }
-                if(s.sale_type === 'Repair') { repairTotal += amt; }
+                
+                if(s.date_only) {
+                    let saleDate = new Date(s.date_only);
+                    // Check if date is valid
+                    if(!isNaN(saleDate.getTime())) {
+                        // Daily (Today)
+                        if(saleDate.toDateString() === today.toDateString()) {
+                            daily += amt;
+                        }
+                        // Monthly (This Month)
+                        if(saleDate.getFullYear() === today.getFullYear() && saleDate.getMonth() === today.getMonth()) {
+                            monthly += amt;
+                        }
+                    }
+                }
+
+                // All time repair sales
+                if(s.sale_type === 'Repair') { 
+                    repairTotal += amt; 
+                }
             });
+
             document.getElementById('dailySalesAmt').textContent = `Rs. ${daily.toFixed(2)}`;
             document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthly.toFixed(2)}`;
             document.getElementById('repairSalesAmt').textContent = `Rs. ${repairTotal.toFixed(2)}`;
