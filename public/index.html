@@ -628,16 +628,12 @@
         }
 
         // --- BILLING / POS ---
-        function handleBillingSearch() {
-            const query = document.getElementById('billingSearch').value.toLowerCase().trim();
+        function renderDropdownList(items) {
             const container = document.getElementById('customDropdownList');
             container.innerHTML = '';
-            if(!query) { container.style.display = 'none'; return; }
+            if(items.length === 0) { container.style.display = 'none'; return; }
 
-            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.brand && p.brand.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
-            if(filtered.length === 0) { container.style.display = 'none'; return; }
-
-            filtered.forEach(p => {
+            items.forEach(p => {
                 const parsed = parseProductItem(p.name);
                 const brandStr = p.brand ? `[${p.brand}] ` : '';
                 const div = document.createElement('div');
@@ -656,7 +652,26 @@
             container.style.display = 'block';
         }
 
-        function openBillingDropdown() { handleBillingSearch(); }
+        function handleBillingSearch() {
+            const query = document.getElementById('billingSearch').value.toLowerCase().trim();
+            if(!query) { renderDropdownList(allProducts); return; }
+
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.brand && p.brand.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
+            renderDropdownList(filtered);
+        }
+
+        function openBillingDropdown() {
+            renderDropdownList(allProducts);
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const searchInput = document.getElementById('billingSearch');
+            const dropdown = document.getElementById('customDropdownList');
+            if (searchInput && dropdown && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
 
         function selectBillingProductById(val) {
             if(!val.startsWith('prod_')) return;
@@ -730,7 +745,9 @@
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name: name, customer_phone: phone, item_details: cart.map(i=>i.name).join(', '), total_amount: total, paid_amount: 0 })
                 });
-                alert('Credit sale recorded!'); cart = []; renderCart(); loadCredits(); return;
+                alert('Credit sale recorded!'); cart = []; renderCart(); loadCredits(); 
+                document.getElementById('custName').value = ''; document.getElementById('custPhone').value = '';
+                return;
             }
 
             const res = await fetch('/api/sales', {
@@ -741,6 +758,9 @@
                 lastSaleData = { customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, total_discount: 0, amount_paid: parseFloat(document.getElementById('amountPaid').value), change_due: parseFloat(document.getElementById('changeDue').value), items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
                 generateAutoMessage(lastSaleData);
                 cart = []; renderCart(); loadInventory(); loadSales();
+                // Clear customer inputs after successful sale
+                document.getElementById('custName').value = '';
+                document.getElementById('custPhone').value = '';
             }
         }
 
