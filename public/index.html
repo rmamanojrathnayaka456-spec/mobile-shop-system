@@ -516,18 +516,7 @@
 
             // Clear billing search data when leaving Tab 2
             if(tabNum !== 2) {
-                document.getElementById('billingSearch').value = '';
-                document.getElementById('customDropdownList').style.display = 'none';
-                document.getElementById('billingProductWarranty').value = '';
-                document.getElementById('costPriceDisplay').value = '';
-                document.getElementById('originalPrice').value = '';
-                document.getElementById('billingPrice').value = '';
-                document.getElementById('billingDiscountDisplay').value = '0.00';
-                document.getElementById('billingImei').value = '';
-                document.getElementById('billingImeiGroup').style.display = 'none';
-                selectedBillingValue = '';
-                selectedOriginalPrice = 0;
-                selectedCostPrice = 0;
+                clearBillingFields();
             }
 
             if(tabNum === 2) { loadInventory(); loadRepairs(); }
@@ -537,6 +526,22 @@
             else if(tabNum === 6) { loadSales(); }
             else if(tabNum === 8) loadCreditSales();
             else if(tabNum === 9) loadExternalItems();
+        }
+
+        function clearBillingFields() {
+            document.getElementById('billingSearch').value = '';
+            document.getElementById('customDropdownList').style.display = 'none';
+            document.getElementById('billingProductWarranty').value = '';
+            document.getElementById('costPriceDisplay').value = '';
+            document.getElementById('originalPrice').value = '';
+            document.getElementById('billingPrice').value = '';
+            document.getElementById('billingDiscountDisplay').value = '0.00';
+            document.getElementById('billingQty').value = '1';
+            document.getElementById('billingImei').value = '';
+            document.getElementById('billingImeiGroup').style.display = 'none';
+            selectedBillingValue = '';
+            selectedOriginalPrice = 0;
+            selectedCostPrice = 0;
         }
 
         function switchRepairSubTab(type, btn) {
@@ -749,6 +754,8 @@
             if(!model || val <= 0) return alert('Enter exchange model & value');
             cart.push({ type: 'exchange', name: `[EXCHANGE] ${model}`, price: -val, qty: 1, subtotal: -val, discount: 0, warranty: 'N/A', imei: 'N/A', original: 0 });
             renderCart();
+            document.getElementById('exModel').value = '';
+            document.getElementById('exValue').value = '';
         }
         function addToCart() {
             if(!selectedBillingValue.startsWith('prod_')) return alert('Please select a valid product!');
@@ -775,7 +782,11 @@
                 original: selectedOriginalPrice
             });
             renderCart();
+
+            // Clear search and selection fields after adding to bill so search bar becomes empty
+            clearBillingFields();
         }
+
         function renderCart() {
             const tbody = document.getElementById('cartTableBody');
             tbody.innerHTML = '';
