@@ -251,7 +251,7 @@ app.put('/api/sales/pay-credit/:id', (req, res) => {
     const saleId = req.params.id;
     const { shop_id, paid_amount } = req.body;
     
-    db.query('SELECT * FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shop_id], (err, results) => {
+    db.query('SELECT * FROM sales WHERE sale_id = ?', [saleId], (err, results) => {
         if (err || !results || results.length === 0) return res.status(404).json({ error: 'Sale not found' });
         const sale = results[0];
         const newPaid = parseFloat(sale.amount_paid || 0) + parseFloat(paid_amount);
@@ -266,7 +266,6 @@ app.put('/api/sales/pay-credit/:id', (req, res) => {
 
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
-    const shopId = req.query.shop_id;
     db.query('DELETE FROM sales WHERE sale_id = ?', [saleId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
@@ -336,7 +335,7 @@ app.put('/api/external-items/:id', (req, res) => {
 app.delete('/api/external-items/:id', (req, res) => {
     db.query('DELETE FROM external_shop_items WHERE item_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: true });
+        res.json({ success: true });
     });
 });
 

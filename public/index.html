@@ -514,7 +514,6 @@
             document.getElementById(`tab${tabNum}`).classList.add('active');
             if(btn) btn.classList.remove('inactive');
 
-            // Clear billing search data when leaving Tab 2
             if(tabNum !== 2) {
                 clearBillingFields();
             }
@@ -782,8 +781,6 @@
                 original: selectedOriginalPrice
             });
             renderCart();
-
-            // Clear search and selection fields after adding to bill so search bar becomes empty
             clearBillingFields();
         }
 
@@ -918,9 +915,8 @@
         }
 
         async function loadSales() {
-            if(!currentUser) return;
             try {
-                const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
+                const res = await fetch('/api/sales');
                 rawSalesData = await res.json();
                 
                 if (!Array.isArray(rawSalesData)) {
@@ -1031,7 +1027,7 @@
 
         async function deleteSale(saleId) {
             if(!confirm(`Are you sure you want to remove Sale #${saleId}?`)) return;
-            const res = await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/sales/${saleId}`, { method: 'DELETE' });
             if(res.ok) {
                 await loadSales();
                 alert('Sale removed successfully!');
@@ -1048,23 +1044,25 @@
         }
 
         async function loadCreditSales() {
-            if(!currentUser) return;
-            const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
-            const sales = await res.json();
-            const tbody = document.getElementById('creditSalesTable');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            const credits = (sales || []).filter(s => parseFloat(s.balance_due) > 0);
-            if(credits.length === 0) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No credit sales.</td></tr>`; return; }
-            credits.forEach(s => {
-                tbody.innerHTML += `<tr>
-                    <td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td>
-                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>Rs. ${parseFloat(s.amount_paid).toFixed(2)}</td>
-                    <td style="color:#d9534f; font-weight:bold;">Rs. ${parseFloat(s.balance_due).toFixed(2)}</td>
-                    <td>${s.formatted_date}</td><td><button onclick="payCredit(${s.sale_id})" style="background:#28a745; padding:3px; font-size:11px;">Pay Due</button></td>
-                </tr>`;
-            });
+            try {
+                const res = await fetch('/api/sales');
+                const sales = await res.json();
+                const tbody = document.getElementById('creditSalesTable');
+                if(!tbody) return;
+                tbody.innerHTML = '';
+                const credits = (sales || []).filter(s => parseFloat(s.balance_due) > 0);
+                if(credits.length === 0) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No credit sales.</td></tr>`; return; }
+                credits.forEach(s => {
+                    tbody.innerHTML += `<tr>
+                        <td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td>
+                        <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>Rs. ${parseFloat(s.amount_paid).toFixed(2)}</td>
+                        <td style="color:#d9534f; font-weight:bold;">Rs. ${parseFloat(s.balance_due).toFixed(2)}</td>
+                        <td>${s.formatted_date}</td><td><button onclick="payCredit(${s.sale_id})" style="background:#28a745; padding:3px; font-size:11px;">Pay Due</button></td>
+                    </tr>`;
+                });
+            } catch(e) { console.error(e); }
         }
+
         async function payCredit(id) {
             const amt = prompt('Enter payment amount received (Rs.):');
             if(!amt || isNaN(amt)) return;
