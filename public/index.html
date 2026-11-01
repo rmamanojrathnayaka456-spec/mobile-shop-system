@@ -65,6 +65,23 @@
             .printable-receipt { position: absolute; left: 0; top: 0; width: 100%; background: #ffffff !important; color: #333333 !important; }
             #printHideBtn { display: none !important; }
         }
+        @media print {
+    body * { visibility: hidden; }
+    .printable-receipt, .printable-receipt * { visibility: visible; }
+    .printable-receipt { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 100% !important; 
+        max-width: 80mm !important; 
+        margin: 0 auto !important;
+        padding: 5px !important;
+        background: #ffffff !important; 
+        color: #000000 !important; 
+        font-size: 12px !important;
+    }
+    #printHideBtn, header, .tabs { display: none !important; }
+}
     </style>
 </head>
 <body data-theme="light">
