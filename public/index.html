@@ -51,7 +51,6 @@
         .card p { font-size: 18px; font-weight: bold; color: #007bff; margin: 0; }
         .badge-prod { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .badge-rep { background: #17a2b8; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .badge-exch { background: #fd7e14; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .badge-mix { background: #ffc107; color: black; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: rgba(255, 0, 0, 0.15) !important; color: #d9534f; font-weight: bold; }
@@ -92,6 +91,7 @@
             </div>
         </header>
 
+        <!-- Updated Tabs (Removed 7, 9, 10 and re-indexed) -->
         <div class="tabs">
             <button class="tab-btn" onclick="switchTab(1, this)">1. Add Product</button>
             <button class="tab-btn inactive" onclick="switchTab(2, this)">2. Billing / POS</button>
@@ -99,12 +99,9 @@
             <button class="tab-btn inactive" onclick="switchTab(4, this)">4. Sales History & EOD</button>
             <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repair Jobs</button>
             <button class="tab-btn inactive" onclick="switchTab(6, this)">6. Customer History</button>
-            <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Trade-In / Exchange</button>
-            <button class="tab-btn inactive" onclick="switchTab(8, this)">8. Credit Book</button>
-            <button class="tab-btn inactive" onclick="switchTab(9, this)">9. Repair Parts Sourcing</button>
-            <button class="tab-btn inactive" onclick="switchTab(10, this)">10. Best Sellers</button>
-            <button class="tab-btn inactive" onclick="switchTab(11, this)">11. Consignment Supplies</button>
-            <button class="tab-btn inactive" onclick="switchTab(12, this)">12. Backup & Restore</button>
+            <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Credit Book</button>
+            <button class="tab-btn inactive" onclick="switchTab(8, this)">8. Consignment Supplies</button>
+            <button class="tab-btn inactive" onclick="switchTab(9, this)">9. Backup & Restore</button>
         </div>
 
         <!-- Tab 1: Add Product -->
@@ -271,51 +268,16 @@
             <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Total (Rs.)</th><th>Status</th></tr></thead><tbody id="custRepairsTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
         </div>
 
-        <!-- Tab 7: Trade-In / Exchange -->
+        <!-- Tab 7: Credit Book (Previously Tab 8) -->
         <div id="tab7" class="section">
-            <h3>7. Trade-In / Phone Exchange Management</h3>
-            <form id="exchangeForm" onsubmit="processExchange(event)" style="background:var(--container-bg); padding:20px; border:1px solid var(--border-color); border-radius:6px; max-width:700px;">
-                <label>Customer Name:</label><input type="text" id="exCustName" required>
-                <label>Customer Phone:</label><input type="text" id="exCustPhone" required>
-                <label>Trade-In Phone Model:</label><input type="text" id="exPhoneModel" required>
-                <label>Brand:</label><input type="text" id="exBrand">
-                <label>IMEI Number:</label><input type="text" id="exImei" required>
-                <label>Colour:</label><input type="text" id="exColor">
-                <label>Valuation Allowance (Rs.):</label><input type="number" id="exValuation" step="0.01" required style="border:2px solid #fd7e14; font-weight:bold;">
-                <button type="submit" style="background:#fd7e14; margin-top:15px; font-weight:bold;">Complete Trade-In</button>
-            </form>
-        </div>
-
-        <!-- Tab 8: Credit Book -->
-        <div id="tab8" class="section">
-            <h3>8. Customer Credit Book</h3>
+            <h3>7. Customer Credit Book</h3>
             <input type="text" id="searchCredit" placeholder="Search credit records..." onkeyup="filterCreditBook()" style="margin-bottom:15px; border:2px solid #007bff;">
             <table><thead><tr><th>Credit ID</th><th>Customer</th><th>Phone</th><th>Item Details</th><th>Total (Rs.)</th><th>Paid (Rs.)</th><th>Balance Due (Rs.)</th><th>Status</th><th>Action</th></tr></thead><tbody id="creditTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody></table>
         </div>
 
-        <!-- Tab 9: Repair Parts Sourcing -->
-        <div id="tab9" class="section">
-            <h3>9. Repair Parts Sourcing & Supplier Tracker</h3>
-            <form id="partSourceForm" onsubmit="addRepairPartSource(event)" style="background:var(--container-bg); padding:15px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:20px; max-width:600px;">
-                <label>Part Name:</label><input type="text" id="partName" required>
-                <label>Supplier Name:</label><input type="text" id="supplierName" required>
-                <label>Supplier Phone:</label><input type="text" id="supplierPhone">
-                <label>Cost Price (Rs.):</label><input type="number" id="partCost" step="0.01" required>
-                <button type="submit" style="background:#28a745; margin-top:10px;">Save Supplier Source</button>
-            </form>
-            <input type="text" id="searchParts" placeholder="Search parts..." onkeyup="filterRepairParts()" style="margin-bottom:15px; border:2px solid #007bff;">
-            <table><thead><tr><th>Part ID</th><th>Part Name</th><th>Supplier Name</th><th>Supplier Phone</th><th>Cost (Rs.)</th><th>Date Added</th></tr></thead><tbody id="partsTable"><tr><td colspan="6" style="text-align:center;">Loading...</td></tr></tbody></table>
-        </div>
-
-        <!-- Tab 10: Best Sellers -->
-        <div id="tab10" class="section">
-            <h3>10. Best Selling Items This Month</h3>
-            <table><thead><tr><th>Rank</th><th>Product Name</th><th>Total Quantity Sold</th><th>Total Revenue Generated (Rs.)</th></tr></thead><tbody id="bestSellersTable"><tr><td colspan="4" style="text-align:center;">Calculating...</td></tr></tbody></table>
-        </div>
-
-        <!-- Tab 11: Consignment Supplies -->
-        <div id="tab11" class="section">
-            <h3>11. Consignment Supplies to Other Shops</h3>
+        <!-- Tab 8: Consignment Supplies (Previously Tab 11) -->
+        <div id="tab8" class="section">
+            <h3>8. Consignment Supplies to Other Shops</h3>
             <form id="consignmentForm" onsubmit="addConsignmentItem(event)" style="background:var(--container-bg); padding:15px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:20px; max-width:600px;">
                 <label>Other Shop Name:</label><input type="text" id="consShopName" required>
                 <label>Item Name:</label><input type="text" id="consItemName" required>
@@ -326,9 +288,9 @@
             <table><thead><tr><th>ID</th><th>Other Shop</th><th>Item Name</th><th>IMEI</th><th>Wholesale Price (Rs.)</th><th>Status</th><th>Action</th></tr></thead><tbody id="consignmentTable"><tr><td colspan="7" style="text-align:center;">Loading...</td></tr></tbody></table>
         </div>
 
-        <!-- Tab 12: Backup & Restore -->
-        <div id="tab12" class="section">
-            <h3>12. Data Backup & Restore</h3>
+        <!-- Tab 9: Backup & Restore (Previously Tab 12) -->
+        <div id="tab9" class="section">
+            <h3>9. Data Backup & Restore</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
                 <div style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 6px;">
                     <h4 style="color: #007bff; margin-top:0;">📥 Download Backup</h4>
@@ -378,7 +340,6 @@
         let allRepairs = [];
         let rawSalesData = [];
         let allCredits = [];
-        let allParts = [];
         let allConsignments = [];
         let currentStockFilter = 'all';
         let currentSalesCardFilter = 'all';
@@ -425,7 +386,7 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
                 document.getElementById('userDisplay').textContent = currentUser.shop_name || "SHA MOBILE";
-                loadInventory(); loadSales(); loadRepairs(); loadCredits(); loadRepairParts(); loadConsignments();
+                loadInventory(); loadSales(); loadRepairs(); loadCredits(); loadConsignments();
             }
             setTheme(localStorage.getItem('pos_theme') || 'light');
         }
@@ -493,10 +454,8 @@
             else if(tabNum === 4) loadSales();
             else if(tabNum === 5) loadRepairs();
             else if(tabNum === 6) { loadSales(); loadRepairs(); }
-            else if(tabNum === 8) loadCredits();
-            else if(tabNum === 9) loadRepairParts();
-            else if(tabNum === 10) calculateBestSellers();
-            else if(tabNum === 11) loadConsignments();
+            else if(tabNum === 7) loadCredits();
+            else if(tabNum === 8) loadConsignments();
         }
 
         function switchRepairSubTab(type, btn) {
@@ -1136,45 +1095,6 @@
             loadCredits();
         }
 
-        async function loadRepairParts() {
-            const res = await fetch(`/api/repair-parts?shop_id=${currentUser.shop_id}`);
-            allParts = await res.json();
-            const tbody = document.getElementById('partsTable');
-            if(!tbody) return;
-            tbody.innerHTML = allParts.length === 0 ? `<tr><td colspan="6" style="text-align:center;">No records.</td></tr>` : '';
-            allParts.forEach(p => { tbody.innerHTML += `<tr><td>#${p.part_id}</td><td>${p.part_name}</td><td>${p.supplier_name}</td><td>${p.supplier_phone}</td><td>Rs. ${p.cost}</td><td>${p.created_at?.substring(0,10)}</td></tr>`; });
-        }
-
-        async function addRepairPartSource(e) {
-            e.preventDefault();
-            await fetch('/api/repair-parts', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shop_id: currentUser.shop_id, part_name: document.getElementById('partName').value, supplier_name: document.getElementById('supplierName').value, supplier_phone: document.getElementById('supplierPhone').value, cost: document.getElementById('partCost').value })
-            });
-            document.getElementById('partSourceForm').reset(); loadRepairParts(); alert('Saved!');
-        }
-
-        function calculateBestSellers() {
-            const currentMonth = new Date().toISOString().slice(0, 7);
-            const counts = {};
-            rawSalesData.forEach(s => {
-                if(s.month_only === currentMonth && Array.isArray(s.items)) {
-                    s.items.forEach(i => {
-                        if(i.name) {
-                            if(!counts[i.name]) counts[i.name] = { qty: 0, revenue: 0 };
-                            counts[i.name].qty += (i.qty || 1);
-                            counts[i.name].revenue += (i.subtotal || 0);
-                        }
-                    });
-                }
-            });
-            const sorted = Object.keys(counts).map(name => ({ name, ...counts[name] })).sort((a,b) => b.qty - a.qty);
-            const tbody = document.getElementById('bestSellersTable');
-            if(!tbody) return;
-            tbody.innerHTML = sorted.length === 0 ? `<tr><td colspan="4" style="text-align:center;">No sales this month.</td></tr>` : '';
-            sorted.forEach((item, idx) => { tbody.innerHTML += `<tr><td>#${idx+1}</td><td>${item.name}</td><td><b>${item.qty}</b></td><td>Rs. ${item.revenue.toFixed(2)}</td></tr>`; });
-        }
-
         async function loadConsignments() {
             const res = await fetch(`/api/consignments?shop_id=${currentUser.shop_id}`);
             allConsignments = await res.json();
@@ -1196,20 +1116,6 @@
         async function markConsignmentSold(id) {
             await fetch(`/api/consignments/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status: 'Sold' }) });
             loadConsignments();
-        }
-
-        async function processExchange(e) {
-            e.preventDefault();
-            const valuation = parseFloat(document.getElementById('exValuation').value) || 0;
-            await fetch('/api/sales', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    shop_id: currentUser.shop_id, customer_name: document.getElementById('exCustName').value, customer_phone: document.getElementById('exCustPhone').value,
-                    payment_method: 'Exchange Allowance', total_amount: -valuation,
-                    items: [{ type: 'exchange', name: `Trade-In: ${document.getElementById('exPhoneModel').value}`, subtotal: -valuation, qty: 1 }]
-                })
-            });
-            alert('Exchange recorded!'); document.getElementById('exchangeForm').reset(); loadSales(); loadInventory();
         }
 
         async function exportDataBackup() {
