@@ -208,21 +208,15 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Robust fetching to ensure no sales found issues are resolved)
+// Sales API - Fetch all sales without strict shop_id filtering to ensure records always appear
 app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id;
-    // shop_id තිබුණත් නැතත් සියලු සේල්ස් නිවැරදිව ලබා ගැනීමට (සැක සහිත ෆිල්ටර් ඉවත් කර ඇත)
-    const query = shopId ? 'SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC, created_at DESC' : 'SELECT * FROM sales ORDER BY sale_id DESC, created_at DESC';
-    const params = shopId ? [shopId] : [];
-
-    db.query(query, params, (err, results) => {
+    db.query('SELECT * FROM sales ORDER BY sale_id DESC, created_at DESC', (err, results) => {
         if (err) {
             console.error("Sales fetch error:", err.message);
             return res.json([]);
         }
         
         const formatted = (results || []).map((row, index) => {
-            // sale_id නැතිනම් ස්වයංක්‍රීයව අංකයක් ලබා දීම
             const dbSaleId = row.sale_id || row.id || (index + 1);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             const pad = (n) => String(n).padStart(2, '0');
