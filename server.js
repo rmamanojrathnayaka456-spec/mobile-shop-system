@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Columns
+// Auto Create Tables & Default Shops (1 to 10)
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -167,7 +167,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Products APIs (Filtered strictly by shop_id)
+// Products APIs (Strictly filtered by shop_id)
 app.get('/api/products', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [shopId], (err, results) => {
@@ -178,14 +178,15 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
+    const finalShopId = shop_id || 1;
     db.query(
         'INSERT INTO products (shop_id, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [shop_id || 1, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
+        [finalShopId, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             const pId = result.insertId;
             const product_code = pId.toString().padStart(3, '0');
-            db.query('UPDATE products SET product_code = ? WHERE product_id = ?', [product_code, pId], () => {
+            db.query('UPDATE products SET product_code = ? WHERE product_id = ? AND shop_id = ?', [product_code, pId, finalShopId], () => {
                 res.json({ message: 'Product added successfully', product_id: pId, product_code });
             });
         }
@@ -200,7 +201,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Filtered strictly by shop_id)
+// Sales APIs (Strictly filtered by shop_id)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id ASC', [shopId], (err, results) => {
@@ -272,7 +273,7 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Robust Delete Sale API supporting both sale_id and created_at timestamp
+// Delete Sale API strictly within shop_id
 app.delete('/api/sales/:id', (req, res) => {
     const targetId = req.params.id;
     const shopId = req.query.shop_id || 1;
@@ -289,7 +290,7 @@ app.delete('/api/sales/:id', (req, res) => {
     });
 });
 
-// Repairs APIs (Filtered strictly by shop_id)
+// Repairs APIs (Strictly filtered by shop_id)
 app.get('/api/repairs', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id ASC', [shopId], (err, results) => {
@@ -326,7 +327,7 @@ app.delete('/api/repairs/:id', (req, res) => {
     });
 });
 
-// Credit Sales APIs (Filtered strictly by shop_id)
+// Credit Sales APIs (Strictly filtered by shop_id)
 app.get('/api/credits', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM credit_sales WHERE shop_id = ? ORDER BY credit_id DESC', [shopId], (err, results) => {
@@ -366,7 +367,7 @@ app.put('/api/credits/:id', (req, res) => {
     });
 });
 
-// Repair Parts Sourcing APIs
+// Repair Parts Sourcing APIs (Strictly filtered by shop_id)
 app.get('/api/repair-parts', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [shopId], (err, results) => {
@@ -384,7 +385,7 @@ app.post('/api/repair-parts', (req, res) => {
         });
 });
 
-// Consignment / Supplies to Other Shops APIs
+// Consignment APIs (Strictly filtered by shop_id)
 app.get('/api/consignments', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM consignment_items WHERE shop_id = ? ORDER BY consignment_id DESC', [shopId], (err, results) => {
