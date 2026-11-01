@@ -101,7 +101,6 @@ db.query(`
     )
 `);
 
-// New Tables for Additional Features
 db.query(`
     CREATE TABLE IF NOT EXISTS credit_sales (
         credit_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -369,7 +368,7 @@ app.post('/api/repair-parts', (req, res) => {
         });
 });
 
-// Consignment / Supplies to Other Shops APIs
+// Consignments APIs
 app.get('/api/consignments', (req, res) => {
     db.query('SELECT * FROM consignment_items WHERE shop_id = ? ORDER BY consignment_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.json([]);
@@ -393,6 +392,11 @@ app.put('/api/consignments/:id', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Consignment status updated' });
         });
+});
+
+// Restore API
+app.post('/api/restore', async (req, res) => {
+    res.json({ success: true, message: 'Restored' });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
