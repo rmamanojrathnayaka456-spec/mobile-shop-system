@@ -208,10 +208,10 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Safely handles shop_id query and returns array)
+// Sales APIs - Fixed Unique IDs & String format for HTML rendering
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
-    const query = shopId ? 'SELECT * FROM sales WHERE shop_id = ? ORDER BY 1 DESC' : 'SELECT * FROM sales ORDER BY 1 DESC';
+    const query = shopId ? 'SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC' : 'SELECT * FROM sales ORDER BY sale_id DESC';
     const params = shopId ? [shopId] : [];
 
     db.query(query, params, (err, results) => {
@@ -227,6 +227,7 @@ app.get('/api/sales', (req, res) => {
             const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
             const isRepair = row.sale_type === 'Repair';
+            // අංකය ස්ට්‍රින්ග් (String) එකක් ලෙස නිවැරදිව සකස් කිරීම මඟින් 'REP is not defined' දෝෂය වළකී
             const displaySaleId = isRepair ? `REP-${dbSaleId}` : `${dbSaleId}`;
 
             return {
