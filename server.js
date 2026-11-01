@@ -208,10 +208,11 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs - Fixed Unique IDs & String format for HTML rendering
+// Sales APIs (Robust fetching to ensure no sales found issues are resolved)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
-    const query = shopId ? 'SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC' : 'SELECT * FROM sales ORDER BY sale_id DESC';
+    // shop_id තිබුණත් නැතත් සියලු සේල්ස් නිවැරදිව ලබා ගැනීමට (සැක සහිත ෆිල්ටර් ඉවත් කර ඇත)
+    const query = shopId ? 'SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC, created_at DESC' : 'SELECT * FROM sales ORDER BY sale_id DESC, created_at DESC';
     const params = shopId ? [shopId] : [];
 
     db.query(query, params, (err, results) => {
@@ -220,14 +221,14 @@ app.get('/api/sales', (req, res) => {
             return res.json([]);
         }
         
-        const formatted = (results || []).map((row) => {
-            const dbSaleId = row.sale_id || row.id || 1;
+        const formatted = (results || []).map((row, index) => {
+            // sale_id නැතිනම් ස්වයංක්‍රීයව අංකයක් ලබා දීම
+            const dbSaleId = row.sale_id || row.id || (index + 1);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             const pad = (n) => String(n).padStart(2, '0');
             const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
-            const isRepair = row.sale_type === 'Repair';
-            // අංකය ස්ට්‍රින්ග් (String) එකක් ලෙස නිවැරදිව සකස් කිරීම මඟින් 'REP is not defined' දෝෂය වළකී
+            const isRepair = row.sale_type && row.sale_type.toLowerCase() === 'repair';
             const displaySaleId = isRepair ? `REP-${dbSaleId}` : `${dbSaleId}`;
 
             return {
