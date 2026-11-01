@@ -6,12 +6,13 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database Connection Pool (Render හෝ Localhost සඳහා සුදුසු පරිදි)
+// Database Connection Pool (Render Environment Variables සඳහා සකස් කර ඇත)
 const db = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'mobile_shop_db',
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306, // මෙතැනට DB_PORT එක එකතු කර ඇත
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
