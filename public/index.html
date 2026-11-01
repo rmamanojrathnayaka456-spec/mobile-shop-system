@@ -978,14 +978,14 @@
         }
 
         async function deleteSale(saleId) {
-    if(!confirm('Delete sale record?')) return;
-    const res = await fetch(`/api/sales/${saleId}`, { method: 'DELETE' });
-    if(res.ok) {
-        loadSales();
-    } else {
-        alert('Failed to delete sale');
-    }
-}
+            if(!confirm('Delete sale record?')) return;
+            const res = await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            if(res.ok) {
+                loadSales();
+            } else {
+                alert('Failed to delete sale');
+            }
+        }
 
         function viewSale(id) {
             const s = rawSalesData.find(item => String(item.sale_id) === String(id));
