@@ -163,21 +163,28 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Fixed to fetch all sales reliably)
+// Sales API - Fixed Sale ID and Items mapping
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales ORDER BY created_at DESC', (err, results) => {
+    db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         
-        const formatted = (results || []).map((row, index) => {
-            const realId = row.sale_id || (index + 1);
+        const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             
             const pad = (n) => String(n).padStart(2, '0');
             const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
+            // Handle items json or fallback
+            let parsedItems = [];
+            try {
+                parsedItems = row.items_json ? JSON.parse(row.items_json) : [{ name: row.sale_type || 'Product Sale', qty: 1, subtotal: row.total_amount, warranty: 'No Warranty', imei: 'N/A' }];
+            } catch(e) {
+                parsedItems = [{ name: 'Product Sale', qty: 1, subtotal: row.total_amount, warranty: 'No Warranty', imei: 'N/A' }];
+            }
+
             return {
                 ...row,
-                sale_id: realId,
+                sale_id: row.sale_id, // Database එකේ නියම Sale ID එක සාවද්‍ය ලෙස වෙනස් වීම වළක්වයි
                 delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
@@ -186,7 +193,7 @@ app.get('/api/sales', (req, res) => {
                 date_only: cDate.toLocaleDateString('en-CA'),
                 month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
                 year_only: cDate.getFullYear().toString(),
-                items: []
+                items: parsedItems
             };
         });
         res.json(formatted);

@@ -1153,16 +1153,23 @@
             loadSales();
         }
 
-        function viewSale(id) {
-            const s = rawSalesData.find(item => item.sale_id == id);
-            if(!s) return;
-            generateAutoReceiptHTML({
-                customer_name: s.customer_name, customer_phone: s.customer_phone, payment_method: s.payment_method,
-                total_amount: s.total_amount, total_discount: s.discount || 0, items: s.items || [],
-                branch: currentUser.shop_name, branch_phone: currentUser.shop_phone
-            });
-        }
-
+      function viewSale(id) {
+    const s = rawSalesData.find(item => item.sale_id == id);
+    if(!s) return alert('Sale record not found!');
+    
+    generateAutoReceiptHTML({
+        customer_name: s.customer_name, 
+        customer_phone: s.customer_phone, 
+        payment_method: s.payment_method,
+        total_amount: s.total_amount, 
+        total_discount: s.discount || 0, 
+        amount_paid: s.total_amount, // Fallback if paid amount not stored separately
+        change_due: 0,
+        items: s.items || [{ name: 'Sale #' + s.sale_id, qty: 1, subtotal: s.total_amount, warranty: 'N/A', imei: 'N/A' }],
+        branch: currentUser ? currentUser.shop_name : "SHA MOBILE", 
+        branch_phone: currentUser ? currentUser.shop_phone : "0720641351"
+    });
+}
         // --- REPAIRS ---
         async function loadRepairs() {
             const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
