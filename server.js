@@ -179,42 +179,41 @@ app.delete('/api/products/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Sales API - Robust data fetching
-app.get('/api/sales', async (req, res) => {
-    try {
-        const [rows] = await db.query('SELECT * FROM sales ORDER BY sale_id DESC');
+// Sales APIs - Updated to fetch all records robustly
+app.get('/api/sales', (req, res) => {
+    const shopId = req.query.shop_id;
+    
+    // shop_id නොමැති නම් හෝ සියලුම ෂොප්ස්වල සේල්ස් පෙන්වීමට අවශ්‍ය නම් shop_id ෆිල්ටර් වීම ලිහිල් කළ හැක
+    const query = shopId ? 'SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC' : 'SELECT * FROM sales ORDER BY created_at DESC';
+    const params = shopId ? [shopId] : [];
+
+    db.query(query, params, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
         
-        const formatted = rows.map(s => {
-            let itemsParsed = [];
-            try {
-                if (typeof s.items_json === 'string') {
-                    itemsParsed = JSON.parse(s.items_json);
-                } else if (Array.isArray(s.items_json)) {
-                    itemsParsed = s.items_json;
-                }
-            } catch(e) {
-                itemsParsed = [];
-            }
-
-            let dateObj = s.created_at ? new Date(s.created_at) : new Date();
-            if (isNaN(dateObj.getTime())) {
-                dateObj = new Date();
-            }
-
-            let year_only = dateObj.getFullYear().toString();
-            let month_only = `${year_only}-${String(dateObj.getMonth()+1).padStart(2,'0')}`;
-            let date_only = `${year_only}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+        const formatted = (results || []).map((row, index) => {
+            const realId = row.sale_id || (index + 1);
+            const cDate = row.created_at ? new Date(row.created_at) : new Date();
+            
+            const pad = (n) => String(n).padStart(2, '0');
+            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
             return {
-                ...s,
-                items: itemsParsed,
-                year_only,
-                month_only,
-                date_only,
-                formatted_date: dateObj.toLocaleString(),
-                delete_key: s.sale_id
+                ...row,
+                sale_id: realId,
+                delete_key: sqlDateTime,
+                sale_type: row.sale_type || 'Product',
+                discount: row.discount || 0,
+                total_amount: parseFloat(row.total_amount || 0),
+                formatted_date: cDate.toLocaleString(),
+                date_only: cDate.toLocaleDateString('en-CA'),
+                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
+                year_only: cDate.getFullYear().toString(),
+                items: [] // Prevent undefined errors on frontend
             };
         });
+        res.json(formatted);
+    });
+});
 
         res.json(formatted);
     } catch (err) {
