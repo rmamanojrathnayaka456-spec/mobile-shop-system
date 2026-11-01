@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Default Shops (1 to 10)
+// Auto Create Tables & Columns
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -101,6 +101,7 @@ db.query(`
     )
 `);
 
+// New Tables for Additional Features
 db.query(`
     CREATE TABLE IF NOT EXISTS credit_sales (
         credit_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -169,8 +170,7 @@ app.post('/api/login', (req, res) => {
 
 // Products APIs
 app.get('/api/products', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -178,15 +178,14 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
-    const finalShopId = shop_id || 1;
     db.query(
         'INSERT INTO products (shop_id, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [finalShopId, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
+        [shop_id || 1, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             const pId = result.insertId;
             const product_code = pId.toString().padStart(3, '0');
-            db.query('UPDATE products SET product_code = ? WHERE product_id = ? AND shop_id = ?', [product_code, pId, finalShopId], () => {
+            db.query('UPDATE products SET product_code = ? WHERE product_id = ?', [product_code, pId], () => {
                 res.json({ message: 'Product added successfully', product_id: pId, product_code });
             });
         }
@@ -194,29 +193,32 @@ app.post('/api/products', (req, res) => {
 });
 
 app.delete('/api/products/:id', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('DELETE FROM products WHERE product_id = ? AND shop_id = ?', [req.params.id, shopId], (err) => {
+    db.query('DELETE FROM products WHERE product_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id || 1], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
 });
 
-// Sales APIs (ORDER BY sale_id DESC so newest sales appear first)
+// Sales APIs
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
         if (err) return res.json([]);
         const list = Array.isArray(results) ? results : [];
-        const formatted = list.map((row) => {
-            const realId = row.sale_id;
+        const formatted = list.map((row, index) => {
+            const realId = row.sale_id || (index + 1);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             let parsedItems = [];
             try { parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []); } catch (e) { parsedItems = []; }
+
+            const pad = (n) => String(n).padStart(2, '0');
+            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
             return {
                 ...row,
                 sale_id: realId,
                 items: parsedItems,
+                delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
@@ -269,20 +271,18 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Delete Sale API by sale_id
 app.delete('/api/sales/:id', (req, res) => {
-    const saleId = req.params.id;
+    const deleteKey = decodeURIComponent(req.params.id);
     const shopId = req.query.shop_id || 1;
-    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err, result) => {
+    db.query('DELETE FROM sales WHERE created_at = ? AND shop_id = ? LIMIT 1', [deleteKey, shopId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Removed', affectedRows: result.affectedRows });
+        res.json({ message: 'Removed' });
     });
 });
 
 // Repairs APIs
 app.get('/api/repairs', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id DESC', [shopId], (err, results) => {
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -301,16 +301,14 @@ app.post('/api/repairs', (req, res) => {
 });
 
 app.put('/api/repairs/:id', (req, res) => {
-    const shopId = req.body.shop_id || 1;
-    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, shopId], (err) => {
+    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.body.shop_id || 1], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Updated' });
     });
 });
 
 app.delete('/api/repairs/:id', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, shopId], (err) => {
+    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id || 1], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
@@ -318,8 +316,7 @@ app.delete('/api/repairs/:id', (req, res) => {
 
 // Credit Sales APIs
 app.get('/api/credits', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM credit_sales WHERE shop_id = ? ORDER BY credit_id DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM credit_sales WHERE shop_id = ? ORDER BY credit_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.json([]);
         res.json(results || []);
     });
@@ -340,8 +337,7 @@ app.post('/api/credits', (req, res) => {
 
 app.put('/api/credits/:id', (req, res) => {
     const { shop_id, additional_payment } = req.body;
-    const shopId = shop_id || 1;
-    db.query('SELECT * FROM credit_sales WHERE credit_id = ? AND shop_id = ?', [req.params.id, shopId], (err, results) => {
+    db.query('SELECT * FROM credit_sales WHERE credit_id = ? AND shop_id = ?', [req.params.id, shop_id || 1], (err, results) => {
         if (err || results.length === 0) return res.status(404).json({ error: 'Not found' });
         const row = results.find(Boolean) || results[0];
         const newPaid = parseFloat(row.paid_amount || 0) + parseFloat(additional_payment || 0);
@@ -349,7 +345,7 @@ app.put('/api/credits/:id', (req, res) => {
         const newStatus = newBalance === 0 ? 'Settled' : 'Pending';
 
         db.query('UPDATE credit_sales SET paid_amount = ?, balance_due = ?, status = ? WHERE credit_id = ? AND shop_id = ?',
-            [newPaid, newBalance, newStatus, req.params.id, shopId], (err2) => {
+            [newPaid, newBalance, newStatus, req.params.id, shop_id || 1], (err2) => {
                 if (err2) return res.status(500).json({ error: err2.message });
                 res.json({ message: 'Credit updated successfully' });
             });
@@ -358,8 +354,7 @@ app.put('/api/credits/:id', (req, res) => {
 
 // Repair Parts Sourcing APIs
 app.get('/api/repair-parts', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.json([]);
         res.json(results || []);
     });
@@ -374,10 +369,9 @@ app.post('/api/repair-parts', (req, res) => {
         });
 });
 
-// Consignment APIs
+// Consignment / Supplies to Other Shops APIs
 app.get('/api/consignments', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM consignment_items WHERE shop_id = ? ORDER BY consignment_id DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM consignment_items WHERE shop_id = ? ORDER BY consignment_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.json([]);
         res.json(results || []);
     });
@@ -394,9 +388,8 @@ app.post('/api/consignments', (req, res) => {
 
 app.put('/api/consignments/:id', (req, res) => {
     const { shop_id, status } = req.body;
-    const shopId = shop_id || 1;
     db.query('UPDATE consignment_items SET status = ? WHERE consignment_id = ? AND shop_id = ?',
-        [status || 'Sold', req.params.id, shopId], (err) => {
+        [status || 'Sold', req.params.id, shop_id || 1], (err) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Consignment status updated' });
         });
