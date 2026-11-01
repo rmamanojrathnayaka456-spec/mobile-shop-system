@@ -208,9 +208,13 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Robust fetching with Unique Sale IDs and REP- prefix for repair sales)
+// Sales APIs (Updated with shop_id filtering)
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales ORDER BY sale_id DESC, created_at DESC', (err, results) => {
+    const shopId = req.query.shop_id;
+    const query = shopId ? 'SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC, created_at DESC' : 'SELECT * FROM sales ORDER BY sale_id DESC, created_at DESC';
+    const params = shopId ? [shopId] : [];
+
+    db.query(query, params, (err, results) => {
         if (err) {
             console.error("Sales fetch error:", err.message);
             return res.json([]);
@@ -251,7 +255,6 @@ app.get('/api/sales', (req, res) => {
         res.json(formatted);
     });
 });
-
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
     
