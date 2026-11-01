@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Columns safely with proper Primary Key
+// Auto Create Tables & Fix Shop IDs automatically
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -69,7 +69,9 @@ db.query(`
         stock INT DEFAULT 1,
         imei VARCHAR(50)
     )
-`);
+`, () => {
+    db.query('UPDATE products SET shop_id = 1 WHERE shop_id IS NULL OR shop_id = 0', () => {});
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
@@ -84,7 +86,10 @@ db.query(`
         items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`);
+`, () => {
+    // Automatically fix any missing or zero shop_ids so existing sales are never lost
+    db.query('UPDATE sales SET shop_id = 1 WHERE shop_id IS NULL OR shop_id = 0', () => {});
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -99,7 +104,9 @@ db.query(`
         status VARCHAR(50) DEFAULT 'Pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`);
+`, () => {
+    db.query('UPDATE repairs SET shop_id = 1 WHERE shop_id IS NULL OR shop_id = 0', () => {});
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS credit_sales (
@@ -157,7 +164,8 @@ app.post('/api/login', (req, res) => {
 
 // Products APIs
 app.get('/api/products', (req, res) => {
-    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id || 1], (err, results) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT * FROM products WHERE shop_id = ? OR shop_id = 0 OR shop_id IS NULL ORDER BY product_id DESC', [shopId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -180,16 +188,16 @@ app.post('/api/products', (req, res) => {
 });
 
 app.delete('/api/products/:id', (req, res) => {
-    db.query('DELETE FROM products WHERE product_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id || 1], (err) => {
+    db.query('DELETE FROM products WHERE product_id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
 });
 
-// Sales APIs
+// Sales APIs (Flexible shop_id matching to ensure all sales load perfectly)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id ASC', [shopId], (err, results) => {
+    db.query('SELECT * FROM sales WHERE shop_id = ? OR shop_id = 1 OR shop_id IS NULL ORDER BY sale_id ASC', [shopId], (err, results) => {
         if (err) return res.json([]);
         const list = Array.isArray(results) ? results : [];
         const formatted = list.map((row) => {
@@ -238,9 +246,9 @@ app.post('/api/sales', (req, res) => {
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     if (item.type === 'product' && item.product_id) {
-                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, finalShopId]);
+                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ?', [item.qty, item.product_id]);
                     } else if (item.type === 'repair' && item.repair_id) {
-                        db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ? AND shop_id = ?', [item.repair_id, finalShopId]);
+                        db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ?', [item.repair_id]);
                     }
                 });
             }
@@ -249,11 +257,10 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Delete Sale API using exact sale_id
+// Delete Sale API
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
-    const shopId = req.query.shop_id || 1;
-    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err, result) => {
+    db.query('DELETE FROM sales WHERE sale_id = ?', [saleId], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed', affectedRows: result.affectedRows });
     });
@@ -261,7 +268,8 @@ app.delete('/api/sales/:id', (req, res) => {
 
 // Repairs APIs
 app.get('/api/repairs', (req, res) => {
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id ASC', [req.query.shop_id || 1], (err, results) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? OR shop_id = 1 OR shop_id IS NULL ORDER BY repair_id ASC', [shopId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -280,14 +288,14 @@ app.post('/api/repairs', (req, res) => {
 });
 
 app.put('/api/repairs/:id', (req, res) => {
-    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.body.shop_id || 1], (err) => {
+    db.query('UPDATE repairs SET status = ? WHERE repair_id = ?', [req.body.status, req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Updated' });
     });
 });
 
 app.delete('/api/repairs/:id', (req, res) => {
-    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id || 1], (err) => {
+    db.query('DELETE FROM repairs WHERE repair_id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
@@ -295,7 +303,8 @@ app.delete('/api/repairs/:id', (req, res) => {
 
 // Credit Sales APIs
 app.get('/api/credits', (req, res) => {
-    db.query('SELECT * FROM credit_sales WHERE shop_id = ? ORDER BY credit_id DESC', [req.query.shop_id || 1], (err, results) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT * FROM credit_sales WHERE shop_id = ? OR shop_id = 1 OR shop_id IS NULL ORDER BY credit_id DESC', [shopId], (err, results) => {
         if (err) return res.json([]);
         res.json(results || []);
     });
@@ -315,16 +324,16 @@ app.post('/api/credits', (req, res) => {
 });
 
 app.put('/api/credits/:id', (req, res) => {
-    const { shop_id, additional_payment } = req.body;
-    db.query('SELECT * FROM credit_sales WHERE credit_id = ? AND shop_id = ?', [req.params.id, shop_id || 1], (err, results) => {
+    const { additional_payment } = req.body;
+    db.query('SELECT * FROM credit_sales WHERE credit_id = ?', [req.params.id], (err, results) => {
         if (err || results.length === 0) return res.status(404).json({ error: 'Not found' });
         const row = results.find(Boolean) || results[0];
         const newPaid = parseFloat(row.paid_amount || 0) + parseFloat(additional_payment || 0);
         const newBalance = Math.max(0, parseFloat(row.total_amount) - newPaid);
         const newStatus = newBalance === 0 ? 'Settled' : 'Pending';
 
-        db.query('UPDATE credit_sales SET paid_amount = ?, balance_due = ?, status = ? WHERE credit_id = ? AND shop_id = ?',
-            [newPaid, newBalance, newStatus, req.params.id, shop_id || 1], (err2) => {
+        db.query('UPDATE credit_sales SET paid_amount = ?, balance_due = ?, status = ? WHERE credit_id = ?',
+            [newPaid, newBalance, newStatus, req.params.id], (err2) => {
                 if (err2) return res.status(500).json({ error: err2.message });
                 res.json({ message: 'Credit updated successfully' });
             });
@@ -333,7 +342,8 @@ app.put('/api/credits/:id', (req, res) => {
 
 // Consignments APIs
 app.get('/api/consignments', (req, res) => {
-    db.query('SELECT * FROM consignment_items WHERE shop_id = ? ORDER BY consignment_id DESC', [req.query.shop_id || 1], (err, results) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT * FROM consignment_items WHERE shop_id = ? OR shop_id = 1 OR shop_id IS NULL ORDER BY consignment_id DESC', [shopId], (err, results) => {
         if (err) return res.json([]);
         res.json(results || []);
     });
@@ -349,9 +359,9 @@ app.post('/api/consignments', (req, res) => {
 });
 
 app.put('/api/consignments/:id', (req, res) => {
-    const { shop_id, status } = req.body;
-    db.query('UPDATE consignment_items SET status = ? WHERE consignment_id = ? AND shop_id = ?',
-        [status || 'Sold', req.params.id, shop_id || 1], (err) => {
+    const { status } = req.body;
+    db.query('UPDATE consignment_items SET status = ? WHERE consignment_id = ?',
+        [status || 'Sold', req.params.id], (err) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Consignment status updated' });
         });
