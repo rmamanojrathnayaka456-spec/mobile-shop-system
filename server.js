@@ -205,7 +205,43 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales POST API (Checkout Complete Sale)
+// Sales APIs (Fixed sale_id mapping)
+app.get('/api/sales', (req, res) => {
+    db.query('SELECT * FROM sales ORDER BY created_at DESC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const formatted = (results || []).map((row) => {
+            const saleIdNum = row.sale_id || row.id || 1;
+            const cDate = row.created_at ? new Date(row.created_at) : new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
+
+            return {
+                ...row,
+                sale_id: saleIdNum,
+                delete_key: sqlDateTime,
+                sale_type: row.sale_type || 'Product',
+                discount: parseFloat(row.discount || 0),
+                total_amount: parseFloat(row.total_amount || 0),
+                formatted_date: cDate.toLocaleString(),
+                date_only: cDate.toLocaleDateString('en-CA'),
+                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
+                year_only: cDate.getFullYear().toString(),
+                items: [
+                    {
+                        name: row.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale',
+                        qty: 1,
+                        subtotal: parseFloat(row.total_amount || 0),
+                        warranty: 'No Warranty',
+                        imei: 'N/A'
+                    }
+                ]
+            };
+        });
+        res.json(formatted);
+    });
+});
+
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
     
@@ -227,10 +263,6 @@ app.post('/api/sales', (req, res) => {
         [shop_id || 1, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
-            
-            const newSaleId = result.insertId;
-
-            // Update stock or repair status if items exist
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     if (item.type === 'product' && item.product_id) {
@@ -240,37 +272,9 @@ app.post('/api/sales', (req, res) => {
                     }
                 });
             }
-            res.json({ message: 'Sale recorded successfully', sale_id: newSaleId });
+            res.json({ message: 'Sale recorded', sale_id: result.insertId });
         }
     );
-});
-
-// Sales GET API (Fetch Sales History with correct sale_id)
-app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales ORDER BY created_at DESC', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        
-        const formatted = (results || []).map((row) => {
-            const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            const pad = (n) => String(n).padStart(2, '0');
-            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
-
-            return {
-                ...row,
-                sale_id: row.sale_id, // Ensures Sale ID displays correctly instead of undefined
-                delete_key: sqlDateTime,
-                sale_type: row.sale_type || 'Product',
-                discount: parseFloat(row.discount || 0),
-                total_amount: parseFloat(row.total_amount || 0),
-                formatted_date: cDate.toLocaleString(),
-                date_only: cDate.toLocaleDateString('en-CA'),
-                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
-                year_only: cDate.getFullYear().toString(),
-                items: [{ name: row.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale', qty: 1, subtotal: row.total_amount, warranty: 'No Warranty', imei: 'N/A' }]
-            };
-        });
-        res.json(formatted);
-    });
 });
 
 app.delete('/api/sales/:id', (req, res) => {
