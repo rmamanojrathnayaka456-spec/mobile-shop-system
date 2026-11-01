@@ -208,13 +208,9 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Updated with shop_id filtering)
+// Sales APIs (Temporarily fetch all sales without shop_id restriction to verify data)
 app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id;
-    const query = shopId ? 'SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC, created_at DESC' : 'SELECT * FROM sales ORDER BY sale_id DESC, created_at DESC';
-    const params = shopId ? [shopId] : [];
-
-    db.query(query, params, (err, results) => {
+    db.query('SELECT * FROM sales ORDER BY sale_id DESC, created_at DESC', (err, results) => {
         if (err) {
             console.error("Sales fetch error:", err.message);
             return res.json([]);
@@ -255,6 +251,7 @@ app.get('/api/sales', (req, res) => {
         res.json(formatted);
     });
 });
+
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
     
