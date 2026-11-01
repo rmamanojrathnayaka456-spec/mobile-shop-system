@@ -179,22 +179,48 @@ app.delete('/api/products/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Sales
+// Sales API - Robust data fetching
 app.get('/api/sales', async (req, res) => {
     try {
-        const shop_id = req.query.shop_id || '1';
-        const [rows] = await db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shop_id]);
+        const [rows] = await db.query('SELECT * FROM sales ORDER BY sale_id DESC');
+        
         const formatted = rows.map(s => {
             let itemsParsed = [];
-            try { itemsParsed = JSON.parse(s.items_json || '[]'); } catch(e) {}
-            let dateObj = new Date(s.created_at || Date.now());
+            try {
+                if (typeof s.items_json === 'string') {
+                    itemsParsed = JSON.parse(s.items_json);
+                } else if (Array.isArray(s.items_json)) {
+                    itemsParsed = s.items_json;
+                }
+            } catch(e) {
+                itemsParsed = [];
+            }
+
+            let dateObj = s.created_at ? new Date(s.created_at) : new Date();
+            if (isNaN(dateObj.getTime())) {
+                dateObj = new Date();
+            }
+
             let year_only = dateObj.getFullYear().toString();
             let month_only = `${year_only}-${String(dateObj.getMonth()+1).padStart(2,'0')}`;
             let date_only = `${year_only}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-            return { ...s, items: itemsParsed, year_only, month_only, date_only, formatted_date: dateObj.toLocaleString(), delete_key: s.sale_id };
+
+            return {
+                ...s,
+                items: itemsParsed,
+                year_only,
+                month_only,
+                date_only,
+                formatted_date: dateObj.toLocaleString(),
+                delete_key: s.sale_id
+            };
         });
+
         res.json(formatted);
-    } catch (err) { res.json([]); }
+    } catch (err) {
+        console.error("Sales fetch error:", err.message);
+        res.json([]);
+    }
 });
 
 app.post('/api/sales', async (req, res) => {
