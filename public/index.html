@@ -59,12 +59,7 @@
         .low-stock-badge { background: #ff9800; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 5px; }
         .out-stock-badge { background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 5px; }
         .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; page-break-inside: avoid; }
-        @media print {
-            body * { visibility: hidden; }
-            .printable-receipt, .printable-receipt * { visibility: visible; }
-            .printable-receipt { position: absolute; left: 0; top: 0; width: 100%; background: #ffffff !important; color: #333333 !important; }
-            #printHideBtn { display: none !important; }
-        @media print {
+@media print {
     body * { visibility: hidden; }
     .printable-receipt, .printable-receipt * { visibility: visible; }
     .printable-receipt { 
