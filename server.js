@@ -101,7 +101,6 @@ db.query(`
     )
 `);
 
-// New Tables for Additional Features
 db.query(`
     CREATE TABLE IF NOT EXISTS credit_sales (
         credit_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -199,25 +198,21 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Loads all past sales perfectly matching your old working structure)
+// Sales APIs
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales ORDER BY created_at DESC', (err, results) => {
+    db.query('SELECT * FROM sales ORDER BY sale_id ASC', (err, results) => {
         if (err) return res.json([]);
         const list = Array.isArray(results) ? results : [];
-        const formatted = list.map((row, index) => {
-            const realId = row.sale_id || (index + 1);
+        const formatted = list.map((row) => {
+            const realId = row.sale_id;
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             let parsedItems = [];
             try { parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []); } catch (e) { parsedItems = []; }
-
-            const pad = (n) => String(n).padStart(2, '0');
-            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
             return {
                 ...row,
                 sale_id: realId,
                 items: parsedItems,
-                delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
@@ -270,17 +265,18 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
+// Delete Sale API by exact sale_id
 app.delete('/api/sales/:id', (req, res) => {
-    const deleteKey = decodeURIComponent(req.params.id);
-    db.query('DELETE FROM sales WHERE created_at = ? LIMIT 1', [deleteKey], (err) => {
+    const saleId = req.params.id;
+    db.query('DELETE FROM sales WHERE sale_id = ?', [saleId], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Removed' });
+        res.json({ message: 'Removed', affectedRows: result.affectedRows });
     });
 });
 
 // Repairs APIs
 app.get('/api/repairs', (req, res) => {
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs ORDER BY created_at DESC', (err, results) => {
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs ORDER BY repair_id ASC', (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -362,7 +358,7 @@ app.post('/api/repair-parts', (req, res) => {
     const { shop_id, part_name, supplier_name, supplier_phone, cost } = req.body;
     db.query('INSERT INTO repair_parts (shop_id, part_name, supplier_name, supplier_phone, cost) VALUES (?, ?, ?, ?, ?)',
         [shop_id || 1, part_name, supplier_name, supplier_phone, cost || 0], (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) return res.status(500).json({ error: res.message });
             res.json({ message: 'Part source recorded', part_id: result.insertId });
         });
 });
