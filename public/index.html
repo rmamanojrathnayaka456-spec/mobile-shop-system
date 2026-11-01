@@ -51,6 +51,8 @@
         .card p { font-size: 18px; font-weight: bold; color: #007bff; margin: 0; }
         .badge-prod { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .badge-rep { background: #17a2b8; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-exch { background: #fd7e14; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-mix { background: #ffc107; color: black; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: rgba(255, 0, 0, 0.15) !important; color: #d9534f; font-weight: bold; }
         .low-stock-row { background-color: rgba(255, 152, 0, 0.1) !important; }
@@ -60,9 +62,7 @@
         @media print {
             body * { visibility: hidden; }
             .printable-receipt, .printable-receipt * { visibility: visible; }
-            .printable-receipt { 
-                position: absolute; left: 0; top: 0; width: 100% !important; max-width: 80mm !important; margin: 0 auto !important; padding: 5px !important; background: #ffffff !important; color: #000000 !important; font-size: 12px !important;
-            }
+            .printable-receipt { position: absolute; left: 0; top: 0; width: 100% !important; max-width: 80mm !important; margin: 0 auto !important; padding: 5px !important; background: #ffffff !important; color: #000000 !important; font-size: 12px !important; }
             #printHideBtn, header, .tabs { display: none !important; }
         }
     </style>
@@ -97,9 +97,12 @@
             <button class="tab-btn inactive" onclick="switchTab(4, this)">4. Sales History & EOD</button>
             <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repair Jobs</button>
             <button class="tab-btn inactive" onclick="switchTab(6, this)">6. Customer History</button>
-            <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Credit Book</button>
-            <button class="tab-btn inactive" onclick="switchTab(8, this)">8. Consignment Supplies</button>
-            <button class="tab-btn inactive" onclick="switchTab(9, this)">9. Backup & Restore</button>
+            <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Trade-In / Exchange</button>
+            <button class="tab-btn inactive" onclick="switchTab(8, this)">8. Credit Book</button>
+            <button class="tab-btn inactive" onclick="switchTab(9, this)">9. Repair Parts Sourcing</button>
+            <button class="tab-btn inactive" onclick="switchTab(10, this)">10. Best Sellers</button>
+            <button class="tab-btn inactive" onclick="switchTab(11, this)">11. Consignment Supplies</button>
+            <button class="tab-btn inactive" onclick="switchTab(12, this)">12. Backup & Restore</button>
         </div>
 
         <!-- Tab 1: Add Product -->
@@ -116,14 +119,48 @@
 
             <form id="productForm" onsubmit="addProduct(event)">
                 <input type="hidden" id="pCategory" value="Brand New Phone">
-                <label id="lblModel">Model Name:</label><input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra" required>
-                <div id="groupBrand"><label>Select Brand:</label><input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple" onblur="rememberBrand(this.value)"><datalist id="brandList"><option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"><option value="JBL"></datalist></div>
-                <div id="groupColor"><label>Select Colour:</label><input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue" onblur="rememberColor(this.value)"><datalist id="colorList"><option value="Black"><option value="Blue"><option value="White"><option value="Red"></datalist></div>
-                <div id="groupWarranty"><label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label><input type="text" id="pWarranty" list="warrantyList" placeholder="Select or Type Warranty"><datalist id="warrantyList"><option value="No Warranty"><option value="1 Week"><option value="2 Weeks"><option value="1 Month"><option value="3 Months"><option value="6 Months"><option value="1 Year"></datalist></div>
-                <label>Cost Price (Rs.):</label><input type="number" id="pCost" placeholder="0.00" step="0.01">
-                <div id="groupSellingPrice"><label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01"></div>
-                <label>Stock Quantity:</label><input type="number" id="pStock" value="1" required>
-                <div id="imeiGroup"><label>IMEI Number / Serial:</label><input type="text" id="pImei" placeholder="Enter IMEI"></div>
+                
+                <label id="lblModel">Model Name:</label>
+                <input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra" required>
+                
+                <div id="groupBrand" style="display: block;">
+                    <label>Select Brand:</label>
+                    <input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple" onblur="rememberBrand(this.value)">
+                    <datalist id="brandList">
+                        <option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"><option value="Huawei"><option value="Realme"><option value="Nokia"><option value="JBL">
+                    </datalist>
+                </div>
+
+                <div id="groupColor" style="display: block;">
+                    <label>Select Colour:</label>
+                    <input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue" onblur="rememberColor(this.value)">
+                    <datalist id="colorList">
+                        <option value="Black"><option value="Blue"><option value="White"><option value="Red"><option value="Gold"><option value="Silver"><option value="Green">
+                    </datalist>
+                </div>
+
+                <div id="groupWarranty" style="display: block;">
+                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
+                    <input type="text" id="pWarranty" list="warrantyList" placeholder="Select or Type Warranty (e.g. 6 Months, No Warranty)">
+                    <datalist id="warrantyList"><option value="No Warranty"><option value="1 Week"><option value="2 Weeks"><option value="1 Month"><option value="3 Months"><option value="6 Months"><option value="1 Year"></datalist>
+                </div>
+                
+                <label>Cost Price (Rs.):</label>
+                <input type="number" id="pCost" placeholder="0.00" step="0.01">
+                
+                <div id="groupSellingPrice" style="display: block;">
+                    <label>Selling Price (Rs.):</label>
+                    <input type="number" id="pPrice" placeholder="0.00" step="0.01">
+                </div>
+
+                <label>Stock Quantity:</label>
+                <input type="number" id="pStock" value="1" required>
+
+                <div id="imeiGroup" style="display: block;">
+                    <label>IMEI Number / Serial:</label>
+                    <input type="text" id="pImei" placeholder="Enter IMEI or Serial Number">
+                </div>
+
                 <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product & Print Barcode</button>
             </form>
         </div>
@@ -138,8 +175,10 @@
                         <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">Camera Scanner</button>
                     </div>
                     <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
-                    <input type="text" id="billingSearch" autocomplete="off" placeholder="🔍 Type ID, Name, Brand, IMEI..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #007bff; padding: 12px; font-size: 15px; border-radius: 6px;">
-                    <div style="position: relative;"><div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: #ffffff; color: #111827; border: 2px solid #007bff; z-index: 999; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);"></div></div>
+                    <input type="text" id="billingSearch" autocomplete="off" placeholder="🔍 Type ID, Name, Brand, IMEI or Scan..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #007bff; padding: 12px; font-size: 15px; border-radius: 6px;">
+                    <div style="position: relative;">
+                        <div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: #ffffff; color: #111827; border: 2px solid #007bff; z-index: 999; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);"></div>
+                    </div>
                     
                     <label style="margin-top: 10px; display: block;">Product / Item Warranty:</label>
                     <input type="text" id="billingProductWarranty" style="font-weight:bold; color:#007bff;" disabled>
@@ -188,23 +227,39 @@
         <!-- Tab 4: Sales History & EOD -->
         <div id="tab4" class="section">
             <h3 id="salesHeaderTitle" style="border-left: 4px solid #007bff; padding-left: 10px; margin-bottom: 20px;">4. Sales History & EOD Report</h3>
-            <div style="background:var(--container-bg); padding:20px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:20px; display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px; align-items:flex-end;">
+            
+            <div style="background:var(--container-bg); padding:20px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:20px; display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px; align-items:flex-end; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                 <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Filter by Year:</label><select id="filterYear" onchange="applySalesFilters()"><option value="">All Years</option></select></div>
                 <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Filter by Month:</label><select id="filterMonth" onchange="applySalesFilters()"><option value="">All Months</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
                 <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Payment Method:</label><select id="filterPaymentMethod" onchange="applySalesFilters()"><option value="">All Methods</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Installment">Installment</option><option value="Koko">Koko</option><option value="Credit">Credit</option></select></div>
                 <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Exact Date:</label><input type="date" id="filterExactDate" onchange="applySalesFilters()" style="padding:9px;"></div>
                 <div><button type="button" onclick="resetSalesFilters()" style="background:#6c757d; padding:10px; font-weight:bold; width:100%;">🔄 Reset Filters</button></div>
             </div>
+
             <div class="analytics-grid">
-                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #007bff;"><h4>Total Transactions</h4><p id="totalTransactions" style="color: #007bff;">0</p></div>
-                <div class="card" id="cardDaily" onclick="filterSalesView('daily', this)" style="border-left-color: #28a745;"><h4>Daily Sales (Today)</h4><p id="dailySalesAmt" style="color: #28a745;">Rs. 0.00</p></div>
-                <div class="card" id="cardMonthly" onclick="filterSalesView('monthly', this)" style="border-left-color: #ffc107;"><h4>Monthly Sales (This Month)</h4><p id="monthlySalesAmt" style="color: #d39e00;">Rs. 0.00</p></div>
-                <div class="card" id="cardRepair" onclick="filterSalesView('repair', this)" style="border-left-color: #17a2b8;"><h4>Repair Sales (All Time)</h4><p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p></div>
+                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #007bff;">
+                    <h4>Total Transactions</h4><p id="totalTransactions" style="color: #007bff;">0</p>
+                </div>
+                <div class="card" id="cardDaily" onclick="filterSalesView('daily', this)" style="border-left-color: #28a745;">
+                    <h4>Daily Sales (Today)</h4><p id="dailySalesAmt" style="color: #28a745;">Rs. 0.00</p>
+                </div>
+                <div class="card" id="cardMonthly" onclick="filterSalesView('monthly', this)" style="border-left-color: #ffc107;">
+                    <h4>Monthly Sales (This Month)</h4><p id="monthlySalesAmt" style="color: #d39e00;">Rs. 0.00</p>
+                </div>
+                <div class="card" id="cardRepair" onclick="filterSalesView('repair', this)" style="border-left-color: #17a2b8;">
+                    <h4>Repair Sales (All Time)</h4><p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p>
+                </div>
             </div>
+
             <input type="text" id="searchSales" placeholder="🔍 Search Sales by ID, Customer Name, Phone, Type..." onkeyup="applySalesFilters()" style="margin-bottom: 15px; border: 2px solid #007bff; font-weight: bold; padding: 12px; border-radius: 6px;">
+            
             <table>
-                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
-                <tbody id="salesTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
+                <thead>
+                    <tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr>
+                </thead>
+                <tbody id="salesTable">
+                    <tr><td colspan="8" style="text-align:center;">Loading sales records...</td></tr>
+                </tbody>
             </table>
         </div>
 
@@ -225,7 +280,7 @@
                     <input type="text" id="repWarranty" list="warrantyList" placeholder="Select Warranty">
                     <input type="number" id="repAdvance" placeholder="Advance Cost" value="0" step="0.01">
                     <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" value="0">
-                    <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job & Print Job Sheet</button>
+                    <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job</button>
                 </form>
                 <input type="text" id="searchRepair" placeholder="Search Repair..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #007bff;">
                 <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="repairsTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody></table>
@@ -244,7 +299,7 @@
                         <div>
                             <label>Total Repair Cost (Rs.):</label><input type="number" id="repBillTotal" step="0.01" oninput="calculateRepBalanceFromTotal()" style="font-weight:bold; border: 2px solid #007bff;">
                             <label>Advance Paid (Rs.):</label><input type="number" id="repBillAdvance" disabled style="font-weight:bold; color:#e65100;">
-                            <label>Balance Due / Want to Pay After Advance (Rs.):</label><input type="number" id="repBillBalance" disabled style="font-weight:bold; color:#28a745; background:#e8f4fd;">
+                            <label>Balance Due (Rs.):</label><input type="number" id="repBillBalance" disabled style="font-weight:bold; color:#28a745; background:#e8f4fd;">
                             <label>Payment Method:</label>
                             <select id="repBillPaymentMethod"><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Koko">Koko Payment</option></select>
                             <label>Amount Paid (Rs.):</label><input type="number" id="repBillAmountPaid" step="0.01" oninput="calculateRepChangeDue()" style="border: 2px solid #28a745; font-weight: bold;">
@@ -266,16 +321,51 @@
             <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Total (Rs.)</th><th>Status</th></tr></thead><tbody id="custRepairsTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
         </div>
 
-        <!-- Tab 7: Credit Book -->
+        <!-- Tab 7: Trade-In / Exchange -->
         <div id="tab7" class="section">
-            <h3>7. Customer Credit Book</h3>
+            <h3>7. Trade-In / Phone Exchange Management</h3>
+            <form id="exchangeForm" onsubmit="processExchange(event)" style="background:var(--container-bg); padding:20px; border:1px solid var(--border-color); border-radius:6px; max-width:700px;">
+                <label>Customer Name:</label><input type="text" id="exCustName" required>
+                <label>Customer Phone:</label><input type="text" id="exCustPhone" required>
+                <label>Trade-In Phone Model:</label><input type="text" id="exPhoneModel" required>
+                <label>Brand:</label><input type="text" id="exBrand">
+                <label>IMEI Number:</label><input type="text" id="exImei" required>
+                <label>Colour:</label><input type="text" id="exColor">
+                <label>Valuation Allowance (Rs.):</label><input type="number" id="exValuation" step="0.01" required style="border:2px solid #fd7e14; font-weight:bold;">
+                <button type="submit" style="background:#fd7e14; margin-top:15px; font-weight:bold;">Complete Trade-In</button>
+            </form>
+        </div>
+
+        <!-- Tab 8: Credit Book -->
+        <div id="tab8" class="section">
+            <h3>8. Customer Credit Book</h3>
             <input type="text" id="searchCredit" placeholder="Search credit records..." onkeyup="filterCreditBook()" style="margin-bottom:15px; border:2px solid #007bff;">
             <table><thead><tr><th>Credit ID</th><th>Customer</th><th>Phone</th><th>Item Details</th><th>Total (Rs.)</th><th>Paid (Rs.)</th><th>Balance Due (Rs.)</th><th>Status</th><th>Action</th></tr></thead><tbody id="creditTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody></table>
         </div>
 
-        <!-- Tab 8: Consignment Supplies -->
-        <div id="tab8" class="section">
-            <h3>8. Consignment Supplies to Other Shops</h3>
+        <!-- Tab 9: Repair Parts Sourcing -->
+        <div id="tab9" class="section">
+            <h3>9. Repair Parts Sourcing & Supplier Tracker</h3>
+            <form id="partSourceForm" onsubmit="addRepairPartSource(event)" style="background:var(--container-bg); padding:15px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:20px; max-width:600px;">
+                <label>Part Name:</label><input type="text" id="partName" required>
+                <label>Supplier Name:</label><input type="text" id="supplierName" required>
+                <label>Supplier Phone:</label><input type="text" id="supplierPhone">
+                <label>Cost Price (Rs.):</label><input type="number" id="partCost" step="0.01" required>
+                <button type="submit" style="background:#28a745; margin-top:10px;">Save Supplier Source</button>
+            </form>
+            <input type="text" id="searchParts" placeholder="Search parts..." onkeyup="filterRepairParts()" style="margin-bottom:15px; border:2px solid #007bff;">
+            <table><thead><tr><th>Part ID</th><th>Part Name</th><th>Supplier Name</th><th>Supplier Phone</th><th>Cost (Rs.)</th><th>Date Added</th></tr></thead><tbody id="partsTable"><tr><td colspan="6" style="text-align:center;">Loading...</td></tr></tbody></table>
+        </div>
+
+        <!-- Tab 10: Best Sellers -->
+        <div id="tab10" class="section">
+            <h3>10. Best Selling Items This Month</h3>
+            <table><thead><tr><th>Rank</th><th>Product Name</th><th>Total Quantity Sold</th><th>Total Revenue Generated (Rs.)</th></tr></thead><tbody id="bestSellersTable"><tr><td colspan="4" style="text-align:center;">Calculating...</td></tr></tbody></table>
+        </div>
+
+        <!-- Tab 11: Consignment Supplies -->
+        <div id="tab11" class="section">
+            <h3>11. Consignment Supplies to Other Shops</h3>
             <form id="consignmentForm" onsubmit="addConsignmentItem(event)" style="background:var(--container-bg); padding:15px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:20px; max-width:600px;">
                 <label>Other Shop Name:</label><input type="text" id="consShopName" required>
                 <label>Item Name:</label><input type="text" id="consItemName" required>
@@ -286,9 +376,9 @@
             <table><thead><tr><th>ID</th><th>Other Shop</th><th>Item Name</th><th>IMEI</th><th>Wholesale Price (Rs.)</th><th>Status</th><th>Action</th></tr></thead><tbody id="consignmentTable"><tr><td colspan="7" style="text-align:center;">Loading...</td></tr></tbody></table>
         </div>
 
-        <!-- Tab 9: Backup & Restore -->
-        <div id="tab9" class="section">
-            <h3>9. Data Backup & Restore</h3>
+        <!-- Tab 12: Backup & Restore -->
+        <div id="tab12" class="section">
+            <h3>12. Data Backup & Restore</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
                 <div style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 6px;">
                     <h4 style="color: #007bff; margin-top:0;">📥 Download Backup</h4>
@@ -320,8 +410,10 @@
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
         <div style="background:#ffffff; color:#333333; padding:20px; border-radius:8px; width:480px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="color:#28a745; margin-top:0; text-align:center;" id="receiptModalTitle">Sale Completed Successfully!</h3>
+            <h3 style="color:#28a745; margin-top:0; text-align:center;">Sale Completed Successfully!</h3>
+            
             <div id="receiptBoxContainer" class="printable-receipt" style="background:#ffffff !important; color:#333333 !important; padding:15px; border:1px solid #ddd; border-radius:6px; font-family: Arial, sans-serif;"></div>
+            
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
                 <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">Print Bill</button>
                 <button onclick="copyReceiptText()" style="background:#007bff; flex:1;">Copy</button>
@@ -338,6 +430,7 @@
         let allRepairs = [];
         let rawSalesData = [];
         let allCredits = [];
+        let allParts = [];
         let allConsignments = [];
         let currentStockFilter = 'all';
         let currentSalesCardFilter = 'all';
@@ -384,7 +477,7 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
                 document.getElementById('userDisplay').textContent = currentUser.shop_name || "SHA MOBILE";
-                loadInventory(); loadSales(); loadRepairs(); loadCredits(); loadConsignments();
+                loadInventory(); loadSales(); loadRepairs(); loadCredits(); loadRepairParts(); loadConsignments();
             }
             setTheme(localStorage.getItem('pos_theme') || 'light');
         }
@@ -405,7 +498,11 @@
             if(!val) return;
             const list = document.getElementById('brandList');
             const exists = Array.from(list.options).some(opt => opt.value.toLowerCase() === val.toLowerCase());
-            if(!exists) { const opt = document.createElement('option'); opt.value = val; list.appendChild(opt); }
+            if(!exists) {
+                const opt = document.createElement('option');
+                opt.value = val;
+                list.appendChild(opt);
+            }
         }
 
         function rememberColor(val) {
@@ -413,7 +510,11 @@
             if(!val) return;
             const list = document.getElementById('colorList');
             const exists = Array.from(list.options).some(opt => opt.value.toLowerCase() === val.toLowerCase());
-            if(!exists) { const opt = document.createElement('option'); opt.value = val; list.appendChild(opt); }
+            if(!exists) {
+                const opt = document.createElement('option');
+                opt.value = val;
+                list.appendChild(opt);
+            }
         }
 
         function setCategory(cat, titleText, btn) {
@@ -430,14 +531,30 @@
             const groupSellingPrice = document.getElementById('groupSellingPrice');
             const imeiGroup = document.getElementById('imeiGroup');
 
-            groupBrand.style.display = 'block'; groupColor.style.display = 'block'; groupWarranty.style.display = 'block'; groupSellingPrice.style.display = 'block'; imeiGroup.style.display = 'block';
+            groupBrand.style.display = 'block';
+            groupColor.style.display = 'block';
+            groupWarranty.style.display = 'block';
+            groupSellingPrice.style.display = 'block';
+            imeiGroup.style.display = 'block';
 
-            if(cat === 'Brand New Phone' || cat === 'Used Phone') lblModel.textContent = 'Model Name:';
-            else if(cat === 'Button Phone') lblModel.textContent = 'Phone Model Name:';
-            else if(cat === 'Accessory') { lblModel.textContent = 'Accessory Name:'; imeiGroup.style.display = 'none'; }
-            else if(cat === 'Repair Part') {
-                lblModel.textContent = 'Repair Part Name:'; groupBrand.style.display = 'none'; groupColor.style.display = 'none'; groupWarranty.style.display = 'none'; groupSellingPrice.style.display = 'none'; imeiGroup.style.display = 'none';
-            } else if(cat === 'Karaoke Box') { lblModel.textContent = 'Karaoke Box Name:'; imeiGroup.style.display = 'none'; }
+            if(cat === 'Brand New Phone' || cat === 'Used Phone') {
+                lblModel.textContent = 'Model Name:';
+            } else if(cat === 'Button Phone') {
+                lblModel.textContent = 'Phone Model Name:';
+            } else if(cat === 'Accessory') {
+                lblModel.textContent = 'Accessory Name:';
+                imeiGroup.style.display = 'none';
+            } else if(cat === 'Repair Part') {
+                lblModel.textContent = 'Repair Part Name:';
+                groupBrand.style.display = 'none';
+                groupColor.style.display = 'none';
+                groupWarranty.style.display = 'none';
+                groupSellingPrice.style.display = 'none';
+                imeiGroup.style.display = 'none';
+            } else if(cat === 'Karaoke Box') {
+                lblModel.textContent = 'Karaoke Box Name:';
+                imeiGroup.style.display = 'none';
+            }
         }
 
         function switchTab(tabNum, btn) {
@@ -452,8 +569,10 @@
             else if(tabNum === 4) loadSales();
             else if(tabNum === 5) loadRepairs();
             else if(tabNum === 6) { loadSales(); loadRepairs(); }
-            else if(tabNum === 7) loadCredits();
-            else if(tabNum === 8) loadConsignments();
+            else if(tabNum === 8) loadCredits();
+            else if(tabNum === 9) loadRepairParts();
+            else if(tabNum === 10) calculateBestSellers();
+            else if(tabNum === 11) loadConsignments();
         }
 
         function switchRepairSubTab(type, btn) {
@@ -606,6 +725,7 @@
             loadInventory();
         }
 
+        // --- CAMERA SCANNER ---
         function toggleCameraScanner() {
             const qrDiv = document.getElementById('qr-reader');
             if(qrDiv.style.display === 'none') {
@@ -623,6 +743,7 @@
             }
         }
 
+        // --- BILLING SEARCH DROPDOWN ---
         function renderDropdownList(items) {
             const container = document.getElementById('customDropdownList');
             container.innerHTML = '';
@@ -635,9 +756,14 @@
                 const isLow = p.stock > 0 && p.stock <= 2;
                 
                 const div = document.createElement('div');
-                div.style.padding = '12px 15px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid #f0f0f0'; div.style.color = '#111827';
+                div.style.padding = '12px 15px';
+                div.style.cursor = 'pointer';
+                div.style.borderBottom = '1px solid #f0f0f0';
+                div.style.color = '#111827';
                 div.style.background = isOut ? '#fef2f2' : (isLow ? '#fffbeb' : '#ffffff');
-                div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.alignItems = 'center';
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.alignItems = 'center';
 
                 div.onmouseover = () => div.style.background = isOut ? '#fee2e2' : (isLow ? '#fef3c7' : '#f8fafc');
                 div.onmouseout = () => div.style.background = isOut ? '#fef2f2' : (isLow ? '#fffbeb' : '#ffffff');
@@ -678,6 +804,7 @@
         function handleBillingSearch() {
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
             if(!query) { renderDropdownList(allProducts); return; }
+
             const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.brand && p.brand.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
             renderDropdownList(filtered);
         }
@@ -777,14 +904,14 @@
             if(res.ok) {
                 let totalDiscount = cart.reduce((sum, i) => sum + Math.max(0, (i.original_price || i.price) - i.price) * i.qty, 0);
                 lastSaleData = { customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, total_discount: totalDiscount, amount_paid: parseFloat(document.getElementById('amountPaid').value), change_due: parseFloat(document.getElementById('changeDue').value), items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
-                generateAutoReceiptHTML(lastSaleData, "Sale Completed Successfully!");
+                generateAutoReceiptHTML(lastSaleData);
                 cart = []; renderCart(); loadInventory(); loadSales();
-                document.getElementById('custName').value = ''; document.getElementById('custPhone').value = '';
+                document.getElementById('custName').value = '';
+                document.getElementById('custPhone').value = '';
             }
         }
 
-        function generateAutoReceiptHTML(sale, titleText = "Sale Completed Successfully!") {
-            document.getElementById('receiptModalTitle').textContent = titleText;
+        function generateAutoReceiptHTML(sale) {
             let shopName = (sale.branch || "SHA MOBILE").toUpperCase();
             let contact = sale.branch_phone || "0720641351";
             let dateStr = new Date().toLocaleString();
@@ -808,59 +935,73 @@
                 `;
             });
 
-            let discountRow = (sale.total_discount && sale.total_discount > 0) ? `<div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #dc3545; font-weight: bold;"><span>Total Discount:</span><span>- Rs. ${sale.total_discount.toFixed(2)}</span></div>` : '';
-
-            // Extra rows for Repair Advance / Balance display
-            let repairExtraRows = '';
-            if (sale.is_repair_advance) {
-                repairExtraRows = `
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Total Repair Cost:</span><span>Rs. ${sale.total_repair_cost.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #e65100; font-weight: bold;"><span>Advance Paid:</span><span>Rs. ${sale.amount_paid.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; color: #28a745; font-weight: bold;"><span>Balance to Pay After Advance:</span><span>Rs. ${sale.balance_to_pay.toFixed(2)}</span></div>
-                `;
-            } else if (sale.is_repair_final) {
-                repairExtraRows = `
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Total Repair Cost:</span><span>Rs. ${sale.total_repair_cost.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #e65100; font-weight: bold;"><span>Advance Paid (Less):</span><span>- Rs. ${sale.advance_paid.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; color: #007bff; font-weight: bold;"><span>Net Balance Paid Now:</span><span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Amount Paid:</span><span>Rs. ${sale.amount_paid.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; font-weight: bold; color: #28a745;"><span>Change Due:</span><span>Rs. ${sale.change_due.toFixed(2)}</span></div>
-                `;
-            } else {
-                repairExtraRows = `
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; font-weight: bold; color: #007bff;"><span>Total Payable:</span><span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Amount Paid:</span><span>Rs. ${sale.amount_paid.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; font-weight: bold; color: #28a745;"><span>Change Due:</span><span>Rs. ${sale.change_due.toFixed(2)}</span></div>
-                `;
-            }
+            let discountRow = sale.total_discount > 0 ? `
+                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #dc3545; font-weight: bold;">
+                    <span>Total Discount:</span>
+                    <span>- Rs. ${sale.total_discount.toFixed(2)}</span>
+                </div>
+            ` : '';
 
             let htmlReceipt = `
                 <div style="background: #ffffff !important; color: #333333 !important; padding: 5px;">
                     <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 10px; background: #ffffff !important;">
                         <h2 style="margin: 0; color: #007bff; font-size: 20px;">${shopName}</h2>
                         <div style="font-size: 13px; color: #555555;">Contact: ${contact}</div>
-                        <div style="font-size: 11px; font-weight: bold; color: #777777; margin-top: 3px;">OFFICIAL INVOICE</div>
+                        <div style="font-size: 11px; font-weight: bold; color: #777777; margin-top: 3px;">OFFICIAL SALES RECEIPT</div>
                     </div>
-                    <div style="font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; color: #333333; background: #ffffff !important;"><div><b>Date:</b> ${dateStr}</div></div>
+                    
+                    <div style="font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; color: #333333; background: #ffffff !important;">
+                        <div><b>Date:</b> ${dateStr}</div>
+                    </div>
                     <div style="font-size: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 8px; color: #333333; background: #ffffff !important;">
-                        <div><b>Customer:</b> ${custName}</div><div><b>Phone:</b> ${custPhone}</div>
+                        <div><b>Customer:</b> ${custName}</div>
+                        <div><b>Phone:</b> ${custPhone}</div>
                     </div>
+
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; background: #ffffff !important;">
-                        <thead><tr style="background: #007bff !important; color: white !important;"><th style="padding: 8px; text-align: left; background: #007bff !important; color: white !important;">Description</th><th style="padding: 8px; text-align: center; width: 40px; background: #007bff !important; color: white !important;">Qty</th><th style="padding: 8px; text-align: right; width: 90px; background: #007bff !important; color: white !important;">Total (Rs.)</th></tr></thead>
-                        <tbody style="background: #ffffff !important;">${itemsHtml}</tbody>
+                        <thead>
+                            <tr style="background: #007bff !important; color: white !important;">
+                                <th style="padding: 8px; text-align: left; background: #007bff !important; color: white !important;">Description</th>
+                                <th style="padding: 8px; text-align: center; width: 40px; background: #007bff !important; color: white !important;">Qty</th>
+                                <th style="padding: 8px; text-align: right; width: 90px; background: #007bff !important; color: white !important;">Total (Rs.)</th>
+                            </tr>
+                        </thead>
+                        <tbody style="background: #ffffff !important;">
+                            ${itemsHtml}
+                        </tbody>
                     </table>
+
                     <div style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 8px; background: #ffffff !important;">
                         ${discountRow}
-                        ${repairExtraRows}
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333; margin-top:5px;"><span>Payment Method:</span><span style="font-weight: bold;">${sale.payment_method || 'Cash'}</span></div>
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; font-weight: bold; color: #007bff;">
+                            <span>Total Payable:</span>
+                            <span>Rs. ${sale.total_amount.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;">
+                            <span>Amount Paid:</span>
+                            <span>Rs. ${sale.amount_paid.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; font-weight: bold; color: #28a745;">
+                            <span>Change Due:</span>
+                            <span>Rs. ${sale.change_due.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;">
+                            <span>Payment Method:</span>
+                            <span style="font-weight: bold;">${sale.payment_method}</span>
+                        </div>
                     </div>
-                    <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666666; background: #ffffff !important;">Thank you for your business!</div>
+
+                    <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666666; background: #ffffff !important;">
+                        Thank you for your business!
+                    </div>
                 </div>
             `;
 
             rawReceiptPlaintext = `================================\n          ${shopName}\n    Contact: ${contact}\n================================\n   INVOICE / PURCHASE RECEIPT\n--------------------------------\nDate: ${dateStr}\nCustomer Name : ${custName}\nCustomer Phone: ${custPhone}\n--------------------------------\nPURCHASED ITEMS:\n`;
-            sale.items.forEach(i => { rawReceiptPlaintext += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n`; });
-            rawReceiptPlaintext += `--------------------------------\nPayment Method : ${sale.payment_method || 'Cash'}\n================================\n    Thank you for your business!\n================================`;
+            sale.items.forEach(i => {
+                rawReceiptPlaintext += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n  Warranty: ${i.warranty}\n  IMEI: ${i.imei}\n`;
+            });
+            rawReceiptPlaintext += `--------------------------------\nTOTAL PAYABLE  : Rs. ${sale.total_amount.toFixed(2)}\nAMOUNT PAID    : Rs. ${sale.amount_paid.toFixed(2)}\nCHANGE DUE     : Rs. ${sale.change_due.toFixed(2)}\nPayment Method : ${sale.payment_method}\n================================\n    Thank you for your business!\n================================`;
 
             document.getElementById('receiptBoxContainer').innerHTML = htmlReceipt;
             document.getElementById('receiptModal').style.display = 'flex';
@@ -870,10 +1011,13 @@
         function copyReceiptText() { navigator.clipboard.writeText(rawReceiptPlaintext); alert('Copied to clipboard!'); }
         function sendWhatsAppMessage() { window.open(`https://wa.me/?text=${encodeURIComponent(rawReceiptPlaintext)}`, '_blank'); }
 
+        // --- SALES HISTORY & FILTERS ---
         async function loadSales() {
             const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
             rawSalesData = await res.json();
-            populateYearDropdown(); updateAnalyticsCards(rawSalesData); applySalesFilters();
+            populateYearDropdown(); 
+            updateAnalyticsCards(rawSalesData);
+            applySalesFilters();
         }
 
         function populateYearDropdown() {
@@ -927,7 +1071,11 @@
         }
 
         function resetSalesFilters() {
-            document.getElementById('filterYear').value = ''; document.getElementById('filterMonth').value = ''; document.getElementById('filterPaymentMethod').value = ''; document.getElementById('filterExactDate').value = ''; document.getElementById('searchSales').value = '';
+            document.getElementById('filterYear').value = '';
+            document.getElementById('filterMonth').value = '';
+            document.getElementById('filterPaymentMethod').value = '';
+            document.getElementById('filterExactDate').value = '';
+            document.getElementById('searchSales').value = '';
             currentSalesCardFilter = 'all';
             document.querySelectorAll('.analytics-grid .card').forEach(c => c.classList.remove('active-card'));
             document.getElementById('cardAll').classList.add('active-card');
@@ -969,8 +1117,8 @@
                     <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${s.formatted_date}</td>
                     <td>
                         <div style="display:flex; gap:5px;">
-                            <button onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px 6px; font-size:11px;">View</button>
-                            <button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px 6px; font-size:11px;">Remove</button>
+                            <button onclick="viewSale('${s.sale_id}')" style="background:#17a2b8; padding:3px 6px; font-size:11px;">View</button>
+                            <button onclick="deleteSale('${s.sale_id}')" style="background:#dc3545; padding:3px 6px; font-size:11px;">Remove</button>
                         </div>
                     </td>
                 </tr>`;
@@ -979,12 +1127,8 @@
 
         async function deleteSale(saleId) {
             if(!confirm('Delete sale record?')) return;
-            const res = await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-            if(res.ok) {
-                loadSales();
-            } else {
-                alert('Failed to delete sale');
-            }
+            await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            loadSales();
         }
 
         function viewSale(id) {
@@ -992,23 +1136,34 @@
             if(!s) return alert('Sale record not found!');
 
             let safeItems = (s.items && Array.isArray(s.items) && s.items.length > 0) ? s.items.map(i => ({
-                name: i.name || (s.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale'),
+                name: i.name || 'Product Sale',
                 qty: parseInt(i.qty || 1),
                 subtotal: parseFloat(i.subtotal || s.total_amount || 0),
                 warranty: i.warranty || 'No Warranty',
                 imei: i.imei || 'N/A'
             })) : [{
-                name: s.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale',
-                qty: 1, subtotal: parseFloat(s.total_amount || 0), warranty: 'No Warranty', imei: 'N/A'
+                name: 'Product Sale',
+                qty: 1,
+                subtotal: parseFloat(s.total_amount || 0),
+                warranty: 'No Warranty',
+                imei: 'N/A'
             }];
 
             generateAutoReceiptHTML({
-                customer_name: s.customer_name || 'Cash Customer', customer_phone: s.customer_phone || 'N/A', payment_method: s.payment_method || 'Cash',
-                total_amount: parseFloat(s.total_amount || 0), total_discount: parseFloat(s.discount || 0), amount_paid: parseFloat(s.total_amount || 0), change_due: 0,
-                items: safeItems, branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : "0720641351"
-            }, `Sales History Receipt #${s.sale_id}`);
+                customer_name: s.customer_name || 'Cash Customer',
+                customer_phone: s.customer_phone || 'N/A',
+                payment_method: s.payment_method || 'Cash',
+                total_amount: parseFloat(s.total_amount || 0),
+                total_discount: parseFloat(s.discount || 0),
+                amount_paid: parseFloat(s.total_amount || 0),
+                change_due: 0,
+                items: safeItems,
+                branch: currentUser ? currentUser.shop_name : "SHA MOBILE",
+                branch_phone: currentUser ? currentUser.shop_phone : "0720641351"
+            });
         }
 
+        // --- REPAIRS ---
         async function loadRepairs() {
             const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
             allRepairs = await res.json();
@@ -1028,36 +1183,15 @@
 
         async function addRepair(e) {
             e.preventDefault();
-            const custName = document.getElementById('repCustomer').value.trim();
-            const custPhone = document.getElementById('repPhone').value.trim();
-            const device = document.getElementById('repDevice').value.trim();
-            const issue = document.getElementById('repIssue').value.trim();
-            const warranty = document.getElementById('repWarranty').value.trim() || 'No Warranty';
-            const advance = parseFloat(document.getElementById('repAdvance').value) || 0;
-            const total = parseFloat(document.getElementById('repTotalCost').value) || 0;
-            const balanceToPay = Math.max(0, total - advance);
-
             const data = {
-                shop_id: currentUser.shop_id, customer_name: custName,
-                customer_phone: custPhone, device_model: device,
-                issue_description: `${issue} [Warranty: ${warranty}]`,
-                advance_cost: advance, total_cost: total
+                shop_id: currentUser.shop_id, customer_name: document.getElementById('repCustomer').value.trim(),
+                customer_phone: document.getElementById('repPhone').value.trim(), device_model: document.getElementById('repDevice').value.trim(),
+                issue_description: `${document.getElementById('repIssue').value.trim()} [Warranty: ${document.getElementById('repWarranty').value.trim() || 'No Warranty'}]`,
+                advance_cost: parseFloat(document.getElementById('repAdvance').value) || 0,
+                total_cost: parseFloat(document.getElementById('repTotalCost').value) || 0
             };
             const res = await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            const result = await res.json();
-            if(res.ok) { 
-                document.getElementById('repairForm').reset(); 
-                loadRepairs(); 
-                
-                // Print Repair Job Sheet / Advance Bill with clear balance breakdown
-                generateAutoReceiptHTML({
-                    customer_name: custName, customer_phone: custPhone, payment_method: 'Advance Cash',
-                    total_amount: total, amount_paid: advance, change_due: 0,
-                    total_repair_cost: total, balance_to_pay: balanceToPay, is_repair_advance: true,
-                    items: [{ name: `Repair Job: ${device} - Issue: ${issue}`, qty: 1, subtotal: total, warranty: warranty, imei: 'N/A' }],
-                    branch: currentUser.shop_name, branch_phone: currentUser.shop_phone
-                }, `Repair Job Sheet #${result.repair_id} (Advance Paid)`);
-            }
+            if(res.ok) { document.getElementById('repairForm').reset(); loadRepairs(); alert('Repair added!'); }
         }
 
         async function deleteRepair(id) {
@@ -1108,36 +1242,21 @@
             if(!selectedBillingRepair) return alert('Select a repair job!');
             const rId = selectedBillingRepair.id || selectedBillingRepair.repair_id;
             const bal = parseFloat(document.getElementById('repBillBalance').value) || 0;
-            const totalCost = parseFloat(document.getElementById('repBillTotal').value) || 0;
-            const advPaid = parseFloat(selectedBillingRepair.advance_cost || 0);
-            const payMethod = document.getElementById('repBillPaymentMethod').value;
-            const amountPaid = parseFloat(document.getElementById('repBillAmountPaid').value) || 0;
-            const changeDue = parseFloat(document.getElementById('repBillChangeDue').value) || 0;
-
             const res = await fetch('/api/sales', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     shop_id: currentUser.shop_id, customer_name: selectedBillingRepair.customer_name, customer_phone: selectedBillingRepair.customer_phone,
-                    payment_method: payMethod, total_amount: bal,
-                    items: [{ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${selectedBillingRepair.device_model})`, subtotal: bal, qty: 1, warranty: '1 Month', imei: 'N/A' }]
+                    payment_method: document.getElementById('repBillPaymentMethod').value, total_amount: bal,
+                    items: [{ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${selectedBillingRepair.device_model})`, subtotal: bal, qty: 1 }]
                 })
             });
             if(res.ok) {
                 await fetch(`/api/repairs/${rId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status: 'Delivered' }) });
-                
-                // Print Final Repair Invoice with clear costs breakdown
-                generateAutoReceiptHTML({
-                    customer_name: selectedBillingRepair.customer_name, customer_phone: selectedBillingRepair.customer_phone, payment_method: payMethod,
-                    total_amount: bal, amount_paid: amountPaid, change_due: changeDue,
-                    total_repair_cost: totalCost, advance_paid: advPaid, is_repair_final: true,
-                    items: [{ name: `Repair Job #${rId} (${selectedBillingRepair.device_model})`, qty: 1, subtotal: bal, warranty: '1 Month', imei: 'N/A' }],
-                    branch: currentUser.shop_name, branch_phone: currentUser.shop_phone
-                }, `Repair Final Invoice (Job #${rId})`);
-
-                loadRepairs(); loadSales();
+                alert('Repair completed and checked out!'); loadRepairs(); loadSales();
             }
         }
 
+        // --- CREDIT BOOK & OTHERS ---
         async function loadCredits() {
             const res = await fetch(`/api/credits?shop_id=${currentUser.shop_id}`);
             allCredits = await res.json();
@@ -1154,6 +1273,45 @@
             if(!amt) return;
             await fetch(`/api/credits/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, additional_payment: parseFloat(amt) }) });
             loadCredits();
+        }
+
+        async function loadRepairParts() {
+            const res = await fetch(`/api/repair-parts?shop_id=${currentUser.shop_id}`);
+            allParts = await res.json();
+            const tbody = document.getElementById('partsTable');
+            if(!tbody) return;
+            tbody.innerHTML = allParts.length === 0 ? `<tr><td colspan="6" style="text-align:center;">No records.</td></tr>` : '';
+            allParts.forEach(p => { tbody.innerHTML += `<tr><td>#${p.part_id}</td><td>${p.part_name}</td><td>${p.supplier_name}</td><td>${p.supplier_phone}</td><td>Rs. ${p.cost}</td><td>${p.created_at?.substring(0,10)}</td></tr>`; });
+        }
+
+        async function addRepairPartSource(e) {
+            e.preventDefault();
+            await fetch('/api/repair-parts', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shop_id: currentUser.shop_id, part_name: document.getElementById('partName').value, supplier_name: document.getElementById('supplierName').value, supplier_phone: document.getElementById('supplierPhone').value, cost: document.getElementById('partCost').value })
+            });
+            document.getElementById('partSourceForm').reset(); loadRepairParts(); alert('Saved!');
+        }
+
+        function calculateBestSellers() {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const counts = {};
+            rawSalesData.forEach(s => {
+                if(s.month_only === currentMonth && Array.isArray(s.items)) {
+                    s.items.forEach(i => {
+                        if(i.name) {
+                            if(!counts[i.name]) counts[i.name] = { qty: 0, revenue: 0 };
+                            counts[i.name].qty += (i.qty || 1);
+                            counts[i.name].revenue += (i.subtotal || 0);
+                        }
+                    });
+                }
+            });
+            const sorted = Object.keys(counts).map(name => ({ name, ...counts[name] })).sort((a,b) => b.qty - a.qty);
+            const tbody = document.getElementById('bestSellersTable');
+            if(!tbody) return;
+            tbody.innerHTML = sorted.length === 0 ? `<tr><td colspan="4" style="text-align:center;">No sales this month.</td></tr>` : '';
+            sorted.forEach((item, idx) => { tbody.innerHTML += `<tr><td>#${idx+1}</td><td>${item.name}</td><td><b>${item.qty}</b></td><td>Rs. ${item.revenue.toFixed(2)}</td></tr>`; });
         }
 
         async function loadConsignments() {
@@ -1177,6 +1335,20 @@
         async function markConsignmentSold(id) {
             await fetch(`/api/consignments/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status: 'Sold' }) });
             loadConsignments();
+        }
+
+        async function processExchange(e) {
+            e.preventDefault();
+            const valuation = parseFloat(document.getElementById('exValuation').value) || 0;
+            await fetch('/api/sales', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    shop_id: currentUser.shop_id, customer_name: document.getElementById('exCustName').value, customer_phone: document.getElementById('exCustPhone').value,
+                    payment_method: 'Exchange Allowance', total_amount: -valuation,
+                    items: [{ type: 'exchange', name: `Trade-In: ${document.getElementById('exPhoneModel').value}`, subtotal: -valuation, qty: 1 }]
+                })
+            });
+            alert('Exchange recorded!'); document.getElementById('exchangeForm').reset(); loadSales(); loadInventory();
         }
 
         async function exportDataBackup() {

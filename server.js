@@ -167,7 +167,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Products APIs (Strictly filtered by shop_id)
+// Products APIs
 app.get('/api/products', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [shopId], (err, results) => {
@@ -201,10 +201,10 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Strictly filtered by shop_id)
+// Sales APIs (ORDER BY sale_id DESC so newest sales appear first)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id ASC', [shopId], (err, results) => {
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
         if (err) return res.json([]);
         const list = Array.isArray(results) ? results : [];
         const formatted = list.map((row) => {
@@ -213,14 +213,10 @@ app.get('/api/sales', (req, res) => {
             let parsedItems = [];
             try { parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []); } catch (e) { parsedItems = []; }
 
-            const pad = (n) => String(n).padStart(2, '0');
-            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
-
             return {
                 ...row,
                 sale_id: realId,
                 items: parsedItems,
-                delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
@@ -273,27 +269,20 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Delete Sale API strictly within shop_id
+// Delete Sale API by sale_id
 app.delete('/api/sales/:id', (req, res) => {
-    const targetId = req.params.id;
+    const saleId = req.params.id;
     const shopId = req.query.shop_id || 1;
-    const decodedKey = decodeURIComponent(targetId);
-
-    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [targetId, shopId], (err, result) => {
-        if (!err && result.affectedRows > 0) {
-            return res.json({ message: 'Removed by ID' });
-        }
-        db.query('DELETE FROM sales WHERE created_at = ? AND shop_id = ? LIMIT 1', [decodedKey, shopId], (err2, result2) => {
-            if (err2) return res.status(500).json({ error: err2.message });
-            res.json({ message: 'Removed by timestamp', affectedRows: result2.affectedRows });
-        });
+    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Removed', affectedRows: result.affectedRows });
     });
 });
 
-// Repairs APIs (Strictly filtered by shop_id)
+// Repairs APIs
 app.get('/api/repairs', (req, res) => {
     const shopId = req.query.shop_id || 1;
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id ASC', [shopId], (err, results) => {
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id DESC', [shopId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -327,7 +316,7 @@ app.delete('/api/repairs/:id', (req, res) => {
     });
 });
 
-// Credit Sales APIs (Strictly filtered by shop_id)
+// Credit Sales APIs
 app.get('/api/credits', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM credit_sales WHERE shop_id = ? ORDER BY credit_id DESC', [shopId], (err, results) => {
@@ -367,7 +356,7 @@ app.put('/api/credits/:id', (req, res) => {
     });
 });
 
-// Repair Parts Sourcing APIs (Strictly filtered by shop_id)
+// Repair Parts Sourcing APIs
 app.get('/api/repair-parts', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [shopId], (err, results) => {
@@ -385,7 +374,7 @@ app.post('/api/repair-parts', (req, res) => {
         });
 });
 
-// Consignment APIs (Strictly filtered by shop_id)
+// Consignment APIs
 app.get('/api/consignments', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM consignment_items WHERE shop_id = ? ORDER BY consignment_id DESC', [shopId], (err, results) => {
