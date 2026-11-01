@@ -50,8 +50,6 @@
         .card p { font-size: 18px; font-weight: bold; color: #007bff; margin: 0; }
         .badge-prod { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .badge-rep { background: #17a2b8; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .badge-exch { background: #fd7e14; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .badge-mix { background: #ffc107; color: black; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: rgba(255, 0, 0, 0.15) !important; color: #d9534f; font-weight: bold; }
         .low-stock-row { background-color: rgba(255, 152, 0, 0.1) !important; }
@@ -88,7 +86,6 @@
             </div>
         </header>
 
-        <!-- Updated Tabs (Tabs 7, 9, 10, 11 removed and re-indexed to 8 tabs) -->
         <div class="tabs">
             <button class="tab-btn" onclick="switchTab(1, this)">1. Add Product</button>
             <button class="tab-btn inactive" onclick="switchTab(2, this)">2. Billing / POS</button>
@@ -208,7 +205,7 @@
             </table>
         </div>
 
-        <!-- Tab 5: Repair Jobs -->
+        <!-- Tab 5: Repair Jobs (Includes Intake Receipt Feature) -->
         <div id="tab5" class="section">
             <h3>5. Repair Jobs Management</h3>
             <div class="sub-tabs">
@@ -225,7 +222,7 @@
                     <input type="text" id="repWarranty" list="warrantyList" placeholder="Select Warranty">
                     <input type="number" id="repAdvance" placeholder="Advance Cost" value="0" step="0.01">
                     <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" value="0">
-                    <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job</button>
+                    <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job & Print Intake Receipt</button>
                 </form>
                 <input type="text" id="searchRepair" placeholder="Search Repair..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #007bff;">
                 <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="repairsTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody></table>
@@ -554,7 +551,6 @@
             loadInventory();
         }
 
-        // --- CAMERA SCANNER ---
         function toggleCameraScanner() {
             const qrDiv = document.getElementById('qr-reader');
             if(qrDiv.style.display === 'none') {
@@ -572,7 +568,6 @@
             }
         }
 
-        // --- BILLING / POS ---
         function handleBillingSearch() {
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
             const container = document.getElementById('customDropdownList');
@@ -689,7 +684,6 @@
             }
         }
 
-        // --- HTML RECEIPT ---
         function generateAutoMessage(sale) {
             let htmlMsg = `
                 <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333333; line-height: 1.4; background: #ffffff; padding: 10px;">
@@ -733,7 +727,6 @@
         function copyReceiptText() { navigator.clipboard.writeText(rawReceiptPlaintext); alert('Copied to clipboard!'); }
         function sendWhatsAppMessage() { window.open(`https://wa.me/?text=${encodeURIComponent(rawReceiptPlaintext)}`, '_blank'); }
 
-        // --- SALES HISTORY & REMOVE ---
         async function loadSales() {
             const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
             rawSalesData = await res.json();
@@ -832,7 +825,7 @@
             });
         }
 
-        // --- REPAIRS ---
+        // --- REPAIRS (WITH INTAKE RECEIPT) ---
         async function loadRepairs() {
             const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
             allRepairs = await res.json();
@@ -852,15 +845,60 @@
 
         async function addRepair(e) {
             e.preventDefault();
+            const customerName = document.getElementById('repCustomer').value.trim();
+            const customerPhone = document.getElementById('repPhone').value.trim();
+            const deviceModel = document.getElementById('repDevice').value.trim();
+            const issue = document.getElementById('repIssue').value.trim();
+            const warranty = document.getElementById('repWarranty').value.trim() || 'No Warranty';
+            const advance = parseFloat(document.getElementById('repAdvance').value) || 0;
+            const totalCost = parseFloat(document.getElementById('repTotalCost').value) || 0;
+
             const data = {
-                shop_id: currentUser.shop_id, customer_name: document.getElementById('repCustomer').value.trim(),
-                customer_phone: document.getElementById('repPhone').value.trim(), device_model: document.getElementById('repDevice').value.trim(),
-                issue_description: `${document.getElementById('repIssue').value.trim()} [Warranty: ${document.getElementById('repWarranty').value.trim() || 'No Warranty'}]`,
-                advance_cost: parseFloat(document.getElementById('repAdvance').value) || 0,
-                total_cost: parseFloat(document.getElementById('repTotalCost').value) || 0
+                shop_id: currentUser.shop_id, customer_name: customerName,
+                customer_phone: customerPhone, device_model: deviceModel,
+                issue_description: `${issue} [Warranty: ${warranty}]`,
+                advance_cost: advance, total_cost: totalCost
             };
             const res = await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            if(res.ok) { document.getElementById('repairForm').reset(); loadRepairs(); alert('Repair added!'); }
+            const result = await res.json();
+            if(res.ok) {
+                // Print Repair Intake Receipt
+                generateRepairIntakeReceipt({
+                    repair_id: result.repair_id, customer_name: customerName, customer_phone: customerPhone,
+                    device_model: deviceModel, issue: issue, warranty: warranty, advance: advance, total_cost: totalCost,
+                    branch: currentUser.shop_name, branch_phone: currentUser.shop_phone
+                });
+                document.getElementById('repairForm').reset(); loadRepairs();
+            }
+        }
+
+        function generateRepairIntakeReceipt(rep) {
+            let htmlMsg = `
+                <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333333; line-height: 1.4; background: #ffffff; padding: 10px;">
+                    <div style="text-align: center; border-bottom: 2px solid #17a2b8; padding-bottom: 10px; margin-bottom: 12px;">
+                        <h2 style="margin: 0; color: #17a2b8; font-size: 18px;">${rep.branch.toUpperCase()}</h2>
+                        ${rep.branch_phone ? `<div style="font-size: 12px; color: #666; margin-top: 3px;">Contact: ${rep.branch_phone}</div>` : ''}
+                        <div style="font-size: 10px; text-transform: uppercase; color: #888; margin-top: 4px; font-weight: bold;">REPAIR INTAKE RECEIPT (JOB #${rep.repair_id})</div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; color: #333;">
+                        <div><b>Date:</b> ${new Date().toLocaleString()}</div>
+                        <div><b>Customer:</b> ${rep.customer_name} | <b>Phone:</b> ${rep.customer_phone}</div>
+                        <div><b>Device Model:</b> ${rep.device_model}</div>
+                        <div><b>Issue:</b> ${rep.issue}</div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px; color: #333;">
+                        <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span>Estimated Total Cost:</span> <b>Rs. ${rep.total_cost.toFixed(2)}</b></div>
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #17a2b8; margin-top: 6px;"><span>Advance Paid:</span> <span>Rs. ${rep.advance.toFixed(2)}</span></div>
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; color: #28a745; margin-top: 4px;"><span>Balance Due upon Pickup:</span> <span>Rs. ${Math.max(0, rep.total_cost - rep.advance).toFixed(2)}</span></div>
+                    </div>
+                    <div style="text-align: center; font-size: 11px; color: #777; border-top: 1px dashed #ddd; padding-top: 8px; margin-top: 10px;">Please bring this receipt when collecting your device!</div>
+                </div>`;
+
+            rawReceiptPlaintext = `================================\n    ${rep.branch.toUpperCase()}\n    REPAIR INTAKE (JOB #${rep.repair_id})\n================================\nCustomer: ${rep.customer_name}\nPhone: ${rep.customer_phone}\nDevice: ${rep.device_model}\nIssue: ${rep.issue}\n--------------------------------\nTotal Cost  : Rs. ${rep.total_cost.toFixed(2)}\nAdvance Paid: Rs. ${rep.advance.toFixed(2)}\nBalance Due : Rs. ${Math.max(0, rep.total_cost - rep.advance).toFixed(2)}\n================================\nPlease bring receipt upon pickup!`;
+
+            document.getElementById('receiptModalTitle').textContent = 'Repair Job Accepted & Intake Printed!';
+            document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
+            document.getElementById('receiptModal').style.display = 'flex';
         }
 
         async function deleteRepair(id) {

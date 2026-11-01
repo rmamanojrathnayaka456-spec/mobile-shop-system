@@ -101,7 +101,6 @@ db.query(`
     )
 `);
 
-// New Tables for Additional Features
 db.query(`
     CREATE TABLE IF NOT EXISTS credit_sales (
         credit_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -113,31 +112,6 @@ db.query(`
         paid_amount DECIMAL(10, 2) DEFAULT 0,
         balance_due DECIMAL(10, 2) NOT NULL,
         status VARCHAR(20) DEFAULT 'Pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-`);
-
-db.query(`
-    CREATE TABLE IF NOT EXISTS repair_parts (
-        part_id INT AUTO_INCREMENT PRIMARY KEY,
-        shop_id INT NOT NULL,
-        part_name VARCHAR(100),
-        supplier_name VARCHAR(100),
-        supplier_phone VARCHAR(20),
-        cost DECIMAL(10, 2),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-`);
-
-db.query(`
-    CREATE TABLE IF NOT EXISTS consignment_items (
-        consignment_id INT AUTO_INCREMENT PRIMARY KEY,
-        shop_id INT NOT NULL,
-        other_shop_name VARCHAR(100),
-        item_name VARCHAR(100),
-        imei VARCHAR(50),
-        wholesale_price DECIMAL(10, 2),
-        status VARCHAR(20) DEFAULT 'At Other Shop',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `);
@@ -168,7 +142,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Products APIs
+// Products APIs (Per Shop Product ID starting from 1 -> 001, 002...)
 app.get('/api/products', (req, res) => {
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -178,18 +152,22 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
-    db.query(
-        'INSERT INTO products (shop_id, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [shop_id || 1, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
-        (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            const pId = result.insertId;
-            const product_code = pId.toString().padStart(3, '0');
-            db.query('UPDATE products SET product_code = ? WHERE product_id = ?', [product_code, pId], () => {
-                res.json({ message: 'Product added successfully', product_id: pId, product_code });
-            });
-        }
-    );
+    const finalShopId = shop_id || 1;
+
+    db.query('SELECT COUNT(*) AS total FROM products WHERE shop_id = ?', [finalShopId], (err, countResult) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const nextNumber = (countResult[0].total || 0) + 1;
+        const product_code = nextNumber.toString().padStart(3, '0');
+
+        db.query(
+            'INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [finalShopId, product_code, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
+            (err2, result) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ message: 'Product added successfully', product_id: result.insertId, product_code });
+            }
+        );
+    });
 });
 
 app.delete('/api/products/:id', (req, res) => {
@@ -199,14 +177,14 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs
+// Sales APIs (Stable Sale IDs)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
         if (err) return res.json([]);
         const list = Array.isArray(results) ? results : [];
-        const formatted = list.map((row, index) => {
-            const realId = row.sale_id || (index + 1);
+        const formatted = list.map((row) => {
+            const realId = row.sale_id;
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             let parsedItems = [];
             try { parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []); } catch (e) { parsedItems = []; }
@@ -260,9 +238,6 @@ app.post('/api/sales', (req, res) => {
                         db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, finalShopId]);
                     } else if (item.type === 'repair' && item.repair_id) {
                         db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ? AND shop_id = ?', [item.repair_id, finalShopId]);
-                    } else if (item.type === 'exchange') {
-                        db.query('INSERT INTO products (shop_id, name, brand, color, category, selling_price, stock, imei) VALUES (?, ?, ?, ?, "Used Phone", ?, 1, ?)',
-                            [finalShopId, item.exchange_name, item.brand || 'Exchange', item.color || 'N/A', item.valuation, item.imei || 'N/A']);
                     }
                 });
             }
@@ -350,49 +325,6 @@ app.put('/api/credits/:id', (req, res) => {
                 res.json({ message: 'Credit updated successfully' });
             });
     });
-});
-
-// Repair Parts Sourcing APIs
-app.get('/api/repair-parts', (req, res) => {
-    db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [req.query.shop_id || 1], (err, results) => {
-        if (err) return res.json([]);
-        res.json(results || []);
-    });
-});
-
-app.post('/api/repair-parts', (req, res) => {
-    const { shop_id, part_name, supplier_name, supplier_phone, cost } = req.body;
-    db.query('INSERT INTO repair_parts (shop_id, part_name, supplier_name, supplier_phone, cost) VALUES (?, ?, ?, ?, ?)',
-        [shop_id || 1, part_name, supplier_name, supplier_phone, cost || 0], (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Part source recorded', part_id: result.insertId });
-        });
-});
-
-// Consignment / Supplies to Other Shops APIs
-app.get('/api/consignments', (req, res) => {
-    db.query('SELECT * FROM consignment_items WHERE shop_id = ? ORDER BY consignment_id DESC', [req.query.shop_id || 1], (err, results) => {
-        if (err) return res.json([]);
-        res.json(results || []);
-    });
-});
-
-app.post('/api/consignments', (req, res) => {
-    const { shop_id, other_shop_name, item_name, imei, wholesale_price } = req.body;
-    db.query('INSERT INTO consignment_items (shop_id, other_shop_name, item_name, imei, wholesale_price, status) VALUES (?, ?, ?, ?, ?, "At Other Shop")',
-        [shop_id || 1, other_shop_name, item_name, imei || 'N/A', wholesale_price || 0], (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Consignment item recorded', consignment_id: result.insertId });
-        });
-});
-
-app.put('/api/consignments/:id', (req, res) => {
-    const { shop_id, status } = req.body;
-    db.query('UPDATE consignment_items SET status = ? WHERE consignment_id = ? AND shop_id = ?',
-        [status || 'Sold', req.params.id, shop_id || 1], (err) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Consignment status updated' });
-        });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
