@@ -176,8 +176,11 @@ app.post('/api/login', (req, res) => {
 
 // Products APIs
 app.get('/api/products', (req, res) => {
-    db.query('SELECT * FROM products ORDER BY product_id DESC', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+    const shopId = req.query.shop_id;
+    const query = shopId ? 'SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC' : 'SELECT * FROM products ORDER BY product_id DESC';
+    const params = shopId ? [shopId] : [];
+    db.query(query, params, (err, results) => {
+        if (err) return res.json([]);
         res.json(results || []);
     });
 });
@@ -205,13 +208,20 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Unique Sale IDs & REP- prefix for repair sales)
+// Sales APIs (Safely handles shop_id query and returns array)
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+    const shopId = req.query.shop_id;
+    const query = shopId ? 'SELECT * FROM sales WHERE shop_id = ? ORDER BY 1 DESC' : 'SELECT * FROM sales ORDER BY 1 DESC';
+    const params = shopId ? [shopId] : [];
+
+    db.query(query, params, (err, results) => {
+        if (err) {
+            console.error("Sales fetch error:", err.message);
+            return res.json([]);
+        }
         
         const formatted = (results || []).map((row) => {
-            const dbSaleId = row.sale_id || row.id;
+            const dbSaleId = row.sale_id || row.id || 1;
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             const pad = (n) => String(n).padStart(2, '0');
             const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
@@ -291,8 +301,11 @@ app.delete('/api/sales/:id', (req, res) => {
 
 // Repairs APIs
 app.get('/api/repairs', (req, res) => {
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs ORDER BY created_at DESC', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+    const shopId = req.query.shop_id;
+    const query = shopId ? 'SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC' : 'SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs ORDER BY created_at DESC';
+    const params = shopId ? [shopId] : [];
+    db.query(query, params, (err, results) => {
+        if (err) return res.json([]);
         res.json(results || []);
     });
 });
@@ -325,8 +338,11 @@ app.delete('/api/repairs/:id', (req, res) => {
 
 // Credits APIs
 app.get('/api/credits', (req, res) => {
-    db.query('SELECT * FROM credits ORDER BY credit_id DESC', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+    const shopId = req.query.shop_id;
+    const query = shopId ? 'SELECT * FROM credits WHERE shop_id = ? ORDER BY credit_id DESC' : 'SELECT * FROM credits ORDER BY credit_id DESC';
+    const params = shopId ? [shopId] : [];
+    db.query(query, params, (err, results) => {
+        if (err) return res.json([]);
         res.json(results || []);
     });
 });
@@ -349,8 +365,11 @@ app.put('/api/credits/:id', (req, res) => {
 
 // Consignments APIs
 app.get('/api/consignments', (req, res) => {
-    db.query('SELECT * FROM consignments ORDER BY consignment_id DESC', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+    const shopId = req.query.shop_id;
+    const query = shopId ? 'SELECT * FROM consignments WHERE shop_id = ? ORDER BY consignment_id DESC' : 'SELECT * FROM consignments ORDER BY consignment_id DESC';
+    const params = shopId ? [shopId] : [];
+    db.query(query, params, (err, results) => {
+        if (err) return res.json([]);
         res.json(results || []);
     });
 });
@@ -373,8 +392,11 @@ app.put('/api/consignments/:id', (req, res) => {
 
 // Repair Parts APIs
 app.get('/api/repair-parts', (req, res) => {
-    db.query('SELECT * FROM repair_parts ORDER BY part_id DESC', (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+    const shopId = req.query.shop_id;
+    const query = shopId ? 'SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC' : 'SELECT * FROM repair_parts ORDER BY part_id DESC';
+    const params = shopId ? [shopId] : [];
+    db.query(query, params, (err, results) => {
+        if (err) return res.json([]);
         res.json(results || []);
     });
 });
