@@ -1164,38 +1164,38 @@
             loadSales();
         }
 
-        function viewSale(id) {
-            // String හෝ Number ඕනෑම ආකාරයකින් ID එක හරියටම සෙවීම
-            const s = rawSalesData.find(item => String(item.sale_id) === String(id));
-            if(!s) return alert('Sale record not found!');
+function viewSale(id) {
+    // rawSalesData එකෙන් අදාළ Sale එක ID හෝ String එක මඟින් හරියටම සෙවීම
+    const s = rawSalesData.find(item => String(item.sale_id) === String(id) || String(item.raw_id) === String(id));
+    if(!s) return alert('Sale record not found!');
 
-            let safeItems = (s.items && Array.isArray(s.items) && s.items.length > 0) ? s.items.map(i => ({
-                name: i.name || 'Product Sale',
-                qty: parseInt(i.qty || 1),
-                subtotal: parseFloat(i.subtotal || s.total_amount || 0),
-                warranty: i.warranty || 'No Warranty',
-                imei: i.imei || 'N/A'
-            })) : [{
-                name: s.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale',
-                qty: 1,
-                subtotal: parseFloat(s.total_amount || 0),
-                warranty: 'No Warranty',
-                imei: 'N/A'
-            }];
+    let safeItems = (s.items && Array.isArray(s.items) && s.items.length > 0) ? s.items.map(i => ({
+        name: i.name || (s.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale'),
+        qty: parseInt(i.qty || 1),
+        subtotal: parseFloat(i.subtotal || s.total_amount || 0),
+        warranty: i.warranty || 'No Warranty',
+        imei: i.imei || 'N/A'
+    })) : [{
+        name: s.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale',
+        qty: 1,
+        subtotal: parseFloat(s.total_amount || 0),
+        warranty: 'No Warranty',
+        imei: 'N/A'
+    }];
 
-            generateAutoReceiptHTML({
-                customer_name: s.customer_name || 'Cash Customer',
-                customer_phone: s.customer_phone || 'N/A',
-                payment_method: s.payment_method || 'Cash',
-                total_amount: parseFloat(s.total_amount || 0),
-                total_discount: parseFloat(s.discount || 0),
-                amount_paid: parseFloat(s.total_amount || 0),
-                change_due: 0,
-                items: safeItems,
-                branch: currentUser ? currentUser.shop_name : "SHA MOBILE",
-                branch_phone: currentUser ? currentUser.shop_phone : "0720641351"
-            });
-        }
+    generateAutoReceiptHTML({
+        customer_name: s.customer_name || 'Cash Customer',
+        customer_phone: s.customer_phone || 'N/A',
+        payment_method: s.payment_method || 'Cash',
+        total_amount: parseFloat(s.total_amount || 0),
+        total_discount: parseFloat(s.discount || 0),
+        amount_paid: parseFloat(s.total_amount || 0),
+        change_due: 0,
+        items: safeItems,
+        branch: currentUser ? currentUser.shop_name : "SHA MOBILE",
+        branch_phone: currentUser ? currentUser.shop_phone : "0720641351"
+    });
+}
 
         // --- REPAIRS ---
         async function loadRepairs() {
