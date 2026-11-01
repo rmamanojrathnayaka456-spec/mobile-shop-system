@@ -244,7 +244,7 @@
                         <div>
                             <label>Total Repair Cost (Rs.):</label><input type="number" id="repBillTotal" step="0.01" oninput="calculateRepBalanceFromTotal()" style="font-weight:bold; border: 2px solid #007bff;">
                             <label>Advance Paid (Rs.):</label><input type="number" id="repBillAdvance" disabled style="font-weight:bold; color:#e65100;">
-                            <label>Balance Due (Rs.):</label><input type="number" id="repBillBalance" disabled style="font-weight:bold; color:#28a745; background:#e8f4fd;">
+                            <label>Balance Due / Want to Pay After Advance (Rs.):</label><input type="number" id="repBillBalance" disabled style="font-weight:bold; color:#28a745; background:#e8f4fd;">
                             <label>Payment Method:</label>
                             <select id="repBillPaymentMethod"><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Koko">Koko Payment</option></select>
                             <label>Amount Paid (Rs.):</label><input type="number" id="repBillAmountPaid" step="0.01" oninput="calculateRepChangeDue()" style="border: 2px solid #28a745; font-weight: bold;">
@@ -810,6 +810,30 @@
 
             let discountRow = (sale.total_discount && sale.total_discount > 0) ? `<div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #dc3545; font-weight: bold;"><span>Total Discount:</span><span>- Rs. ${sale.total_discount.toFixed(2)}</span></div>` : '';
 
+            // Extra rows for Repair Advance / Balance display
+            let repairExtraRows = '';
+            if (sale.is_repair_advance) {
+                repairExtraRows = `
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Total Repair Cost:</span><span>Rs. ${sale.total_repair_cost.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #e65100; font-weight: bold;"><span>Advance Paid:</span><span>Rs. ${sale.amount_paid.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; color: #28a745; font-weight: bold;"><span>Balance to Pay After Advance:</span><span>Rs. ${sale.balance_to_pay.toFixed(2)}</span></div>
+                `;
+            } else if (sale.is_repair_final) {
+                repairExtraRows = `
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Total Repair Cost:</span><span>Rs. ${sale.total_repair_cost.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #e65100; font-weight: bold;"><span>Advance Paid (Less):</span><span>- Rs. ${sale.advance_paid.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; color: #007bff; font-weight: bold;"><span>Net Balance Paid Now:</span><span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Amount Paid:</span><span>Rs. ${sale.amount_paid.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; font-weight: bold; color: #28a745;"><span>Change Due:</span><span>Rs. ${sale.change_due.toFixed(2)}</span></div>
+                `;
+            } else {
+                repairExtraRows = `
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; font-weight: bold; color: #007bff;"><span>Total Payable:</span><span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Amount Paid:</span><span>Rs. ${sale.amount_paid.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; font-weight: bold; color: #28a745;"><span>Change Due:</span><span>Rs. ${sale.change_due.toFixed(2)}</span></div>
+                `;
+            }
+
             let htmlReceipt = `
                 <div style="background: #ffffff !important; color: #333333 !important; padding: 5px;">
                     <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 10px; background: #ffffff !important;">
@@ -827,18 +851,16 @@
                     </table>
                     <div style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 8px; background: #ffffff !important;">
                         ${discountRow}
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; font-weight: bold; color: #007bff;"><span>Total Payable:</span><span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Amount Paid:</span><span>Rs. ${(sale.amount_paid !== undefined ? sale.amount_paid : sale.total_amount).toFixed(2)}</span></div>
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; font-weight: bold; color: #28a745;"><span>Change Due:</span><span>Rs. ${(sale.change_due !== undefined ? sale.change_due : 0).toFixed(2)}</span></div>
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;"><span>Payment Method:</span><span style="font-weight: bold;">${sale.payment_method || 'Cash'}</span></div>
+                        ${repairExtraRows}
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333; margin-top:5px;"><span>Payment Method:</span><span style="font-weight: bold;">${sale.payment_method || 'Cash'}</span></div>
                     </div>
                     <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666666; background: #ffffff !important;">Thank you for your business!</div>
                 </div>
             `;
 
             rawReceiptPlaintext = `================================\n          ${shopName}\n    Contact: ${contact}\n================================\n   INVOICE / PURCHASE RECEIPT\n--------------------------------\nDate: ${dateStr}\nCustomer Name : ${custName}\nCustomer Phone: ${custPhone}\n--------------------------------\nPURCHASED ITEMS:\n`;
-            sale.items.forEach(i => { rawReceiptPlaintext += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n  Warranty: ${i.warranty}\n  IMEI: ${i.imei}\n`; });
-            rawReceiptPlaintext += `--------------------------------\nTOTAL PAYABLE  : Rs. ${sale.total_amount.toFixed(2)}\nAMOUNT PAID    : Rs. ${(sale.amount_paid !== undefined ? sale.amount_paid : sale.total_amount).toFixed(2)}\nCHANGE DUE     : Rs. ${(sale.change_due !== undefined ? sale.change_due : 0).toFixed(2)}\nPayment Method : ${sale.payment_method || 'Cash'}\n================================\n    Thank you for your business!\n================================`;
+            sale.items.forEach(i => { rawReceiptPlaintext += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n`; });
+            rawReceiptPlaintext += `--------------------------------\nPayment Method : ${sale.payment_method || 'Cash'}\n================================\n    Thank you for your business!\n================================`;
 
             document.getElementById('receiptBoxContainer').innerHTML = htmlReceipt;
             document.getElementById('receiptModal').style.display = 'flex';
@@ -947,7 +969,7 @@
                     <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${s.formatted_date}</td>
                     <td>
                         <div style="display:flex; gap:5px;">
-                            <button onclick="viewSale('${s.sale_id}')" style="background:#17a2b8; padding:3px 6px; font-size:11px;">View</button>
+                            <button onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px 6px; font-size:11px;">View</button>
                             <button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px 6px; font-size:11px;">Remove</button>
                         </div>
                     </td>
@@ -957,8 +979,12 @@
 
         async function deleteSale(saleId) {
             if(!confirm('Delete sale record?')) return;
-            await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-            loadSales();
+            const res = await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            if(res.ok) {
+                loadSales();
+            } else {
+                alert('Failed to delete sale');
+            }
         }
 
         function viewSale(id) {
@@ -980,7 +1006,7 @@
                 customer_name: s.customer_name || 'Cash Customer', customer_phone: s.customer_phone || 'N/A', payment_method: s.payment_method || 'Cash',
                 total_amount: parseFloat(s.total_amount || 0), total_discount: parseFloat(s.discount || 0), amount_paid: parseFloat(s.total_amount || 0), change_due: 0,
                 items: safeItems, branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : "0720641351"
-            }, "Sales History Receipt");
+            }, `Sales History Receipt #${s.sale_id}`);
         }
 
         async function loadRepairs() {
@@ -1009,6 +1035,7 @@
             const warranty = document.getElementById('repWarranty').value.trim() || 'No Warranty';
             const advance = parseFloat(document.getElementById('repAdvance').value) || 0;
             const total = parseFloat(document.getElementById('repTotalCost').value) || 0;
+            const balanceToPay = Math.max(0, total - advance);
 
             const data = {
                 shop_id: currentUser.shop_id, customer_name: custName,
@@ -1022,10 +1049,11 @@
                 document.getElementById('repairForm').reset(); 
                 loadRepairs(); 
                 
-                // Print Repair Job Sheet / Advance Bill
+                // Print Repair Job Sheet / Advance Bill with clear balance breakdown
                 generateAutoReceiptHTML({
                     customer_name: custName, customer_phone: custPhone, payment_method: 'Advance Cash',
                     total_amount: total, amount_paid: advance, change_due: 0,
+                    total_repair_cost: total, balance_to_pay: balanceToPay, is_repair_advance: true,
                     items: [{ name: `Repair Job: ${device} - Issue: ${issue}`, qty: 1, subtotal: total, warranty: warranty, imei: 'N/A' }],
                     branch: currentUser.shop_name, branch_phone: currentUser.shop_phone
                 }, `Repair Job Sheet #${result.repair_id} (Advance Paid)`);
@@ -1097,11 +1125,12 @@
             if(res.ok) {
                 await fetch(`/api/repairs/${rId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status: 'Delivered' }) });
                 
-                // Print Final Repair Invoice
+                // Print Final Repair Invoice with clear costs breakdown
                 generateAutoReceiptHTML({
                     customer_name: selectedBillingRepair.customer_name, customer_phone: selectedBillingRepair.customer_phone, payment_method: payMethod,
-                    total_amount: totalCost, amount_paid: amountPaid, change_due: changeDue,
-                    items: [{ name: `Repair Job #${rId} (${selectedBillingRepair.device_model}) - Total: Rs.${totalCost.toFixed(2)} (Less Advance: Rs.${advPaid.toFixed(2)})`, qty: 1, subtotal: bal, warranty: '1 Month', imei: 'N/A' }],
+                    total_amount: bal, amount_paid: amountPaid, change_due: changeDue,
+                    total_repair_cost: totalCost, advance_paid: advPaid, is_repair_final: true,
+                    items: [{ name: `Repair Job #${rId} (${selectedBillingRepair.device_model})`, qty: 1, subtotal: bal, warranty: '1 Month', imei: 'N/A' }],
                     branch: currentUser.shop_name, branch_phone: currentUser.shop_phone
                 }, `Repair Final Invoice (Job #${rId})`);
 
