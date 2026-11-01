@@ -32,6 +32,9 @@ db.query(`
     )
 `, () => {
     db.query("ALTER TABLE shops ADD COLUMN shop_phone VARCHAR(50) DEFAULT ''", () => {});
+    for (let i = 1; i <= 10; i++) {
+        db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [i, `Shop ${i}`]);
+    }
 });
 
 db.query(`
@@ -104,6 +107,45 @@ db.query(`
     )
 `);
 
+db.query(`
+    CREATE TABLE IF NOT EXISTS credits (
+        credit_id INT AUTO_INCREMENT PRIMARY KEY,
+        shop_id INT NOT NULL,
+        customer_name VARCHAR(100),
+        customer_phone VARCHAR(20),
+        item_details TEXT,
+        total_amount DECIMAL(10, 2) NOT NULL,
+        paid_amount DECIMAL(10, 2) DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+db.query(`
+    CREATE TABLE IF NOT EXISTS consignments (
+        consignment_id INT AUTO_INCREMENT PRIMARY KEY,
+        shop_id INT NOT NULL,
+        other_shop_name VARCHAR(100),
+        item_name VARCHAR(100),
+        imei VARCHAR(50),
+        wholesale_price DECIMAL(10, 2) NOT NULL,
+        status VARCHAR(50) DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+db.query(`
+    CREATE TABLE IF NOT EXISTS repair_parts (
+        part_id INT AUTO_INCREMENT PRIMARY KEY,
+        shop_id INT NOT NULL,
+        part_name VARCHAR(100),
+        supplier_name VARCHAR(100),
+        supplier_phone VARCHAR(20),
+        cost DECIMAL(10, 2) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
 // Login API
 app.post('/api/login', (req, res) => {
     const { username, password, custom_shop_name, shop_phone } = req.body;
@@ -163,28 +205,19 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales API - Fixed Sale ID and Items mapping
+// Sales APIs
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
+    db.query('SELECT * FROM sales ORDER BY created_at DESC', (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         
         const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            
             const pad = (n) => String(n).padStart(2, '0');
             const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
-            // Handle items json or fallback
-            let parsedItems = [];
-            try {
-                parsedItems = row.items_json ? JSON.parse(row.items_json) : [{ name: row.sale_type || 'Product Sale', qty: 1, subtotal: row.total_amount, warranty: 'No Warranty', imei: 'N/A' }];
-            } catch(e) {
-                parsedItems = [{ name: 'Product Sale', qty: 1, subtotal: row.total_amount, warranty: 'No Warranty', imei: 'N/A' }];
-            }
-
             return {
                 ...row,
-                sale_id: row.sale_id, // Database එකේ නියම Sale ID එක සාවද්‍ය ලෙස වෙනස් වීම වළක්වයි
+                sale_id: row.sale_id,
                 delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
@@ -193,7 +226,7 @@ app.get('/api/sales', (req, res) => {
                 date_only: cDate.toLocaleDateString('en-CA'),
                 month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
                 year_only: cDate.getFullYear().toString(),
-                items: parsedItems
+                items: [{ name: row.sale_type || 'Product Sale', qty: 1, subtotal: row.total_amount, warranty: 'No Warranty', imei: 'N/A' }]
             };
         });
         res.json(formatted);
@@ -275,6 +308,71 @@ app.delete('/api/repairs/:id', (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
+});
+
+// Credits APIs
+app.get('/api/credits', (req, res) => {
+    db.query('SELECT * FROM credits ORDER BY credit_id DESC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results || []);
+    });
+});
+
+app.post('/api/credits', (req, res) => {
+    const { shop_id, customer_name, customer_phone, item_details, total_amount, paid_amount } = req.body;
+    db.query('INSERT INTO credits (shop_id, customer_name, customer_phone, item_details, total_amount, paid_amount) VALUES (?, ?, ?, ?, ?, ?)',
+        [shop_id || 1, customer_name, customer_phone, item_details, total_amount, paid_amount || 0], (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Credit added', credit_id: result.insertId });
+        });
+});
+
+app.put('/api/credits/:id', (req, res) => {
+    db.query('UPDATE credits SET paid_amount = paid_amount + ? WHERE credit_id = ?', [req.body.additional_payment, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Updated' });
+    });
+});
+
+// Consignments APIs
+app.get('/api/consignments', (req, res) => {
+    db.query('SELECT * FROM consignments ORDER BY consignment_id DESC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results || []);
+    });
+});
+
+app.post('/api/consignments', (req, res) => {
+    const { shop_id, other_shop_name, item_name, imei, wholesale_price } = req.body;
+    db.query('INSERT INTO consignments (shop_id, other_shop_name, item_name, imei, wholesale_price) VALUES (?, ?, ?, ?, ?)',
+        [shop_id || 1, other_shop_name, item_name, imei || 'N/A', wholesale_price], (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Consignment added', consignment_id: result.insertId });
+        });
+});
+
+app.put('/api/consignments/:id', (req, res) => {
+    db.query('UPDATE consignments SET status = ? WHERE consignment_id = ?', [req.body.status, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Updated' });
+    });
+});
+
+// Repair Parts APIs
+app.get('/api/repair-parts', (req, res) => {
+    db.query('SELECT * FROM repair_parts ORDER BY part_id DESC', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results || []);
+    });
+});
+
+app.post('/api/repair-parts', (req, res) => {
+    const { shop_id, part_name, supplier_name, supplier_phone, cost } = req.body;
+    db.query('INSERT INTO repair_parts (shop_id, part_name, supplier_name, supplier_phone, cost) VALUES (?, ?, ?, ?, ?)',
+        [shop_id || 1, part_name, supplier_name, supplier_phone || 'N/A', cost], (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Part source added', part_id: result.insertId });
+        });
 });
 
 // Restore API
