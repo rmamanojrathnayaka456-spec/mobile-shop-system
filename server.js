@@ -198,21 +198,25 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs
+// Sales APIs (Loads all past sales regardless of shop_id mismatch)
 app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales ORDER BY sale_id ASC', (err, results) => {
         if (err) return res.json([]);
         const list = Array.isArray(results) ? results : [];
-        const formatted = list.map((row) => {
-            const realId = row.sale_id;
+        const formatted = list.map((row, index) => {
+            const realId = row.sale_id || (index + 1);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             let parsedItems = [];
             try { parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []); } catch (e) { parsedItems = []; }
+
+            const pad = (n) => String(n).padStart(2, '0');
+            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
             return {
                 ...row,
                 sale_id: realId,
                 items: parsedItems,
+                delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
@@ -265,12 +269,21 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Delete Sale API by exact sale_id
+// Robust Delete Sale API supporting both sale_id and created_at timestamp delete_key
 app.delete('/api/sales/:id', (req, res) => {
-    const saleId = req.params.id;
-    db.query('DELETE FROM sales WHERE sale_id = ?', [saleId], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Removed', affectedRows: result.affectedRows });
+    const targetId = req.params.id;
+    const decodedKey = decodeURIComponent(targetId);
+
+    // First try deleting by sale_id if it's a number
+    db.query('DELETE FROM sales WHERE sale_id = ?', [targetId], (err, result) => {
+        if (!err && result.affectedRows > 0) {
+            return res.json({ message: 'Removed by ID' });
+        }
+        // Fallback: delete by created_at timestamp (delete_key)
+        db.query('DELETE FROM sales WHERE created_at = ? LIMIT 1', [decodedKey], (err2, result2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ message: 'Removed by timestamp', affectedRows: result2.affectedRows });
+        });
     });
 });
 
@@ -358,7 +371,7 @@ app.post('/api/repair-parts', (req, res) => {
     const { shop_id, part_name, supplier_name, supplier_phone, cost } = req.body;
     db.query('INSERT INTO repair_parts (shop_id, part_name, supplier_name, supplier_phone, cost) VALUES (?, ?, ?, ?, ?)',
         [shop_id || 1, part_name, supplier_name, supplier_phone, cost || 0], (err, result) => {
-            if (err) return res.status(500).json({ error: res.message });
+            if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Part source recorded', part_id: result.insertId });
         });
 });
