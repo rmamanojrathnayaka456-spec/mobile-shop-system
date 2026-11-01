@@ -208,7 +208,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales API - Fetch all sales without strict shop_id filtering to ensure records always appear
+// Sales APIs (Robust fetching with Unique Sale IDs and REP- prefix for repair sales)
 app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales ORDER BY sale_id DESC, created_at DESC', (err, results) => {
         if (err) {
