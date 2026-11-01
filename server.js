@@ -104,11 +104,59 @@ app.post('/api/login', (req, res) => {
     res.json({ success: true, user: { shop_id: '1', shop_name: custom_shop_name || 'SHA MOBILE', shop_phone: shop_phone || '0720641351', username } });
 });
 
-// Products
+// Products - Get all products regardless of strict shop_id mismatch
 app.get('/api/products', async (req, res) => {
     try {
-        const shop_id = req.query.shop_id || '1';
-        const [rows] = await db.query('SELECT * FROM products WHERE shop_id = ?', [shop_id]);
+        const [rows] = await db.query('SELECT * FROM products');
+        res.json(rows);
+    } catch (err) { res.json([]); }
+});
+
+// Sales - Get all sales regardless of strict shop_id mismatch
+app.get('/api/sales', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM sales ORDER BY sale_id DESC');
+        const formatted = rows.map(s => {
+            let itemsParsed = [];
+            try { itemsParsed = JSON.parse(s.items_json || '[]'); } catch(e) {}
+            let dateObj = new Date(s.created_at || Date.now());
+            let year_only = dateObj.getFullYear().toString();
+            let month_only = `${year_only}-${String(dateObj.getMonth()+1).padStart(2,'0')}`;
+            let date_only = `${year_only}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+            return { ...s, items: itemsParsed, year_only, month_only, date_only, formatted_date: dateObj.toLocaleString(), delete_key: s.sale_id };
+        });
+        res.json(formatted);
+    } catch (err) { res.json([]); }
+});
+
+// Repairs - Get all repairs
+app.get('/api/repairs', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM repairs');
+        res.json(rows);
+    } catch (err) { res.json([]); }
+});
+
+// Credits - Get all credits
+app.get('/api/credits', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM credits');
+        res.json(rows);
+    } catch (err) { res.json([]); }
+});
+
+// Consignments - Get all consignments
+app.get('/api/consignments', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM consignments');
+        res.json(rows);
+    } catch (err) { res.json([]); }
+});
+
+// Repair Parts - Get all repair parts
+app.get('/api/repair-parts', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM repair_parts');
         res.json(rows);
     } catch (err) { res.json([]); }
 });
