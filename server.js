@@ -205,20 +205,24 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Fixed sale_id mapping)
+// Sales APIs (Unique Sale IDs & REP- prefix for repair sales)
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales ORDER BY created_at DESC', (err, results) => {
+    db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         
         const formatted = (results || []).map((row) => {
-            const saleIdNum = row.sale_id || row.id || 1;
+            const dbSaleId = row.sale_id || row.id;
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             const pad = (n) => String(n).padStart(2, '0');
             const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
 
+            const isRepair = row.sale_type === 'Repair';
+            const displaySaleId = isRepair ? `REP-${dbSaleId}` : `${dbSaleId}`;
+
             return {
                 ...row,
-                sale_id: saleIdNum,
+                sale_id: displaySaleId,
+                raw_id: dbSaleId,
                 delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
                 discount: parseFloat(row.discount || 0),
@@ -229,7 +233,7 @@ app.get('/api/sales', (req, res) => {
                 year_only: cDate.getFullYear().toString(),
                 items: [
                     {
-                        name: row.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale',
+                        name: isRepair ? 'Repair Job Service' : 'Product Sale',
                         qty: 1,
                         subtotal: parseFloat(row.total_amount || 0),
                         warranty: 'No Warranty',
