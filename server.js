@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables with correct structure
+// Auto Create Tables
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -70,7 +70,6 @@ db.query(`
     )
 `);
 
-// Simple and robust sales table structure
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -171,7 +170,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Direct & Error-free)
+// Sales APIs
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
@@ -285,7 +284,7 @@ app.post('/api/credits', (req, res) => {
     );
 });
 
-app.put('/api/credits/:id', (req, res.json) => {
+app.put('/api/credits/:id', (req, res) => {
     const { shop_id, additional_payment } = req.body;
     db.query('SELECT * FROM credit_sales WHERE credit_id = ? AND shop_id = ?', [req.params.id, shop_id || 1], (err, results) => {
         if (err || results.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -297,7 +296,7 @@ app.put('/api/credits/:id', (req, res.json) => {
         db.query('UPDATE credit_sales SET paid_amount = ?, balance_due = ?, status = ? WHERE credit_id = ? AND shop_id = ?',
             [newPaid, newBalance, newStatus, req.params.id, shop_id || 1], (err2) => {
                 if (err2) return res.status(500).json({ error: err2.message });
-                res.status(200).json({ message: 'Credit updated successfully' });
+                res.json({ message: 'Credit updated successfully' });
             });
     });
 });
