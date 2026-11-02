@@ -56,11 +56,11 @@
         .badge-mix { background: #f59e0b; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .logout-btn { background: #ef4444; width: auto; padding: 8px 16px; font-size: 13px; border-radius: 8px; }
         .out-of-stock { background-color: rgba(239, 68, 68, 0.1) !important; color: #ef4444; font-weight: 600; }
-        .low-stock-row { background-color: rgba(245, 158, 11, 0.08) !important; }
+        .low-stock-row { background-color: rgba(245, 158, 11, 0.08) !important; color: #b45309; font-weight: 600; }
         .low-stock-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
         .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; margin-bottom: 12px; }
         
-        /* Fixed Receipt Box Styling (Always Clear & Readable) */
+        /* Fixed Receipt Box Styling (Strictly Clear & Readable with White Background) */
         #receiptBoxContainer { background: #ffffff !important; color: #333333 !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; }
         @media print {
             body * { visibility: hidden; }
@@ -461,6 +461,20 @@
             const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
             allProducts = await res.json();
             renderInventory(allProducts);
+            checkLowStockBanner();
+        }
+
+        function checkLowStockBanner() {
+            const lowCount = allProducts.filter(p => p.stock > 0 && p.stock <= 2).length;
+            const banner = document.getElementById('lowStockWarningBanner');
+            if(banner) {
+                if(lowCount > 0) {
+                    banner.style.display = 'block';
+                    banner.textContent = `⚠️ Low Stock Items Detected (${lowCount})!`;
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
         }
 
         function renderInventory(products) {
@@ -599,9 +613,22 @@
             products.forEach(p => {
                 const parsed = parseProductItem(p.name);
                 const isOut = p.stock <= 0;
+                const isLow = p.stock > 0 && p.stock <= 2;
+                
                 const div = document.createElement('div');
                 div.style.padding = '10px 14px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid var(--border-color)';
-                div.innerHTML = `<b>#${p.product_code || p.product_id}</b> - ${p.brand ? '['+p.brand+'] ' : ''}${parsed.name} - <b>Rs. ${p.selling_price}</b> ${isOut ? '<span style="color:#ef4444;">[OUT OF STOCK]</span>' : '[Stock: '+p.stock+']'}`;
+                
+                // Low stock color highlight in billing dropdown list
+                if (isOut) {
+                    div.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                    div.style.color = '#ef4444';
+                } else if (isLow) {
+                    div.style.backgroundColor = 'rgba(245, 158, 11, 0.12)';
+                    div.style.color = '#b45309';
+                    div.style.fontWeight = 'bold';
+                }
+
+                div.innerHTML = `<b>#${p.product_code || p.product_id}</b> - ${p.brand ? '['+p.brand+'] ' : ''}${parsed.name} - <b>Rs. ${p.selling_price}</b> ${isOut ? '<span style="color:#ef4444;">[OUT OF STOCK]</span>' : (isLow ? '<span style="color:#f59e0b;">[LOW STOCK: '+p.stock+']</span>' : '[Stock: '+p.stock+']')}`;
                 div.onclick = () => {
                     selectedBillingValue = 'prod_' + p.product_id;
                     document.getElementById('billingSearch').value = parsed.name;
@@ -766,11 +793,15 @@
         function sendWhatsAppMessage() { window.open('https://wa.me/?text=' + encodeURIComponent('Receipt ID: ' + (lastSaleData.sale_id||'') + '\nTotal: Rs. ' + document.getElementById('cartTotal').textContent), '_blank'); }
 
         async function loadSales() {
-            const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
-            rawSalesData = await res.json();
-            if(!Array.isArray(rawSalesData)) rawSalesData = [];
-            populateYearDropdown();
-            applySalesFilters();
+            try {
+                const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
+                rawSalesData = await res.json();
+                if(!Array.isArray(rawSalesData)) rawSalesData = [];
+                populateYearDropdown();
+                applySalesFilters();
+            } catch(e) {
+                rawSalesData = [];
+            }
         }
 
         function populateYearDropdown() {

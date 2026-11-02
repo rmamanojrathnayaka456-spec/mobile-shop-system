@@ -256,6 +256,7 @@ app.post('/api/restore', (req, res) => {
     const { shop_id, products, sales, repairs } = req.body;
     db.query('DELETE FROM products WHERE shop_id = ?', [shop_id], () => {
         db.query('DELETE FROM sales WHERE shop_id = ?', [shop_id], () => {
+            db.query('DELETE_REP?: repairs WHERE shop_id = ?', [shop_id], () => {}); // placeholder
             db.query('DELETE FROM repairs WHERE shop_id = ?', [shop_id], () => {
                 if (products) products.forEach(p => db.query('INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, p.product_code, p.name, p.brand, p.color, p.category, p.cost_price, p.selling_price, p.stock, p.imei], ()=>{}));
                 if (sales) sales.forEach(s => db.query('INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [shop_id, s.customer_name, s.customer_phone, s.payment_method, s.sale_type || 'Product', s.discount || 0, s.total_amount], ()=>{}));
