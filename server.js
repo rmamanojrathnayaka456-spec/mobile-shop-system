@@ -142,7 +142,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Products APIs (Per Shop Product ID starting from 1 -> 001, 002...)
+// Products APIs
 app.get('/api/products', (req, res) => {
     db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -177,10 +177,10 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Stable Sale IDs)
+// Sales APIs (Ensuring sale_id is correctly returned)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+    db.query('SELECT sale_id, shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, items, created_at FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
         if (err) return res.json([]);
         const list = Array.isArray(results) ? results : [];
         const formatted = list.map((row) => {
