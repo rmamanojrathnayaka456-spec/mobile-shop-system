@@ -51,7 +51,6 @@
         .badge-prod { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: rgba(255, 0, 0, 0.15) !important; color: #d9534f; font-weight: bold; }
-        .low-stock-row { background-color: rgba(255, 152, 0, 0.1) !important; }
         .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; page-break-inside: avoid; }
         @media print {
             body * { visibility: hidden; }
@@ -95,7 +94,7 @@
             <button class="tab-btn inactive" onclick="switchTab(8, this)">8. Backup & Restore</button>
         </div>
 
-        <!-- Tab 1: Add Product -->
+        <!-- Tab 1 -->
         <div id="tab1" class="section active">
             <h3 id="categoryTitle">1. Add New Product / Brand New Phone</h3>
             <div class="category-buttons">
@@ -109,14 +108,20 @@
             <form id="productForm" onsubmit="addProduct(event)">
                 <input type="hidden" id="pCategory" value="Brand New Phone">
                 <label id="lblModel">Model Name:</label><input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra" required>
-                <label>Select Brand:</label><input type="text" id="pBrand" placeholder="e.g. Samsung, Apple">
-                <label>Select Colour:</label><input type="text" id="pColor" placeholder="e.g. Black, Blue">
-                <label>Warranty Period:</label><input type="text" id="pWarranty" placeholder="No Warranty">
+                <div id="groupBrand"><label>Brand:</label><input type="text" id="pBrand" list="brandList" placeholder="Samsung, Apple"></div>
+                <datalist id="brandList"><option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"></datalist>
+                <div id="groupColor"><label>Colour:</label><input type="text" id="pColor" list="colorList" placeholder="Black, Blue"></div>
+                <datalist id="colorList"><option value="Black"><option value="Blue"><option value="White"><option value="Red"></datalist>
+                <div id="groupWarranty">
+                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
+                    <input type="text" id="pWarranty" list="warrantyList" placeholder="Select Warranty">
+                </div>
+                <datalist id="warrantyList"><option value="No Warranty"><option value="1 Week"><option value="1 Month"><option value="3 Months"><option value="6 Months"><option value="1 Year"></datalist>
                 <label>Cost Price (Rs.):</label><input type="number" id="pCost" placeholder="0.00" step="0.01">
-                <label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01">
+                <div id="groupSellingPrice"><label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01"></div>
                 <label>Stock Quantity:</label><input type="number" id="pStock" value="1" required>
-                <label>IMEI Number:</label><input type="text" id="pImei" placeholder="Enter IMEI">
-                <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product</button>
+                <div id="imeiGroup"><label>IMEI / Serial:</label><input type="text" id="pImei" placeholder="Enter IMEI"></div>
+                <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product & Print Barcode</button>
             </form>
         </div>
 
@@ -125,10 +130,13 @@
             <h3>2. Billing & Checkout</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
-                    <label>Search Product by Name or Code:</label>
-                    <input type="text" id="billingSearch" placeholder="Type product name..." oninput="handleBillingSearch()" style="border: 2px solid #007bff; padding: 10px;">
-                    <div id="customDropdownList" style="background:#fff; border:1px solid #ddd; max-height:150px; overflow-y:auto; display:none;"></div>
+                    <label>Search Product by Name, Code, Brand or IMEI:</label>
+                    <input type="text" id="billingSearch" autocomplete="off" placeholder="🔍 Type ID, Name, Brand..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #007bff; padding: 12px;">
+                    <div style="position: relative;"><div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: var(--container-bg); color: var(--text-color); border: 2px solid #007bff; z-index: 999; border-radius: 6px;"></div></div>
                     
+                    <label style="margin-top: 10px; display: block;">Warranty:</label>
+                    <input type="text" id="billingProductWarranty" style="font-weight:bold; color:#007bff;" disabled>
+                    <div id="billingImeiGroup" style="display:none; margin-top: 5px;"><label style="font-weight:bold; color:#e65100;">IMEI Number:</label><input type="text" id="billingImei" style="border: 2px solid #e65100; font-weight:bold;"></div>
                     <label>Selling Price (Rs.):</label><input type="number" id="billingPrice" step="0.01">
                     <label>Quantity:</label><input type="number" id="billingQty" value="1" min="1">
                     <button type="button" onclick="addToCart()" style="margin-top: 15px; background: #28a745;">Add to Bill</button>
@@ -138,8 +146,11 @@
                     <label>Customer Name:</label><input type="text" id="custName" placeholder="Cash Customer">
                     <label>Customer Phone:</label><input type="text" id="custPhone" placeholder="07X XXXXXXX">
                     <label>Payment Method:</label>
-                    <select id="paymentMethod"><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option></select>
-                    <label>Amount Paid (Rs.):</label><input type="number" id="amountPaid" placeholder="0.00" step="0.01">
+                    <select id="paymentMethod">
+                        <option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Koko">Koko Payment</option><option value="Credit">Credit Book</option>
+                    </select>
+                    <label>Amount Paid (Rs.):</label><input type="number" id="amountPaid" placeholder="0.00" step="0.01" oninput="calculateChangeDue()" style="border: 2px solid #28a745; font-weight: bold;">
+                    <label>Change Due (Rs.):</label><input type="number" id="changeDue" value="0.00" style="font-weight:bold; color:#28a745;" disabled>
                     <table><thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead><tbody id="cartTableBody"><tr><td colspan="4" style="text-align:center;">Cart is empty</td></tr></tbody></table>
                     <h3>Total Payable: Rs. <span id="cartTotal">0.00</span></h3>
                     <button type="button" onclick="completeCheckout()" style="background: #28a745;">Checkout & Complete Sale</button>
@@ -147,41 +158,69 @@
             </div>
         </div>
 
-        <!-- Tab 3: Stock Inventory -->
+        <!-- Tab 3: Stock -->
         <div id="tab3" class="section">
-            <h3>3. Stock Inventory</h3>
-            <table><thead><tr><th>ID</th><th>Name</th><th>Brand</th><th>Price (Rs.)</th><th>Stock</th><th>Action</th></tr></thead><tbody id="inventoryTable"><tr><td colspan="6" style="text-align:center;">Loading...</td></tr></tbody></table>
-        </div>
-
-        <!-- Tab 4: Sales History & EOD -->
-        <div id="tab4" class="section">
-            <h3>4. Sales History & EOD Report</h3>
-            <div class="analytics-grid">
-                <div class="card"><h4>Total Transactions</h4><p id="totalTransactions">0</p></div>
-                <div class="card"><h4>Total Revenue</h4><p id="totalRevenueAmt">Rs. 0.00</p></div>
-            </div>
+            <h3>3. Stock Inventory Management</h3>
+            <input type="text" id="searchStock" placeholder="Search stock..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
             <table>
-                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
-                <tbody id="salesTable"><tr><td colspan="7" style="text-align:center;">Loading sales...</td></tr></tbody>
+                <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Warranty</th><th>Price (Rs.)</th><th>Stock</th><th>Action</th></tr></thead>
+                <tbody id="inventoryTable"><tr><td colspan="7" style="text-align:center;">Loading...</td></tr></tbody>
             </table>
         </div>
 
-        <!-- Tab 5: Repair Jobs -->
-        <div id="tab5" class="section"><h3>5. Repair Jobs</h3><p>Manage repairs here.</p></div>
+        <!-- Tab 4: Sales History -->
+        <div id="tab4" class="section">
+            <h3>4. Sales History & EOD Report</h3>
+            <input type="text" id="searchSales" placeholder="🔍 Search Sales by ID, Customer..." onkeyup="applySalesFilters()" style="margin-bottom: 15px; border: 2px solid #007bff;">
+            <table>
+                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
+                <tbody id="salesTable"><tr><td colspan="7" style="text-align:center;">Loading...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- Tab 5: Repairs -->
+        <div id="tab5" class="section">
+            <h3>5. Repair Jobs Management</h3>
+            <form id="repairForm" onsubmit="addRepair(event)" style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px;">
+                <input type="text" id="repCustomer" placeholder="Customer Name" required>
+                <input type="text" id="repPhone" placeholder="Customer Phone" required>
+                <input type="text" id="repDevice" placeholder="Device Model" required>
+                <input type="text" id="repIssue" placeholder="Issue Description" required>
+                <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" required>
+                <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job</button>
+            </form>
+            <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="repairsTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody></table>
+        </div>
+
         <!-- Tab 6: Customer History -->
-        <div id="tab6" class="section"><h3>6. Customer History</h3></div>
+        <div id="tab6" class="section">
+            <h3>6. Customer History</h3>
+            <input type="text" id="searchCustomerHistory" placeholder="Type customer name or phone..." onkeyup="filterCustomerHistory()" style="margin-bottom: 15px; border: 2px solid #007bff;">
+            <table><thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Method</th><th>Total (Rs.)</th><th>Date</th></tr></thead><tbody id="custSalesTable"><tr><td colspan="6" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
+        </div>
+
         <!-- Tab 7: Credit Book -->
-        <div id="tab7" class="section"><h3>7. Credit Book</h3></div>
-        <!-- Tab 8: Backup & Restore -->
-        <div id="tab8" class="section"><h3>8. Backup & Restore</h3></div>
+        <div id="tab7" class="section">
+            <h3>7. Customer Credit Book</h3>
+            <table><thead><tr><th>Credit ID</th><th>Customer</th><th>Phone</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead><tbody id="creditTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody></table>
+        </div>
+
+        <!-- Tab 8: Backup -->
+        <div id="tab8" class="section">
+            <h3>8. Data Backup & Restore</h3>
+            <button type="button" onclick="exportDataBackup()" style="background: #28a745; margin-top: 15px;">Download Backup File</button>
+        </div>
     </div>
 
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:#fff; color:#333; padding:20px; border-radius:8px; width:400px; text-align:center;">
-            <h3>Sale Complete!</h3>
-            <div id="receiptBoxContainer" style="text-align:left; font-size:13px; margin-bottom:15px; background:#f9f9f9; padding:10px;"></div>
-            <button onclick="closeReceiptModal()" style="background:#6c757d; width:100%;">Close</button>
+        <div style="background:#ffffff; color:#333; padding:20px; border-radius:8px; width:480px;">
+            <h3 style="color:#28a745; text-align:center;">Receipt Generated!</h3>
+            <div id="receiptBoxContainer" class="printable-receipt" style="padding:15px; border:1px solid #ddd; font-family:Arial;"></div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">Print</button>
+                <button onclick="closeReceiptModal()" style="background:#6c757d; flex:1;">Close</button>
+            </div>
         </div>
     </div>
 
@@ -189,26 +228,29 @@
         let currentUser = null;
         let cart = [];
         let allProducts = [];
+        let allRepairs = [];
         let rawSalesData = [];
-        let selectedProduct = null;
+        let allCredits = [];
+        let selectedBillingValue = "";
+        let selectedProductWarranty = 'No Warranty';
 
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value.trim();
             const custom_shop_name = document.getElementById('loginShopName').value.trim();
             const shop_phone = document.getElementById('loginShopPhone').value.trim();
 
-            fetch('/api/login', {
+            const res = await fetch('/api/login', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password, custom_shop_name, shop_phone })
-            }).then(res => res.json()).then(data => {
-                if(data.success) {
-                    currentUser = data.user;
-                    localStorage.setItem('pos_user', JSON.stringify(currentUser));
-                    initApp();
-                } else { alert(data.error || 'Login failed'); }
             });
+            const data = await res.json();
+            if(res.ok && data.success) {
+                currentUser = data.user;
+                localStorage.setItem('pos_user', JSON.stringify(currentUser));
+                initApp();
+            } else { alert(data.error || 'Login failed!'); }
         }
 
         function handleLogout() {
@@ -224,10 +266,29 @@
                 currentUser = JSON.parse(saved);
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
-                document.getElementById('userDisplay').textContent = currentUser.shop_name;
-                loadInventory();
-                loadSales();
+                document.getElementById('userDisplay').textContent = currentUser.shop_name || "SHA MOBILE";
+                loadInventory(); loadSales(); loadRepairs(); loadCredits();
             }
+            setTheme(localStorage.getItem('pos_theme') || 'light');
+        }
+
+        function toggleTheme() {
+            setTheme(document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        }
+
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('pos_theme', theme);
+            const btn = document.getElementById('themeToggleBtn');
+            if(btn) btn.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+        }
+
+        function setCategory(cat, titleText, btn) {
+            document.getElementById('productForm').reset();
+            document.getElementById('pCategory').value = cat;
+            document.getElementById('categoryTitle').textContent = titleText;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
         function switchTab(tabNum, btn) {
@@ -236,116 +297,150 @@
             document.getElementById(`tab${tabNum}`).classList.add('active');
             if(btn) btn.classList.remove('inactive');
 
-            if(tabNum === 3) loadInventory();
-            if(tabNum === 4) loadSales();
-        }
-
-        function setCategory(cat, title, btn) {
-            document.getElementById('pCategory').value = cat;
-            document.getElementById('categoryTitle').textContent = title;
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            if(tabNum === 2) loadInventory();
+            else if(tabNum === 3) loadInventory();
+            else if(tabNum === 4) loadSales();
+            else if(tabNum === 5) loadRepairs();
+            else if(tabNum === 6) { loadSales(); loadRepairs(); }
+            else if(tabNum === 7) loadCredits();
         }
 
         async function loadInventory() {
             const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
             allProducts = await res.json();
+            renderInventory(allProducts);
+        }
+
+        function renderInventory(products) {
             const tbody = document.getElementById('inventoryTable');
-            tbody.innerHTML = allProducts.length === 0 ? `<tr><td colspan="6" style="text-align:center;">No products found</td></tr>` : '';
-            allProducts.forEach(p => {
-                tbody.innerHTML += `<tr><td>#${p.product_id}</td><td>${p.name}</td><td>${p.brand || '-'}</td><td>Rs. ${p.selling_price}</td><td>${p.stock}</td><td><button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:3px;">Delete</button></td></tr>`;
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if(products.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No products found.</td></tr>`; return; }
+            products.forEach(p => {
+                tbody.innerHTML += `<tr>
+                    <td><b>#${p.product_code || p.product_id}</b></td>
+                    <td>${p.name}</td><td>${p.brand || '-'}</td>
+                    <td>${p.warranty || 'No Warranty'}</td>
+                    <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
+                    <td>${p.stock}</td>
+                    <td><button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:3px 6px;">Delete</button></td>
+                </tr>`;
             });
         }
 
         async function addProduct(e) {
             e.preventDefault();
+            const cat = document.getElementById('pCategory').value;
+            const baseName = document.getElementById('pName').value.trim();
+            const warranty = document.getElementById('pWarranty').value.trim() || 'No Warranty';
+            const finalName = `${baseName} [Warranty: ${warranty}]`;
+            
             const data = {
-                shop_id: currentUser.shop_id,
-                name: document.getElementById('pName').value,
-                brand: document.getElementById('pBrand').value,
+                shop_id: currentUser.shop_id, name: finalName,
+                brand: document.getElementById('pBrand').value, 
                 color: document.getElementById('pColor').value,
-                category: document.getElementById('pCategory').value,
-                cost_price: document.getElementById('pCost').value || 0,
-                selling_price: document.getElementById('pPrice').value || 0,
-                stock: document.getElementById('pStock').value || 1,
+                category: cat, cost_price: document.getElementById('pCost').value,
+                selling_price: document.getElementById('pPrice').value,
+                stock: parseInt(document.getElementById('pStock').value) || 1,
                 imei: document.getElementById('pImei').value || 'N/A'
             };
-            await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            alert('Product added successfully!');
-            document.getElementById('productForm').reset();
-            loadInventory();
+
+            const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            if(res.ok) {
+                alert('Product added successfully!');
+                document.getElementById('productForm').reset();
+                loadInventory();
+            }
         }
 
         async function deleteProduct(id) {
+            if(!confirm('Delete product?')) return;
             await fetch(`/api/products/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
             loadInventory();
         }
 
-        function handleBillingSearch() {
-            const q = document.getElementById('billingSearch').value.toLowerCase();
-            const dropdown = document.getElementById('customDropdownList');
-            if(!q) { dropdown.style.display = 'none'; return; }
-            const matches = allProducts.filter(p => p.name.toLowerCase().includes(q));
-            dropdown.innerHTML = '';
-            matches.forEach(m => {
+        function renderDropdownList(items) {
+            const container = document.getElementById('customDropdownList');
+            container.innerHTML = '';
+            if(items.length === 0) { container.style.display = 'none'; return; }
+
+            items.forEach(p => {
                 const div = document.createElement('div');
-                div.style.padding = '8px'; div.style.cursor = 'pointer';
-                div.textContent = `${m.name} - Rs. ${m.selling_price}`;
+                div.style.padding = '10px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid #ddd';
+                div.innerHTML = `<b>#${p.product_code || p.product_id}</b> - ${p.name} | <b>Rs. ${parseFloat(p.selling_price).toFixed(2)}</b> (Stock: ${p.stock})`;
                 div.onclick = () => {
-                    selectedProduct = m;
-                    document.getElementById('billingSearch').value = m.name;
-                    document.getElementById('billingPrice').value = m.selling_price;
-                    dropdown.style.display = 'none';
+                    selectedBillingValue = p.product_id;
+                    document.getElementById('billingSearch').value = p.name;
+                    document.getElementById('billingPrice').value = p.selling_price;
+                    document.getElementById('billingProductWarranty').value = p.warranty || 'No Warranty';
+                    container.style.display = 'none';
                 };
-                dropdown.appendChild(div);
+                container.appendChild(div);
             });
-            dropdown.style.display = matches.length ? 'block' : 'none';
+            container.style.display = 'block';
         }
 
+        function handleBillingSearch() {
+            const query = document.getElementById('billingSearch').value.toLowerCase().trim();
+            if(!query) { renderDropdownList(allProducts); return; }
+            renderDropdownList(allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query))));
+        }
+
+        function openBillingDropdown() { renderDropdownList(allProducts); }
+
         function addToCart() {
-            if(!selectedProduct) return alert('Select a product first!');
-            const price = parseFloat(document.getElementById('billingPrice').value) || 0;
+            const p = allProducts.find(item => item.product_id == selectedBillingValue);
+            const price = parseFloat(document.getElementById('billingPrice').value);
             const qty = parseInt(document.getElementById('billingQty').value) || 1;
-            cart.push({ product_id: selectedProduct.product_id, name: selectedProduct.name, price, qty, subtotal: price * qty });
+            if(!p || isNaN(price)) return alert('Select a valid product!');
+
+            cart.push({ product_id: p.product_id, name: p.name, price, qty, subtotal: price * qty });
             renderCart();
-            selectedProduct = null;
-            document.getElementById('billingSearch').value = '';
-            document.getElementById('billingPrice').value = '';
         }
 
         function renderCart() {
             const tbody = document.getElementById('cartTableBody');
             tbody.innerHTML = '';
             let total = 0;
-            cart.forEach((c, i) => {
-                total += c.subtotal;
-                tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.qty}</td><td>Rs. ${c.subtotal.toFixed(2)}</td><td><button onclick="cart.splice(${i},1);renderCart();" style="background:#dc3545; padding:2px;">X</button></td></tr>`;
+            cart.forEach((item, idx) => {
+                total += item.subtotal;
+                tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>Rs. ${item.subtotal.toFixed(2)}</td><td><button onclick="cart.splice(${idx},1);renderCart();" style="background:#dc3545; padding:2px 5px;">X</button></td></tr>`;
             });
             document.getElementById('cartTotal').textContent = total.toFixed(2);
             document.getElementById('amountPaid').value = total.toFixed(2);
+            calculateChangeDue();
+        }
+
+        function calculateChangeDue() {
+            const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+            const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
+            document.getElementById('changeDue').value = Math.max(0, paid - total).toFixed(2);
         }
 
         async function completeCheckout() {
             if(cart.length === 0) return alert('Cart is empty!');
-            const total = cart.reduce((sum, i) => sum + i.subtotal, 0);
-            const data = {
-                shop_id: currentUser.shop_id,
-                customer_name: document.getElementById('custName').value || 'Cash Customer',
-                customer_phone: document.getElementById('custPhone').value || 'N/A',
-                payment_method: document.getElementById('paymentMethod').value,
-                total_amount: total,
-                items: cart
-            };
+            const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+            const name = document.getElementById('custName').value.trim() || 'Cash Customer';
+            const phone = document.getElementById('custPhone').value.trim() || 'N/A';
+            const paymentMethod = document.getElementById('paymentMethod').value;
 
-            const res = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            const res = await fetch('/api/sales', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, items: cart })
+            });
             if(res.ok) {
                 alert('Sale completed successfully!');
-                document.getElementById('receiptBoxContainer').innerHTML = `<b>Customer:</b> ${data.customer_name}<br><b>Total:</b> Rs. ${total.toFixed(2)}`;
-                document.getElementById('receiptModal').style.display = 'flex';
-                cart = [];
-                renderCart();
-                loadSales();
+                generateReceipt({ customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, items: [...cart] });
+                cart = []; renderCart(); loadInventory(); loadSales();
             }
+        }
+
+        function generateReceipt(sale) {
+            let html = `<h4>${currentUser.shop_name}</h4><p>Customer: ${sale.customer_name}<br>Phone: ${sale.customer_phone}<br>Method: ${sale.payment_method}</p><ul>`;
+            sale.items.forEach(i => { html += `<li>${i.name} (x${i.qty}) - Rs. ${i.subtotal.toFixed(2)}</li>`; });
+            html += `</ul><h4>Total: Rs. ${sale.total_amount.toFixed(2)}</h4>`;
+            document.getElementById('receiptBoxContainer').innerHTML = html;
+            document.getElementById('receiptModal').style.display = 'flex';
         }
 
         function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
@@ -353,36 +448,75 @@
         async function loadSales() {
             const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
             rawSalesData = await res.json();
-            const tbody = document.getElementById('salesTable');
-            if(!tbody) return;
-            tbody.innerHTML = rawSalesData.length === 0 ? `<tr><td colspan="7" style="text-align:center;">No sales found.</td></tr>` : '';
-            
-            let totalRev = 0;
-            rawSalesData.forEach(s => {
-                totalRev += parseFloat(s.total_amount || 0);
-                tbody.innerHTML += `<tr>
-                    <td><b>#${s.sale_id}</b></td>
-                    <td>${s.customer_name}</td>
-                    <td>${s.customer_phone}</td>
-                    <td>${s.payment_method}</td>
-                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
-                    <td>${s.formatted_date || s.created_at}</td>
-                    <td><button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px;">Delete</button></td>
-                </tr>`;
-            });
-            document.getElementById('totalTransactions').textContent = rawSalesData.length;
-            document.getElementById('totalRevenueAmt').textContent = `Rs. ${totalRev.toFixed(2)}`;
+            renderSalesTable(rawSalesData);
         }
 
-        async function deleteSale(id) {
+        function renderSalesTable(sales) {
+            const tbody = document.getElementById('salesTable');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if(sales.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No sales found.</td></tr>`; return; }
+            sales.forEach(s => {
+                tbody.innerHTML += `<tr>
+                    <td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td>
+                    <td>${s.payment_method}</td><td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${s.formatted_date}</td>
+                    <td><button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px 6px;">Delete</button></td>
+                </tr>`;
+            });
+        }
+
+        async function deleteSale(saleId) {
             if(!confirm('Delete sale?')) return;
-            await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
             loadSales();
         }
 
-        function toggleTheme() {
-            const current = document.body.getAttribute('data-theme');
-            document.body.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+        async function loadRepairs() {
+            const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
+            allRepairs = await res.json();
+            const tbody = document.getElementById('repairsTable');
+            if(!tbody) return;
+            tbody.innerHTML = allRepairs.length === 0 ? `<tr><td colspan="8" style="text-align:center;">No repairs.</td></tr>` : '';
+            allRepairs.forEach(r => {
+                tbody.innerHTML += `<tr><td>#${r.repair_id}</td><td>${r.customer_name}</td><td>${r.customer_phone}</td><td>${r.device_model}</td><td>${r.issue_description}</td><td>Rs. ${r.total_cost}</td><td>${r.status}</td><td>-</td></tr>`;
+            });
+        }
+
+        async function addRepair(e) {
+            e.preventDefault();
+            const data = {
+                shop_id: currentUser.shop_id,
+                customer_name: document.getElementById('repCustomer').value,
+                customer_phone: document.getElementById('repPhone').value,
+                device_model: document.getElementById('repDevice').value,
+                issue_description: document.getElementById('repIssue').value,
+                total_cost: document.getElementById('repTotalCost').value
+            };
+            await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            document.getElementById('repairForm').reset();
+            loadRepairs();
+        }
+
+        async function loadCredits() {
+            const res = await fetch(`/api/credits?shop_id=${currentUser.shop_id}`);
+            allCredits = await res.json();
+            const tbody = document.getElementById('creditTable');
+            if(!tbody) return;
+            tbody.innerHTML = allCredits.length === 0 ? `<tr><td colspan="8" style="text-align:center;">No credit records.</td></tr>` : '';
+            allCredits.forEach(c => {
+                tbody.innerHTML += `<tr><td>#${c.credit_id}</td><td>${c.customer_name}</td><td>${c.customer_phone}</td><td>Rs. ${c.total_amount}</td><td>Rs. ${c.paid_amount}</td><td>Rs. ${c.balance_due}</td><td>${c.status}</td><td>-</td></tr>`;
+            });
+        }
+
+        async function exportDataBackup() {
+            const [p, s, r] = await Promise.all([
+                fetch(`/api/products?shop_id=${currentUser.shop_id}`).then(res=>res.json()),
+                fetch(`/api/sales?shop_id=${currentUser.shop_id}`).then(res=>res.json()),
+                fetch(`/api/repairs?shop_id=${currentUser.shop_id}`).then(res=>res.json())
+            ]);
+            const a = document.createElement('a');
+            a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ products: p, sales: s, repairs: r }, null, 2));
+            a.download = `backup_${currentUser.shop_name}.json`; document.body.appendChild(a); a.click(); a.remove();
         }
 
         window.onload = initApp;
