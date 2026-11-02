@@ -735,15 +735,11 @@
                     const parsed = parseProductItem(p.name);
                     selectedProductWarranty = parsed.warranty;
                     document.getElementById('billingProductWarranty').value = selectedProductWarranty;
+                    document.getElementById('billingImeiGroup').style.display = (p.imei && p.imei !== 'N/A') ? 'block' : 'none';
+                    if(p.imei && p.imei !== 'N/A') document.getElementById('billingImei').value = p.imei;
                     document.getElementById('costPriceDisplay').value = selectedCostPrice.toFixed(2);
                     document.getElementById('originalPrice').value = selectedOriginalPrice.toFixed(2);
                     document.getElementById('billingPrice').value = selectedOriginalPrice.toFixed(2);
-                    if(p.imei && p.imei !== 'N/A') {
-                        document.getElementById('billingImeiGroup').style.display = 'block';
-                        document.getElementById('billingImei').value = p.imei;
-                    } else {
-                        document.getElementById('billingImeiGroup').style.display = 'none';
-                    }
                 }
             } else if(val.startsWith('rep_')) {
                 const r = allRepairs.find(item => (item.id || item.repair_id) == val.replace('rep_', ''));
@@ -824,9 +820,19 @@
             const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
             const change = Math.max(0, paid - total);
 
+            const payload = {
+                shop_id: Number(currentUser.shop_id),
+                customer_name: name,
+                customer_phone: phone,
+                payment_method: paymentMethod,
+                discount: discount,
+                total_amount: total,
+                items: cart
+            };
+
             const res = await fetch('/api/sales', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name: name, customer_phone: phone, payment_method: paymentMethod, discount, total_amount: total, items: cart })
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             if(res.ok) {
@@ -838,7 +844,8 @@
                 };
                 generateAutoMessage(lastSaleData);
                 cart = []; renderCart(); loadInventory(); loadSales(); loadRepairs();
-                // Customer Name and Phone remain preserved and do NOT vanish
+            } else {
+                alert('Checkout failed: ' + (data.error || 'Unknown error'));
             }
         }
 
@@ -1166,8 +1173,12 @@
             const res = await fetch('/api/sales', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    shop_id: currentUser.shop_id, customer_name: selectedBillingRepair.customer_name, customer_phone: selectedBillingRepair.customer_phone,
-                    payment_method: paymentMethod, total_amount: bal, sale_type: 'Repair',
+                    shop_id: Number(currentUser.shop_id),
+                    customer_name: selectedBillingRepair.customer_name,
+                    customer_phone: selectedBillingRepair.customer_phone,
+                    payment_method: paymentMethod,
+                    total_amount: bal,
+                    sale_type: 'Repair',
                     items: [{ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${selectedBillingRepair.device_model} - ${parsed.issue})`, warranty: parsed.warranty, subtotal: bal, qty: 1, total_cost: total, advance_cost: adv }]
                 })
             });
