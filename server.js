@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MySQL Connection Pool
+// MySQL Connection Pool with Aiven SSL Support
 const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -22,6 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
+// Initialize Database Tables Safely
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -29,10 +30,12 @@ db.query(`
         shop_phone VARCHAR(50) DEFAULT '',
         status VARCHAR(20) DEFAULT 'ACTIVE'
     )
-`, () => {
-    db.query("ALTER TABLE shops ADD COLUMN shop_phone VARCHAR(50) DEFAULT ''", () => {});
-    for (let i = 1; i <= 10; i++) {
-        db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [i, `Shop ${i}`]);
+`, (err) => {
+    if (!err) {
+        db.query("ALTER TABLE shops ADD COLUMN shop_phone VARCHAR(50) DEFAULT ''", () => {});
+        for (let i = 1; i <= 10; i++) {
+            db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [i, `Shop ${i}`]);
+        }
     }
 });
 
@@ -43,15 +46,17 @@ db.query(`
         password VARCHAR(50) NOT NULL,
         shop_id INT NOT NULL
     )
-`, () => {
-    const defaultUsers = [
-        ['system01', 'sysKey@01', 1], ['system02', 'mobPass@02', 2], ['system03', 'shopPin@03', 3],
-        ['system04', 'posCode@04', 4], ['system05', 'storeKey@05', 5], ['system06', 'branch@06', 6],
-        ['system07', 'login@07', 7], ['system08', 'access@08', 8], ['system09', 'secure@09', 9], ['system10', 'admin@10', 10]
-    ];
-    defaultUsers.forEach(user => {
-        db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password)`, user);
-    });
+`, (err) => {
+    if (!err) {
+        const defaultUsers = [
+            ['system01', 'sysKey@01', 1], ['system02', 'mobPass@02', 2], ['system03', 'shopPin@03', 3],
+            ['system04', 'posCode@04', 4], ['system05', 'storeKey@05', 5], ['system06', 'branch@06', 6],
+            ['system07', 'login@07', 7], ['system08', 'access@08', 8], ['system09', 'secure@09', 9], ['system10', 'admin@10', 10]
+        ];
+        defaultUsers.forEach(user => {
+            db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password)`, user);
+        });
+    }
 });
 
 db.query(`
@@ -198,7 +203,10 @@ app.get('/api/sales', (req, res) => {
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error("Sales Fetch Error:", err.message);
+            return res.status(500).json({ error: err.message });
+        }
         const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             return {
@@ -233,7 +241,10 @@ app.post('/api/sales', (req, res) => {
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount],
         (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) {
+                console.error("Sales Insert Error:", err.message);
+                return res.status(500).json({ error: err.message });
+            }
             const newSaleId = result.insertId;
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
@@ -285,7 +296,7 @@ app.put('/api/repairs/:id', (req, res) => {
 });
 
 app.delete('/api/repairs/:id', (req, res) => {
-    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
+    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.body.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
@@ -299,7 +310,7 @@ app.post('/api/restore', (req, res) => {
                 db.query('DELETE FROM repair_parts WHERE shop_id = ?', [shop_id], () => {
                     if (products) products.forEach(p => db.query('INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, p.product_code, p.name, p.brand, p.color, p.category, p.cost_price, p.selling_price, p.stock, p.imei], ()=>{}));
                     if (sales) sales.forEach(s => db.query('INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount) VALUES (?, ?, ?, ?, ?, ?, ?)', [shop_id, s.customer_name, s.customer_phone, s.payment_method, s.sale_type || 'Product', s.discount || 0, s.total_amount], ()=>{}));
-                    if (repairs) repairs.forEach(r => db.query('INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, r.customer_name, r.customer_phone, r.device_model, r.issue_description, r.advance_cost || 0, r.total_cost, r.status || 'Pending'], ()=>{}));
+                    if, repairs && repairs.forEach(r => db.query('INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, r.customer_name, r.customer_phone, r.device_model, r.issue_description, r.advance_cost || 0, r.total_cost, r.status || 'Pending'], ()=>{}));
                     if (repair_parts) repair_parts.forEach(rp => db.query('INSERT INTO repair_parts (shop_id, part_name, device_model, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)', [shop_id, rp.part_name, rp.device_model, rp.cost_price, rp.selling_price, rp.stock], ()=>{}));
                     res.json({ success: true, message: 'Restored successfully' });
                 });
