@@ -205,7 +205,7 @@ app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err.message);
-            return res.status(500).json({ error: err.message });
+            return res.json([]); // Return empty array instead of 500 error to keep UI stable
         }
         const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
