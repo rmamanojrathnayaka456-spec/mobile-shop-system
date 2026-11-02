@@ -177,14 +177,13 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Ensuring sale_id is correctly returned)
+// Sales APIs (Ensuring correct sale_id and fetching by shop_id)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT sale_id, shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, items, created_at FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
         if (err) return res.json([]);
         const list = Array.isArray(results) ? results : [];
         const formatted = list.map((row) => {
-            const realId = row.sale_id;
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             let parsedItems = [];
             try { parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []); } catch (e) { parsedItems = []; }
@@ -194,7 +193,7 @@ app.get('/api/sales', (req, res) => {
 
             return {
                 ...row,
-                sale_id: realId,
+                sale_id: row.sale_id,
                 items: parsedItems,
                 delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
