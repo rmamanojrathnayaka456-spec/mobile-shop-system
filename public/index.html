@@ -447,7 +447,9 @@
         }
 
         async function loadInventory() {
-            const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
+            if(!currentUser) return;
+            const shopId = currentUser.shop_id || 1;
+            const res = await fetch(`/api/products?shop_id=${shopId}`);
             allProducts = await res.json();
             renderInventory(allProducts);
         }
@@ -729,7 +731,9 @@
         function sendWhatsAppMessage() { window.open(`https://wa.me/?text=${encodeURIComponent(rawReceiptPlaintext)}`, '_blank'); }
 
         async function loadSales() {
-            const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
+            if(!currentUser) return;
+            const shopId = currentUser.shop_id || 1;
+            const res = await fetch(`/api/sales?shop_id=${shopId}`);
             rawSalesData = await res.json();
             populateYearDropdown(); applySalesFilters();
         }
@@ -828,7 +832,9 @@
 
         // --- REPAIRS ---
         async function loadRepairs() {
-            const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
+            if(!currentUser) return;
+            const shopId = currentUser.shop_id || 1;
+            const res = await fetch(`/api/repairs?shop_id=${shopId}`);
             allRepairs = await res.json();
             renderRepairsTable(allRepairs);
         }
@@ -964,7 +970,6 @@
             if(res.ok) {
                 await fetch(`/api/repairs/${rId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status: 'Delivered' }) });
                 
-                // Generate and Display Final Return / Settlement Receipt
                 generateAutoMessage({
                     customer_name: selectedBillingRepair.customer_name, customer_phone: selectedBillingRepair.customer_phone, payment_method: paymentMethod,
                     total_amount: bal, total_discount: 0, amount_paid: amountPaid, change_due: changeDue,
@@ -978,7 +983,9 @@
 
         // --- CREDIT BOOK ---
         async function loadCredits() {
-            const res = await fetch(`/api/credits?shop_id=${currentUser.shop_id}`);
+            if(!currentUser) return;
+            const shopId = currentUser.shop_id || 1;
+            const res = await fetch(`/api/credits?shop_id=${shopId}`);
             allCredits = await res.json();
             const tbody = document.getElementById('creditTable');
             if(!tbody) return;

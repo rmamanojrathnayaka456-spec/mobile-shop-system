@@ -177,7 +177,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Ensuring correct sale_id and fetching by shop_id)
+// Sales APIs
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT sale_id, shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, items, created_at FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
