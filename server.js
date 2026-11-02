@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Columns safely
+// Auto Create Tables with correct structure
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,7 +31,6 @@ db.query(`
         status VARCHAR(20) DEFAULT 'ACTIVE'
     )
 `, () => {
-    db.query("ALTER TABLE shops ADD COLUMN shop_phone VARCHAR(50) DEFAULT ''", () => {});
     for (let i = 1; i <= 10; i++) {
         db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [i, `Shop ${i}`]);
     }
@@ -71,6 +70,7 @@ db.query(`
     )
 `);
 
+// Simple and robust sales table structure
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -82,9 +82,7 @@ db.query(`
         items TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`, () => {
-    db.query("ALTER TABLE sales ADD COLUMN items TEXT", () => {});
-});
+`);
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -173,10 +171,10 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Compatible with standard setup)
+// Sales APIs (Direct & Error-free)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id ASC', [shopId], (err, results) => {
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
         if (err) return res.json([]);
         const list = Array.isArray(results) ? results : [];
         const formatted = list.map((row) => {
@@ -189,8 +187,8 @@ app.get('/api/sales', (req, res) => {
 
             return {
                 ...row,
-                sale_id: row.sale_id,
                 items: parsedItems,
+                sale_type: 'Product',
                 formatted_date: cDate.toLocaleString(),
                 date_only: cDate.toLocaleDateString('en-CA'),
                 month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
@@ -213,10 +211,8 @@ app.post('/api/sales', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
-                    if (item.type === 'product' && item.product_id) {
-                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, finalShopId]);
-                    } else if (item.type === 'repair' && item.repair_id) {
-                        db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ? AND shop_id = ?', [item.repair_id, finalShopId]);
+                    if (item.product_id) {
+                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty || 1, item.product_id, finalShopId]);
                     }
                 });
             }
@@ -289,7 +285,7 @@ app.post('/api/credits', (req, res) => {
     );
 });
 
-app.put('/api/credits/:id', (req, res) => {
+app.put('/api/credits/:id', (req, res.json) => {
     const { shop_id, additional_payment } = req.body;
     db.query('SELECT * FROM credit_sales WHERE credit_id = ? AND shop_id = ?', [req.params.id, shop_id || 1], (err, results) => {
         if (err || results.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -301,7 +297,7 @@ app.put('/api/credits/:id', (req, res) => {
         db.query('UPDATE credit_sales SET paid_amount = ?, balance_due = ?, status = ? WHERE credit_id = ? AND shop_id = ?',
             [newPaid, newBalance, newStatus, req.params.id, shop_id || 1], (err2) => {
                 if (err2) return res.status(500).json({ error: err2.message });
-                res.json({ message: 'Credit updated successfully' });
+                res.status(200).json({ message: 'Credit updated successfully' });
             });
     });
 });
