@@ -205,7 +205,7 @@
             </table>
         </div>
 
-        <!-- Tab 5: Repair Jobs (Includes Intake Receipt Feature) -->
+        <!-- Tab 5: Repair Jobs -->
         <div id="tab5" class="section">
             <h3>5. Repair Jobs Management</h3>
             <div class="sub-tabs">
@@ -719,6 +719,7 @@
             txt += `--------------------------------\nTOTAL: Rs. ${sale.total_amount.toFixed(2)}\nPayment: ${sale.payment_method}\n================================`;
             rawReceiptPlaintext = txt;
 
+            document.getElementById('receiptModalTitle').textContent = 'Sale Completed Successfully!';
             document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';
         }
@@ -825,7 +826,7 @@
             });
         }
 
-        // --- REPAIRS (WITH INTAKE RECEIPT) ---
+        // --- REPAIRS ---
         async function loadRepairs() {
             const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
             allRepairs = await res.json();
@@ -862,7 +863,6 @@
             const res = await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             const result = await res.json();
             if(res.ok) {
-                // Print Repair Intake Receipt
                 generateRepairIntakeReceipt({
                     repair_id: result.repair_id, customer_name: customerName, customer_phone: customerPhone,
                     device_model: deviceModel, issue: issue, warranty: warranty, advance: advance, total_cost: totalCost,
@@ -949,17 +949,30 @@
             if(!selectedBillingRepair) return alert('Select a repair job!');
             const rId = selectedBillingRepair.id || selectedBillingRepair.repair_id;
             const bal = parseFloat(document.getElementById('repBillBalance').value) || 0;
+            const paymentMethod = document.getElementById('repBillPaymentMethod').value;
+            const amountPaid = parseFloat(document.getElementById('repBillAmountPaid').value) || 0;
+            const changeDue = parseFloat(document.getElementById('repBillChangeDue').value) || 0;
+
             const res = await fetch('/api/sales', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     shop_id: currentUser.shop_id, customer_name: selectedBillingRepair.customer_name, customer_phone: selectedBillingRepair.customer_phone,
-                    payment_method: document.getElementById('repBillPaymentMethod').value, total_amount: bal,
+                    payment_method: paymentMethod, total_amount: bal,
                     items: [{ type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${selectedBillingRepair.device_model})`, subtotal: bal, qty: 1 }]
                 })
             });
             if(res.ok) {
                 await fetch(`/api/repairs/${rId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status: 'Delivered' }) });
-                alert('Repair completed and checked out!'); loadRepairs(); loadSales();
+                
+                // Generate and Display Final Return / Settlement Receipt
+                generateAutoMessage({
+                    customer_name: selectedBillingRepair.customer_name, customer_phone: selectedBillingRepair.customer_phone, payment_method: paymentMethod,
+                    total_amount: bal, total_discount: 0, amount_paid: amountPaid, change_due: changeDue,
+                    items: [{ name: `Repair Balance Settled - Job #${rId} (${selectedBillingRepair.device_model})`, warranty: 'No Warranty', qty: 1, subtotal: bal }],
+                    branch: currentUser.shop_name, branch_phone: currentUser.shop_phone
+                });
+
+                loadRepairs(); loadSales();
             }
         }
 
