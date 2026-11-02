@@ -49,12 +49,9 @@
         .card h4 { margin: 0 0 10px 0; font-size: 14px; opacity: 0.8; }
         .card p { font-size: 18px; font-weight: bold; color: #007bff; margin: 0; }
         .badge-prod { background: #007bff; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .badge-rep { background: #17a2b8; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .logout-btn { background: #dc3545; width: auto; padding: 6px 12px; font-size: 12px; }
         .out-of-stock { background-color: rgba(255, 0, 0, 0.15) !important; color: #d9534f; font-weight: bold; }
         .low-stock-row { background-color: rgba(255, 152, 0, 0.1) !important; }
-        .low-stock-badge { background: #ff9800; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 5px; }
-        .out-stock-badge { background: #dc3545; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 5px; }
         .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #333; border-radius: 5px; text-align: center; margin-bottom: 10px; page-break-inside: avoid; }
         @media print {
             body * { visibility: hidden; }
@@ -87,7 +84,6 @@
             </div>
         </header>
 
-        <!-- 8 Streamlined Tabs (Tabs 7, 9, 10, 11 removed) -->
         <div class="tabs">
             <button class="tab-btn" onclick="switchTab(1, this)">1. Add Product</button>
             <button class="tab-btn inactive" onclick="switchTab(2, this)">2. Billing / POS</button>
@@ -108,30 +104,19 @@
                 <button type="button" class="cat-btn" onclick="setCategory('Button Phone', '1. Add New Product / Button Phone', this)">Button / Feature Phones</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Accessory', '1. Add New Product / Accessory', this)">Accessories</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Repair Part', '1. Add New Product / Repair Part', this)">Repair Parts</button>
-                <button type="button" class="cat-btn" onclick="setCategory('Karaoke Box', '1. Add New Product / Karaoke Box', this)">Karaoke Box</button>
             </div>
 
             <form id="productForm" onsubmit="addProduct(event)">
                 <input type="hidden" id="pCategory" value="Brand New Phone">
                 <label id="lblModel">Model Name:</label><input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra" required>
-                
-                <div id="groupBrand"><label>Select Brand:</label><input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple"></div>
-                <datalist id="brandList"><option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"><option value="JBL"></datalist>
-                
-                <div id="groupColor"><label>Select Colour:</label><input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue"></div>
-                <datalist id="colorList"><option value="Black"><option value="Blue"><option value="White"><option value="Red"></datalist>
-                
-                <div id="groupWarranty">
-                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
-                    <input type="text" id="pWarranty" list="warrantyList" placeholder="Select or Type Warranty">
-                </div>
-                <datalist id="warrantyList"><option value="No Warranty"><option value="1 Week"><option value="1 Month"><option value="3 Months"><option value="6 Months"><option value="1 Year"></datalist>
-                
+                <label>Select Brand:</label><input type="text" id="pBrand" placeholder="e.g. Samsung, Apple">
+                <label>Select Colour:</label><input type="text" id="pColor" placeholder="e.g. Black, Blue">
+                <label>Warranty Period:</label><input type="text" id="pWarranty" placeholder="No Warranty">
                 <label>Cost Price (Rs.):</label><input type="number" id="pCost" placeholder="0.00" step="0.01">
-                <div id="groupSellingPrice"><label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01"></div>
+                <label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01">
                 <label>Stock Quantity:</label><input type="number" id="pStock" value="1" required>
-                <div id="imeiGroup"><label>IMEI Number / Serial:</label><input type="text" id="pImei" placeholder="Enter IMEI"></div>
-                <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product & Print Barcode</button>
+                <label>IMEI Number:</label><input type="text" id="pImei" placeholder="Enter IMEI">
+                <button type="submit" style="margin-top: 15px; background: #28a745;">Add Product</button>
             </form>
         </div>
 
@@ -140,21 +125,11 @@
             <h3>2. Billing & Checkout</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                        <label>Search ID, Name, Brand, IMEI or Repair Job ID:</label>
-                        <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:3px 8px; font-size:12px; background:#17a2b8;">Camera Scanner</button>
-                    </div>
-                    <div id="qr-reader" style="display:none; margin-bottom:10px;"></div>
-                    <input type="text" id="billingSearch" autocomplete="off" placeholder="🔍 Type ID, Name, Brand, IMEI..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #007bff; padding: 12px; border-radius: 6px;">
-                    <div style="position: relative;"><div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: #ffffff; color: #111827; border: 2px solid #007bff; z-index: 999; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);"></div></div>
+                    <label>Search Product by Name or Code:</label>
+                    <input type="text" id="billingSearch" placeholder="Type product name..." oninput="handleBillingSearch()" style="border: 2px solid #007bff; padding: 10px;">
+                    <div id="customDropdownList" style="background:#fff; border:1px solid #ddd; max-height:150px; overflow-y:auto; display:none;"></div>
                     
-                    <label style="margin-top: 10px; display: block;">Product / Item Warranty:</label>
-                    <input type="text" id="billingProductWarranty" style="font-weight:bold; color:#007bff;" disabled>
-                    <div id="billingImeiGroup" style="display:none; margin-top: 5px;"><label style="font-weight:bold; color:#e65100;">Phone IMEI Number:</label><input type="text" id="billingImei" placeholder="Enter IMEI" style="border: 2px solid #e65100; font-weight:bold;"></div>
-                    <label>Cost Price (Rs.):</label><input type="number" id="costPriceDisplay" style="font-weight:bold; color:#e65100; background:rgba(255, 152, 0, 0.1);" disabled>
-                    <label>Original Selling Price (Rs.):</label><input type="number" id="originalPrice" style="font-weight:bold;" disabled>
-                    <label>Selling / Custom Price (Rs.):</label><input type="number" id="billingPrice" step="0.01" oninput="calculateAutoDiscount()">
-                    <label>Discount Amount (Rs.):</label><input type="number" id="billingDiscountDisplay" value="0.00" style="font-weight:bold; color:#dc3545;" disabled>
+                    <label>Selling Price (Rs.):</label><input type="number" id="billingPrice" step="0.01">
                     <label>Quantity:</label><input type="number" id="billingQty" value="1" min="1">
                     <button type="button" onclick="addToCart()" style="margin-top: 15px; background: #28a745;">Add to Bill</button>
                 </div>
@@ -163,11 +138,8 @@
                     <label>Customer Name:</label><input type="text" id="custName" placeholder="Cash Customer">
                     <label>Customer Phone:</label><input type="text" id="custPhone" placeholder="07X XXXXXXX">
                     <label>Payment Method:</label>
-                    <select id="paymentMethod">
-                        <option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Installment">Installment</option><option value="Koko">Koko Payment</option><option value="Credit">Credit (Add to Credit Book)</option>
-                    </select>
-                    <label>Amount Paid (Rs.):</label><input type="number" id="amountPaid" placeholder="0.00" step="0.01" oninput="calculateChangeDue()" style="border: 2px solid #28a745; font-weight: bold;">
-                    <label>Balance / Change Due (Rs.):</label><input type="number" id="changeDue" value="0.00" style="font-weight:bold; color:#28a745; background:#e8f4fd;" disabled>
+                    <select id="paymentMethod"><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option></select>
+                    <label>Amount Paid (Rs.):</label><input type="number" id="amountPaid" placeholder="0.00" step="0.01">
                     <table><thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead><tbody id="cartTableBody"><tr><td colspan="4" style="text-align:center;">Cart is empty</td></tr></tbody></table>
                     <h3>Total Payable: Rs. <span id="cartTotal">0.00</span></h3>
                     <button type="button" onclick="completeCheckout()" style="background: #28a745;">Checkout & Complete Sale</button>
@@ -177,155 +149,39 @@
 
         <!-- Tab 3: Stock Inventory -->
         <div id="tab3" class="section">
-            <h3>3. Stock Inventory Management</h3>
-            <div class="sub-tabs">
-                <button class="sub-tab-btn active" onclick="switchStockSubTab('all', this)">All Stock</button>
-                <button class="sub-tab-btn" onclick="switchStockSubTab('low', this)">Low Stock (&lt;=2)</button>
-                <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">Out of Stock</button>
-            </div>
-            <input type="text" id="searchStock" placeholder="Search by ID, Name, Brand, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #007bff;">
-            <table>
-                <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Warranty</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
-                <tbody id="inventoryTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
-            </table>
+            <h3>3. Stock Inventory</h3>
+            <table><thead><tr><th>ID</th><th>Name</th><th>Brand</th><th>Price (Rs.)</th><th>Stock</th><th>Action</th></tr></thead><tbody id="inventoryTable"><tr><td colspan="6" style="text-align:center;">Loading...</td></tr></tbody></table>
         </div>
 
         <!-- Tab 4: Sales History & EOD -->
         <div id="tab4" class="section">
-            <h3 style="border-left: 4px solid #007bff; padding-left: 10px; margin-bottom: 20px;">4. Sales History & EOD Report</h3>
-            
-            <div style="background:var(--container-bg); padding:20px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:20px; display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:15px; align-items:flex-end;">
-                <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Filter by Year:</label><select id="filterYear" onchange="applySalesFilters()"><option value="">All Years</option></select></div>
-                <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Filter by Month:</label><select id="filterMonth" onchange="applySalesFilters()"><option value="">All Months</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
-                <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Payment Method:</label><select id="filterPaymentMethod" onchange="applySalesFilters()"><option value="">All Methods</option><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Installment">Installment</option><option value="Koko">Koko</option><option value="Credit">Credit</option></select></div>
-                <div><label style="font-size:12px; font-weight:bold; display:block; margin-bottom:5px;">Exact Date:</label><input type="date" id="filterExactDate" onchange="applySalesFilters()" style="padding:9px;"></div>
-                <div><button type="button" onclick="resetSalesFilters()" style="background:#6c757d; padding:10px; font-weight:bold; width:100%;">🔄 Reset Filters</button></div>
-            </div>
-
+            <h3>4. Sales History & EOD Report</h3>
             <div class="analytics-grid">
-                <div class="card active-card" id="cardAll" onclick="filterSalesView('all', this)" style="border-left-color: #007bff;"><h4>Total Transactions</h4><p id="totalTransactions" style="color: #007bff;">0</p></div>
-                <div class="card" id="cardDaily" onclick="filterSalesView('daily', this)" style="border-left-color: #28a745;"><h4>Daily Sales (Today)</h4><p id="dailySalesAmt" style="color: #28a745;">Rs. 0.00</p></div>
-                <div class="card" id="cardMonthly" onclick="filterSalesView('monthly', this)" style="border-left-color: #ffc107;"><h4>Monthly Sales</h4><p id="monthlySalesAmt" style="color: #d39e00;">Rs. 0.00</p></div>
-                <div class="card" id="cardRepair" onclick="filterSalesView('repair', this)" style="border-left-color: #17a2b8;"><h4>Repair Sales</h4><p id="repairSalesAmt" style="color: #17a2b8;">Rs. 0.00</p></div>
+                <div class="card"><h4>Total Transactions</h4><p id="totalTransactions">0</p></div>
+                <div class="card"><h4>Total Revenue</h4><p id="totalRevenueAmt">Rs. 0.00</p></div>
             </div>
-
-            <input type="text" id="searchSales" placeholder="🔍 Search Sales by ID, Customer Name, Phone..." onkeyup="applySalesFilters()" style="margin-bottom: 15px; border: 2px solid #007bff; font-weight: bold; padding: 12px; border-radius: 6px;">
-            
             <table>
-                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
-                <tbody id="salesTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
+                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
+                <tbody id="salesTable"><tr><td colspan="7" style="text-align:center;">Loading sales...</td></tr></tbody>
             </table>
         </div>
 
-        <!-- Tab 5: Repair Jobs (Issues advance bill & final return bill) -->
-        <div id="tab5" class="section">
-            <h3>5. Repair Jobs Management</h3>
-            <div class="sub-tabs">
-                <button class="sub-tab-btn active" onclick="switchRepairSubTab('list', this)">Repair Jobs List</button>
-                <button class="sub-tab-btn" onclick="switchRepairSubTab('billing', this)">Repair Billing & Checkout</button>
-            </div>
-            <div id="repListSubSection">
-                <form id="repairForm" onsubmit="addRepair(event)" style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 20px;">
-                    <input type="text" id="repCustomer" placeholder="Customer Name" required>
-                    <input type="text" id="repPhone" placeholder="Customer Phone" required>
-                    <input type="text" id="repDevice" placeholder="Device Model" required>
-                    <input type="text" id="repIssue" placeholder="Issue Description" required>
-                    <label style="font-weight:bold; margin-top:5px; display:block;">Warranty Period:</label>
-                    <input type="text" id="repWarranty" list="warrantyList" placeholder="Select Warranty">
-                    <input type="number" id="repAdvance" placeholder="Advance Cost" value="0" step="0.01">
-                    <input type="number" id="repTotalCost" placeholder="Total Repair Cost" step="0.01" value="0">
-                    <button type="submit" style="background:#28a745; margin-top:10px;">Add Repair Job & Print Advance Receipt</button>
-                </form>
-                <input type="text" id="searchRepair" placeholder="Search Repair..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #007bff;">
-                <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="repairsTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody></table>
-            </div>
-            <div id="repBillingSubSection" style="display:none;">
-                <div style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 6px;">
-                    <h4>Repair Return / Final Billing & Delivery</h4>
-                    <label>Select Repair Job:</label>
-                    <select id="repBillingSelect" size="5" onchange="selectRepairForBilling()" style="border: 2px solid #007bff; font-weight:bold; height: 130px;"></select>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
-                        <div>
-                            <label>Customer Name:</label><input type="text" id="repBillCustomer" disabled style="font-weight:bold;">
-                            <label>Customer Phone:</label><input type="text" id="repBillPhone" disabled style="font-weight:bold;">
-                            <label>Device & Issue:</label><input type="text" id="repBillDeviceIssue" disabled style="font-weight:bold;">
-                        </div>
-                        <div>
-                            <label>Total Repair Cost (Rs.):</label><input type="number" id="repBillTotal" step="0.01" oninput="calculateRepBalanceFromTotal()" style="font-weight:bold; border: 2px solid #007bff;">
-                            <label>Advance Paid (Rs.):</label><input type="number" id="repBillAdvance" disabled style="font-weight:bold; color:#e65100;">
-                            <label>Balance Due (Rs.):</label><input type="number" id="repBillBalance" disabled style="font-weight:bold; color:#28a745; background:#e8f4fd;">
-                            <label>Payment Method:</label>
-                            <select id="repBillPaymentMethod"><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Koko">Koko Payment</option></select>
-                            <label>Amount Paid (Rs.):</label><input type="number" id="repBillAmountPaid" step="0.01" oninput="calculateRepChangeDue()" style="border: 2px solid #007bff; font-weight: bold;">
-                            <label>Change Due (Rs.):</label><input type="number" id="repBillChangeDue" value="0.00" disabled style="font-weight:bold; color:#28a745;">
-                            <button type="button" onclick="completeRepairCheckout()" style="background:#28a745; margin-top:15px; padding:12px;">Complete Repair Return & Print Final Bill</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        <!-- Tab 5: Repair Jobs -->
+        <div id="tab5" class="section"><h3>5. Repair Jobs</h3><p>Manage repairs here.</p></div>
         <!-- Tab 6: Customer History -->
-        <div id="tab6" class="section">
-            <h3>6. Customer History</h3>
-            <input type="text" id="searchCustomerHistory" placeholder="Type customer name or phone..." onkeyup="filterCustomerHistory()" style="margin-bottom: 15px; border: 2px solid #007bff; font-weight: bold;">
-            <h4>🛍️ Purchase / Sales History</h4>
-            <table><thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Payment</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead><tbody id="custSalesTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
-            <h4 style="margin-top:25px;">🔧 Repair Jobs History</h4>
-            <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Total (Rs.)</th><th>Status</th></tr></thead><tbody id="custRepairsTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
-        </div>
-
+        <div id="tab6" class="section"><h3>6. Customer History</h3></div>
         <!-- Tab 7: Credit Book -->
-        <div id="tab7" class="section">
-            <h3>7. Customer Credit Book</h3>
-            <input type="text" id="searchCredit" placeholder="Search credit records..." onkeyup="filterCreditBook()" style="margin-bottom:15px; border:2px solid #007bff;">
-            <table><thead><tr><th>Credit ID</th><th>Customer</th><th>Phone</th><th>Item Details</th><th>Total (Rs.)</th><th>Paid (Rs.)</th><th>Balance Due (Rs.)</th><th>Status</th><th>Action</th></tr></thead><tbody id="creditTable"><tr><td colspan="9" style="text-align:center;">Loading...</td></tr></tbody></table>
-        </div>
-
+        <div id="tab7" class="section"><h3>7. Credit Book</h3></div>
         <!-- Tab 8: Backup & Restore -->
-        <div id="tab8" class="section">
-            <h3>8. Data Backup & Restore</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-                <div style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 6px;">
-                    <h4 style="color: #007bff; margin-top:0;">📥 Download Backup</h4>
-                    <button type="button" onclick="exportDataBackup()" style="background: #28a745; margin-top: 15px;">Download Backup File</button>
-                </div>
-                <div style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 6px;">
-                    <h4 style="color: #dc3545; margin-top:0;">📤 Restore Backup</h4>
-                    <input type="file" id="backupFileInput" accept=".json" style="margin-top: 10px; margin-bottom: 10px;">
-                    <button type="button" onclick="restoreDataBackup()" style="background: #ffc107; color: #000; margin-top: 5px;">Restore from Backup</button>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Barcode Modal -->
-    <div id="barcodeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:white; color:#333; padding:25px; border-radius:8px; width:340px; text-align:center;">
-            <label style="font-weight:bold;">Print Quantity:</label>
-            <input type="number" id="bcPrintQty" value="1" min="1" oninput="renderBarcodeStickers()" style="width:100px; text-align:center; font-weight:bold; margin-bottom:15px;">
-            <div id="stickersContainer"></div>
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="window.print()" style="background:#28a745; flex:1;">Print</button>
-                <button onclick="closeBarcodeModal()" style="background:#6c757d; flex:1;">Close</button>
-            </div>
-        </div>
+        <div id="tab8" class="section"><h3>8. Backup & Restore</h3></div>
     </div>
 
     <!-- Receipt Modal -->
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:#ffffff; color:#333333; padding:20px; border-radius:8px; width:480px; max-width:95%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="color:#28a745; margin-top:0; text-align:center;" id="receiptModalTitle">Receipt Generated Successfully!</h3>
-            
-            <div id="receiptBoxContainer" class="printable-receipt" style="background:#ffffff !important; color:#333333 !important; padding:15px; border:1px solid #ddd; border-radius:6px; font-family: Arial, sans-serif;"></div>
-            
-            <div id="printHideBtn" style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
-                <button onclick="window.print()" style="background:#ffc107; color:#000; flex:1;">Print Bill</button>
-                <button onclick="copyReceiptText()" style="background:#007bff; flex:1;">Copy</button>
-                <button onclick="sendWhatsAppMessage()" style="background:#25d366; flex:1;">WhatsApp</button>
-                <button onclick="closeReceiptModal()" style="background:#6c757d; flex:1;">Close</button>
-            </div>
+        <div style="background:#fff; color:#333; padding:20px; border-radius:8px; width:400px; text-align:center;">
+            <h3>Sale Complete!</h3>
+            <div id="receiptBoxContainer" style="text-align:left; font-size:13px; margin-bottom:15px; background:#f9f9f9; padding:10px;"></div>
+            <button onclick="closeReceiptModal()" style="background:#6c757d; width:100%;">Close</button>
         </div>
     </div>
 
@@ -333,38 +189,26 @@
         let currentUser = null;
         let cart = [];
         let allProducts = [];
-        let allRepairs = [];
         let rawSalesData = [];
-        let allCredits = [];
-        let currentStockFilter = 'all';
-        let currentSalesCardFilter = 'all';
-        let html5QrcodeScanner = null;
-        let lastSaleData = null;
-        let currentBarcodeData = null;
-        let selectedOriginalPrice = 0;
-        let selectedCostPrice = 0;
-        let selectedProductWarranty = 'No Warranty';
-        let rawReceiptPlaintext = "";
-        let selectedBillingRepair = null;
-        let selectedBillingValue = "";
+        let selectedProduct = null;
 
-        async function handleLogin(e) {
+        function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPass').value.trim();
             const custom_shop_name = document.getElementById('loginShopName').value.trim();
             const shop_phone = document.getElementById('loginShopPhone').value.trim();
 
-            const res = await fetch('/api/login', {
+            fetch('/api/login', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password, custom_shop_name, shop_phone })
+            }).then(res => res.json()).then(data => {
+                if(data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('pos_user', JSON.stringify(currentUser));
+                    initApp();
+                } else { alert(data.error || 'Login failed'); }
             });
-            const data = await res.json();
-            if(res.ok && data.success) {
-                currentUser = data.user;
-                localStorage.setItem('pos_user', JSON.stringify(currentUser));
-                initApp();
-            } else { alert(data.error || 'Login failed!'); }
         }
 
         function handleLogout() {
@@ -380,55 +224,9 @@
                 currentUser = JSON.parse(saved);
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
-                document.getElementById('userDisplay').textContent = currentUser.shop_name || "SHA MOBILE";
-                loadInventory(); loadSales(); loadRepairs(); loadCredits();
-            }
-            setTheme(localStorage.getItem('pos_theme') || 'light');
-        }
-
-        function toggleTheme() {
-            setTheme(document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-        }
-
-        function setTheme(theme) {
-            document.body.setAttribute('data-theme', theme);
-            localStorage.setItem('pos_theme', theme);
-            const btn = document.getElementById('themeToggleBtn');
-            if(btn) btn.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-        }
-
-        function setCategory(cat, titleText, btn) {
-            document.getElementById('productForm').reset();
-            document.getElementById('pCategory').value = cat;
-            document.getElementById('categoryTitle').textContent = titleText;
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            const lblModel = document.getElementById('lblModel');
-            const groupBrand = document.getElementById('groupBrand');
-            const groupColor = document.getElementById('groupColor');
-            const groupWarranty = document.getElementById('groupWarranty');
-            const groupSellingPrice = document.getElementById('groupSellingPrice');
-            const imeiGroup = document.getElementById('imeiGroup');
-
-            groupBrand.style.display = 'block';
-            groupColor.style.display = 'block';
-            groupWarranty.style.display = 'block';
-            groupSellingPrice.style.display = 'block';
-            imeiGroup.style.display = 'block';
-
-            if(cat === 'Repair Part') {
-                lblModel.textContent = 'Repair Part Name:';
-                groupBrand.style.display = 'none';
-                groupColor.style.display = 'none';
-                groupWarranty.style.display = 'none';
-                groupSellingPrice.style.display = 'none';
-                imeiGroup.style.display = 'none';
-            } else if(cat === 'Accessory' || cat === 'Karaoke Box') {
-                lblModel.textContent = 'Name:';
-                imeiGroup.style.display = 'none';
-            } else {
-                lblModel.textContent = 'Model Name:';
+                document.getElementById('userDisplay').textContent = currentUser.shop_name;
+                loadInventory();
+                loadSales();
             }
         }
 
@@ -438,769 +236,153 @@
             document.getElementById(`tab${tabNum}`).classList.add('active');
             if(btn) btn.classList.remove('inactive');
 
-            if(tabNum !== 2) clearBillingFields();
-            if(tabNum === 2) { loadInventory(); loadRepairs(); }
-            else if(tabNum === 3) loadInventory();
-            else if(tabNum === 4) loadSales();
-            else if(tabNum === 5) loadRepairs();
-            else if(tabNum === 6) { loadSales(); loadRepairs(); }
-            else if(tabNum === 7) loadCredits();
+            if(tabNum === 3) loadInventory();
+            if(tabNum === 4) loadSales();
         }
 
-        function switchRepairSubTab(type, btn) {
-            document.querySelectorAll('#tab5 .sub-tab-btn').forEach(b => b.classList.remove('active'));
+        function setCategory(cat, title, btn) {
+            document.getElementById('pCategory').value = cat;
+            document.getElementById('categoryTitle').textContent = title;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            if(type === 'list') {
-                document.getElementById('repListSubSection').style.display = 'block';
-                document.getElementById('repBillingSubSection').style.display = 'none';
-            } else {
-                document.getElementById('repListSubSection').style.display = 'none';
-                document.getElementById('repBillingSubSection').style.display = 'block';
-                populateRepairBillingDropdown();
-            }
-        }
-
-        function clearBillingFields() {
-            document.getElementById('billingSearch').value = '';
-            document.getElementById('billingProductWarranty').value = '';
-            document.getElementById('billingImeiGroup').style.display = 'none';
-            document.getElementById('billingImei').value = '';
-            document.getElementById('costPriceDisplay').value = '';
-            document.getElementById('originalPrice').value = '';
-            document.getElementById('billingPrice').value = '';
-            document.getElementById('billingDiscountDisplay').value = '0.00';
-            document.getElementById('billingQty').value = '1';
-            selectedOriginalPrice = 0; selectedCostPrice = 0; selectedBillingValue = "";
-        }
-
-        function parseProductItem(fullName) {
-            if (!fullName) return { name: '-', warranty: 'No Warranty' };
-            const match = fullName.match(/^(.*?)\[Warranty:\s*(.*?)\]$/);
-            if (match) return { name: match[1].trim(), warranty: match[2].trim() };
-            return { name: fullName.trim(), warranty: 'No Warranty' };
         }
 
         async function loadInventory() {
             const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
             allProducts = await res.json();
-            renderInventory(allProducts);
-        }
-
-        function renderInventory(products) {
             const tbody = document.getElementById('inventoryTable');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            let filtered = products;
-            if(currentStockFilter === 'out') filtered = products.filter(p => p.stock <= 0);
-            else if(currentStockFilter === 'low') filtered = products.filter(p => p.stock > 0 && p.stock <= 2);
-
-            if(filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No products found.</td></tr>`; return; }
-            filtered.forEach(p => {
-                const isOut = p.stock <= 0;
-                const isLow = p.stock > 0 && p.stock <= 2;
-                const parsed = parseProductItem(p.name);
-                tbody.innerHTML += `<tr class="${isOut ? 'out-of-stock' : (isLow ? 'low-stock-row' : '')}">
-                    <td><b>#${p.product_code || p.product_id}</b></td>
-                    <td>${parsed.name} ${isLow ? '<span class="low-stock-badge">LOW</span>' : (isOut ? '<span class="out-stock-badge">OUT</span>' : '')}</td>
-                    <td>${p.brand || '-'}</td><td>${p.category || '-'}</td><td>${p.color || '-'}</td>
-                    <td><span style="color:#007bff; font-weight:bold;">${parsed.warranty}</span></td>
-                    <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
-                    <td>${p.stock} ${isOut ? '(OUT)' : ''}</td><td>${p.imei || '-'}</td>
-                    <td>
-                        <div style="display:flex; gap:5px;">
-                            <button onclick="printExistingBarcode('${parsed.name}', '${p.product_code || p.product_id}', ${p.selling_price})" style="background:#17a2b8; padding:3px; width:auto; font-size:11px;">Barcode</button>
-                            <button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:3px; width:auto; font-size:11px;">Delete</button>
-                        </div>
-                    </td>
-                </tr>`;
+            tbody.innerHTML = allProducts.length === 0 ? `<tr><td colspan="6" style="text-align:center;">No products found</td></tr>` : '';
+            allProducts.forEach(p => {
+                tbody.innerHTML += `<tr><td>#${p.product_id}</td><td>${p.name}</td><td>${p.brand || '-'}</td><td>Rs. ${p.selling_price}</td><td>${p.stock}</td><td><button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:3px;">Delete</button></td></tr>`;
             });
-        }
-
-        function printExistingBarcode(name, code, price) {
-            currentBarcodeData = { shop: currentUser.shop_name || "SHA MOBILE", name, code, price };
-            document.getElementById('bcPrintQty').value = 1;
-            showBarcodeModal();
-        }
-
-        function switchStockSubTab(type, btn) {
-            currentStockFilter = type;
-            document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            loadInventory();
-        }
-
-        function filterStock() {
-            const query = document.getElementById('searchStock').value.toLowerCase();
-            renderInventory(allProducts.filter(p => p.product_code?.toLowerCase().includes(query) || p.name.toLowerCase().includes(query) || p.brand?.toLowerCase().includes(query) || p.imei?.toLowerCase().includes(query)));
         }
 
         async function addProduct(e) {
             e.preventDefault();
-            const cat = document.getElementById('pCategory').value;
-            const baseName = document.getElementById('pName').value.trim();
-            const stockQty = parseInt(document.getElementById('pStock').value) || 1;
-            
-            let finalName = baseName;
-            let price = 0;
-            let warranty = 'No Warranty';
-
-            if(cat === 'Repair Part') {
-                price = parseFloat(document.getElementById('pCost').value) || 0;
-            } else {
-                warranty = document.getElementById('pWarranty').value.trim() || 'No Warranty';
-                finalName = `${baseName} [Warranty: ${warranty}]`;
-                price = document.getElementById('pPrice').value;
-            }
-
             const data = {
-                shop_id: currentUser.shop_id, name: finalName,
-                brand: cat === 'Repair Part' ? 'Repair Part' : document.getElementById('pBrand').value, 
-                color: cat === 'Repair Part' ? '-' : document.getElementById('pColor').value,
-                category: cat, cost_price: document.getElementById('pCost').value,
-                selling_price: price, stock: stockQty, imei: cat === 'Repair Part' ? 'N/A' : (document.getElementById('pImei').value || 'N/A')
+                shop_id: currentUser.shop_id,
+                name: document.getElementById('pName').value,
+                brand: document.getElementById('pBrand').value,
+                color: document.getElementById('pColor').value,
+                category: document.getElementById('pCategory').value,
+                cost_price: document.getElementById('pCost').value || 0,
+                selling_price: document.getElementById('pPrice').value || 0,
+                stock: document.getElementById('pStock').value || 1,
+                imei: document.getElementById('pImei').value || 'N/A'
             };
-
-            const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            const result = await res.json();
-            if(res.ok) {
-                currentBarcodeData = { shop: currentUser.shop_name || "SHA MOBILE", name: baseName, code: result.product_code, price };
-                document.getElementById('bcPrintQty').value = stockQty;
-                showBarcodeModal();
-                document.getElementById('productForm').reset();
-                loadInventory();
-            }
+            await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            alert('Product added successfully!');
+            document.getElementById('productForm').reset();
+            loadInventory();
         }
-
-        function showBarcodeModal() {
-            renderBarcodeStickers();
-            document.getElementById('barcodeModal').style.display = 'flex';
-        }
-
-        function renderBarcodeStickers() {
-            const container = document.getElementById('stickersContainer');
-            container.innerHTML = '';
-            const qty = parseInt(document.getElementById('bcPrintQty').value) || 1;
-            for(let i = 0; i < qty; i++) {
-                const card = document.createElement('div');
-                card.className = 'sticker-card';
-                card.innerHTML = `<h4 style="margin:0 0 3px 0;">${currentBarcodeData.shop}</h4><div style="font-weight:bold; font-size:13px;">${currentBarcodeData.name}</div><svg id="bcSvg_${i}"></svg><div style="font-weight:bold; font-size:15px; margin-top:3px;">Rs. ${parseFloat(currentBarcodeData.price).toFixed(2)}</div>`;
-                container.appendChild(card);
-                JsBarcode(`#bcSvg_${i}`, currentBarcodeData.code, { format: "CODE128", width: 2, height: 45, displayValue: true });
-            }
-        }
-
-        function closeBarcodeModal() { document.getElementById('barcodeModal').style.display = 'none'; }
 
         async function deleteProduct(id) {
-            if(!confirm('Delete product?')) return;
             await fetch(`/api/products/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
             loadInventory();
         }
 
-        function toggleCameraScanner() {
-            const qrDiv = document.getElementById('qr-reader');
-            if(qrDiv.style.display === 'none') {
-                qrDiv.style.display = 'block';
-                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
-                html5QrcodeScanner.render((decodedText) => {
-                    document.getElementById('billingSearch').value = decodedText;
-                    handleBillingSearch();
-                    html5QrcodeScanner.clear();
-                    qrDiv.style.display = 'none';
-                });
-            } else {
-                if(html5QrcodeScanner) html5QrcodeScanner.clear();
-                qrDiv.style.display = 'none';
-            }
-        }
-
-        function renderDropdownList(items) {
-            const container = document.getElementById('customDropdownList');
-            container.innerHTML = '';
-            if(items.length === 0) { container.style.display = 'none'; return; }
-
-            items.forEach(p => {
-                const parsed = parseProductItem(p.name);
-                const brandStr = p.brand ? `<span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:bold; margin-right:5px;">${p.brand}</span>` : '';
-                const isOut = p.stock <= 0;
-                const isLow = p.stock > 0 && p.stock <= 2;
-                
-                const div = document.createElement('div');
-                div.style.padding = '12px 15px'; div.style.cursor = 'pointer'; div.style.borderBottom = '1px solid #f0f0f0';
-                div.style.color = '#111827'; div.style.background = isOut ? '#fef2f2' : (isLow ? '#fffbeb' : '#ffffff');
-                div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.alignItems = 'center';
-
-                div.innerHTML = `
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                            <span style="font-weight: 700; color: #2563eb; margin-right: 8px;">#${p.product_code || p.product_id}</span>
-                            ${brandStr}
-                            <span style="font-weight: 600; font-size: 14px; color: #1f2937;">${parsed.name}</span>
-                        </div>
-                        <div style="font-size: 12px; color: #4b5563;">
-                            Warranty: <span style="color: #0284c7; font-weight: 600;">${parsed.warranty}</span> | 
-                            IMEI: <span style="color: #d97706; font-weight: 600;">${p.imei || 'N/A'}</span>
-                        </div>
-                    </div>
-                    <div style="text-align: right; margin-left: 10px;">
-                        <div style="font-weight: 700; color: #059669; font-size: 14px;">Rs. ${parseFloat(p.selling_price).toFixed(2)}</div>
-                        <div style="font-size: 11px; margin-top: 2px;">
-                            <span style="padding: 2px 6px; border-radius: 4px; font-weight: bold; background: ${isOut ? '#dc2626' : (isLow ? '#d97706' : '#10b981')}; color: white;">
-                                Stock: ${p.stock}
-                            </span>
-                        </div>
-                    </div>
-                `;
-                
-                div.onclick = () => {
-                    selectedBillingValue = 'prod_' + p.product_id;
-                    document.getElementById('billingSearch').value = `${p.brand ? '[' + p.brand + '] ' : ''}${parsed.name}`;
-                    container.style.display = 'none';
-                    selectBillingProductById(selectedBillingValue);
-                };
-                container.appendChild(div);
-            });
-            container.style.display = 'block';
-        }
-
         function handleBillingSearch() {
-            const query = document.getElementById('billingSearch').value.toLowerCase().trim();
-            if(!query) { renderDropdownList(allProducts); return; }
-            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.brand && p.brand.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
-            renderDropdownList(filtered);
-        }
-
-        function openBillingDropdown() { renderDropdownList(allProducts); }
-
-        document.addEventListener('click', function(e) {
-            const searchInput = document.getElementById('billingSearch');
+            const q = document.getElementById('billingSearch').value.toLowerCase();
             const dropdown = document.getElementById('customDropdownList');
-            if (searchInput && dropdown && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.style.display = 'none';
-            }
-        });
-
-        function selectBillingProductById(val) {
-            if(!val.startsWith('prod_')) return;
-            const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
-            if(p) {
-                selectedOriginalPrice = parseFloat(p.selling_price);
-                selectedCostPrice = parseFloat(p.cost_price || 0);
-                const parsed = parseProductItem(p.name);
-                selectedProductWarranty = parsed.warranty;
-                document.getElementById('billingProductWarranty').value = selectedProductWarranty;
-                document.getElementById('costPriceDisplay').value = selectedCostPrice.toFixed(2);
-                document.getElementById('originalPrice').value = selectedOriginalPrice.toFixed(2);
-                document.getElementById('billingPrice').value = selectedOriginalPrice.toFixed(2);
-                if(p.imei && p.imei !== 'N/A') {
-                    document.getElementById('billingImeiGroup').style.display = 'block';
-                    document.getElementById('billingImei').value = p.imei;
-                }
-            }
-        }
-
-        function calculateAutoDiscount() {
-            const currentPrice = parseFloat(document.getElementById('billingPrice').value) || 0;
-            document.getElementById('billingDiscountDisplay').value = Math.max(0, selectedOriginalPrice - currentPrice).toFixed(2);
-        }
-
-        function calculateChangeDue() {
-            const totalPayable = cart.reduce((sum, item) => sum + item.subtotal, 0);
-            const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
-            document.getElementById('changeDue').value = Math.max(0, paid - totalPayable).toFixed(2);
+            if(!q) { dropdown.style.display = 'none'; return; }
+            const matches = allProducts.filter(p => p.name.toLowerCase().includes(q));
+            dropdown.innerHTML = '';
+            matches.forEach(m => {
+                const div = document.createElement('div');
+                div.style.padding = '8px'; div.style.cursor = 'pointer';
+                div.textContent = `${m.name} - Rs. ${m.selling_price}`;
+                div.onclick = () => {
+                    selectedProduct = m;
+                    document.getElementById('billingSearch').value = m.name;
+                    document.getElementById('billingPrice').value = m.selling_price;
+                    dropdown.style.display = 'none';
+                };
+                dropdown.appendChild(div);
+            });
+            dropdown.style.display = matches.length ? 'block' : 'none';
         }
 
         function addToCart() {
-            const val = selectedBillingValue;
-            const price = parseFloat(document.getElementById('billingPrice').value);
+            if(!selectedProduct) return alert('Select a product first!');
+            const price = parseFloat(document.getElementById('billingPrice').value) || 0;
             const qty = parseInt(document.getElementById('billingQty').value) || 1;
-            const origPrice = selectedOriginalPrice;
-            if(!val || isNaN(price)) return alert('Select a valid product!');
-            const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
-            if(!p || p.stock < qty) return alert('Not enough stock!');
-            const parsed = parseProductItem(p.name);
-            const brandStr = p.brand ? `[${p.brand}] ` : '';
-
-            cart.push({
-                type: 'product', product_id: p.product_id, name: `${brandStr}${parsed.name}`, warranty: selectedProductWarranty,
-                price, original_price: origPrice, qty, subtotal: price * qty, imei: document.getElementById('billingImei').value.trim()
-            });
-            renderCart(); clearBillingFields();
+            cart.push({ product_id: selectedProduct.product_id, name: selectedProduct.name, price, qty, subtotal: price * qty });
+            renderCart();
+            selectedProduct = null;
+            document.getElementById('billingSearch').value = '';
+            document.getElementById('billingPrice').value = '';
         }
 
         function renderCart() {
             const tbody = document.getElementById('cartTableBody');
             tbody.innerHTML = '';
             let total = 0;
-            cart.forEach((item, idx) => {
-                total += item.subtotal;
-                tbody.innerHTML += `<tr><td>${item.name} <br><small style="color:#007bff;">[Warranty: ${item.warranty}]</small></td><td>${item.qty}</td><td>Rs. ${item.subtotal.toFixed(2)}</td><td><button onclick="cart.splice(${idx},1);renderCart();" style="background:#dc3545; padding:2px 5px;">X</button></td></tr>`;
+            cart.forEach((c, i) => {
+                total += c.subtotal;
+                tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.qty}</td><td>Rs. ${c.subtotal.toFixed(2)}</td><td><button onclick="cart.splice(${i},1);renderCart();" style="background:#dc3545; padding:2px;">X</button></td></tr>`;
             });
             document.getElementById('cartTotal').textContent = total.toFixed(2);
             document.getElementById('amountPaid').value = total.toFixed(2);
-            calculateChangeDue();
         }
 
         async function completeCheckout() {
             if(cart.length === 0) return alert('Cart is empty!');
-            const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
-            const name = document.getElementById('custName').value.trim() || 'Cash Customer';
-            const phone = document.getElementById('custPhone').value.trim() || 'N/A';
-            const paymentMethod = document.getElementById('paymentMethod').value;
+            const total = cart.reduce((sum, i) => sum + i.subtotal, 0);
+            const data = {
+                shop_id: currentUser.shop_id,
+                customer_name: document.getElementById('custName').value || 'Cash Customer',
+                customer_phone: document.getElementById('custPhone').value || 'N/A',
+                payment_method: document.getElementById('paymentMethod').value,
+                total_amount: total,
+                items: cart
+            };
 
-            if(paymentMethod === 'Credit') {
-                await fetch('/api/credits', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name: name, customer_phone: phone, item_details: cart.map(i=>i.name).join(', '), total_amount: total, paid_amount: 0 })
-                });
-                alert('Credit sale recorded!'); cart = []; renderCart(); loadCredits(); 
-                document.getElementById('custName').value = ''; document.getElementById('custPhone').value = '';
-                return;
-            }
-
-            const res = await fetch('/api/sales', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shop_id: currentUser.shop_id, customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, items: cart })
-            });
+            const res = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             if(res.ok) {
-                let totalDiscount = cart.reduce((sum, i) => sum + Math.max(0, (i.original_price || i.price) - i.price) * i.qty, 0);
-                lastSaleData = { customer_name: name, customer_phone: phone, payment_method: paymentMethod, total_amount: total, total_discount: totalDiscount, amount_paid: parseFloat(document.getElementById('amountPaid').value), change_due: parseFloat(document.getElementById('changeDue').value), items: [...cart], branch: currentUser.shop_name, branch_phone: currentUser.shop_phone };
-                generateAutoReceiptHTML(lastSaleData);
-                cart = []; renderCart(); loadInventory(); loadSales();
-                document.getElementById('custName').value = '';
-                document.getElementById('custPhone').value = '';
+                alert('Sale completed successfully!');
+                document.getElementById('receiptBoxContainer').innerHTML = `<b>Customer:</b> ${data.customer_name}<br><b>Total:</b> Rs. ${total.toFixed(2)}`;
+                document.getElementById('receiptModal').style.display = 'flex';
+                cart = [];
+                renderCart();
+                loadSales();
             }
-        }
-
-        function generateAutoReceiptHTML(sale) {
-            let shopName = (sale.branch || "SHA MOBILE").toUpperCase();
-            let contact = sale.branch_phone || "0720641351";
-            let dateStr = new Date().toLocaleString();
-            let custName = (sale.customer_name || "CASH CUSTOMER").toUpperCase();
-            let custPhone = sale.customer_phone || "N/A";
-
-            let itemsHtml = '';
-            sale.items.forEach(item => {
-                let origPriceHtml = (item.original_price && item.original_price > item.price) ? `<br><span style="color:#d9534f; text-decoration:line-through; font-size:11px;">Original: Rs. ${item.original_price.toFixed(2)}</span>` : '';
-                itemsHtml += `
-                    <tr>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #333333; background: #ffffff !important;">
-                            <b>${item.name}</b><br>
-                            <span style="color: #0284c7; font-size: 11px;">Warranty: ${item.warranty || 'No Warranty'}</span><br>
-                            <span style="color: #d97706; font-size: 11px;">IMEI: ${item.imei || 'N/A'}</span>
-                            ${origPriceHtml}
-                        </td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center; color: #333333; background: #ffffff !important;">${item.qty}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #333333; background: #ffffff !important;">Rs. ${item.subtotal.toFixed(2)}</td>
-                    </tr>
-                `;
-            });
-
-            let discountRow = sale.total_discount > 0 ? `
-                <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #dc3545; font-weight: bold;">
-                    <span>Total Discount:</span>
-                    <span>- Rs. ${sale.total_discount.toFixed(2)}</span>
-                </div>
-            ` : '';
-
-            let htmlReceipt = `
-                <div style="background: #ffffff !important; color: #333333 !important; padding: 5px;">
-                    <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 10px; background: #ffffff !important;">
-                        <h2 style="margin: 0; color: #007bff; font-size: 20px;">${shopName}</h2>
-                        <div style="font-size: 13px; color: #555555;">Contact: ${contact}</div>
-                        <div style="font-size: 11px; font-weight: bold; color: #777777; margin-top: 3px;">OFFICIAL SALES RECEIPT</div>
-                    </div>
-                    
-                    <div style="font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; color: #333333; background: #ffffff !important;">
-                        <div><b>Date:</b> ${dateStr}</div>
-                    </div>
-                    <div style="font-size: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 8px; color: #333333; background: #ffffff !important;">
-                        <div><b>Customer:</b> ${custName}</div>
-                        <div><b>Phone:</b> ${custPhone}</div>
-                    </div>
-
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; background: #ffffff !important;">
-                        <thead>
-                            <tr style="background: #007bff !important; color: white !important;">
-                                <th style="padding: 8px; text-align: left; background: #007bff !important; color: white !important;">Description</th>
-                                <th style="padding: 8px; text-align: center; width: 40px; background: #007bff !important; color: white !important;">Qty</th>
-                                <th style="padding: 8px; text-align: right; width: 90px; background: #007bff !important; color: white !important;">Total (Rs.)</th>
-                            </tr>
-                        </thead>
-                        <tbody style="background: #ffffff !important;">
-                            ${itemsHtml}
-                        </tbody>
-                    </table>
-
-                    <div style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 8px; background: #ffffff !important;">
-                        ${discountRow}
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; font-weight: bold; color: #007bff;">
-                            <span>Total Payable:</span>
-                            <span>Rs. ${sale.total_amount.toFixed(2)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;">
-                            <span>Amount Paid:</span>
-                            <span>Rs. ${sale.amount_paid.toFixed(2)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; font-weight: bold; color: #28a745;">
-                            <span>Change Due:</span>
-                            <span>Rs. ${sale.change_due.toFixed(2)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #333333;">
-                            <span>Payment Method:</span>
-                            <span style="font-weight: bold;">${sale.payment_method}</span>
-                        </div>
-                    </div>
-
-                    <div style="text-align: center; margin-top: 15px; font-size: 12px; border-top: 1px dashed #ddd; padding-top: 8px; color: #666666; background: #ffffff !important;">
-                        Thank you for your business!
-                    </div>
-                </div>
-            `;
-
-            rawReceiptPlaintext = `================================\n          ${shopName}\n    Contact: ${contact}\n================================\n   INVOICE / PURCHASE RECEIPT\n--------------------------------\nDate: ${dateStr}\nCustomer Name : ${custName}\nCustomer Phone: ${custPhone}\n--------------------------------\nPURCHASED ITEMS:\n`;
-            sale.items.forEach(i => {
-                rawReceiptPlaintext += `- ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n  Warranty: ${i.warranty}\n  IMEI: ${i.imei}\n`;
-            });
-            rawReceiptPlaintext += `--------------------------------\nTOTAL PAYABLE  : Rs. ${sale.total_amount.toFixed(2)}\nAMOUNT PAID    : Rs. ${sale.amount_paid.toFixed(2)}\nCHANGE DUE     : Rs. ${sale.change_due.toFixed(2)}\nPayment Method : ${sale.payment_method}\n================================\n    Thank you for your business!\n================================`;
-
-            document.getElementById('receiptBoxContainer').innerHTML = htmlReceipt;
-            document.getElementById('receiptModal').style.display = 'flex';
         }
 
         function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
-        function copyReceiptText() { navigator.clipboard.writeText(rawReceiptPlaintext); alert('Copied to clipboard!'); }
-        function sendWhatsAppMessage() { window.open(`https://wa.me/?text=${encodeURIComponent(rawReceiptPlaintext)}`, '_blank'); }
 
         async function loadSales() {
             const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
             rawSalesData = await res.json();
-            populateYearDropdown(); 
-            updateAnalyticsCards(rawSalesData);
-            applySalesFilters();
-        }
-
-        function populateYearDropdown() {
-            const yearSelect = document.getElementById('filterYear');
-            if(!yearSelect) return;
-            const years = [...new Set(rawSalesData.map(s => s.year_only))].filter(Boolean).sort().reverse();
-            yearSelect.innerHTML = '<option value="">All Years</option>';
-            years.forEach(y => { yearSelect.innerHTML += `<option value="${y}">${y}</option>`; });
-        }
-
-        function filterSalesView(type, cardElement) {
-            currentSalesCardFilter = type;
-            document.querySelectorAll('.analytics-grid .card').forEach(c => c.classList.remove('active-card'));
-            if(cardElement) cardElement.classList.add('active-card');
-            applySalesFilters();
-        }
-
-        function applySalesFilters() {
-            const yearVal = document.getElementById('filterYear').value;
-            const monthVal = document.getElementById('filterMonth').value;
-            const methodVal = document.getElementById('filterPaymentMethod').value;
-            const dateVal = document.getElementById('filterExactDate').value;
-            const query = document.getElementById('searchSales').value.toLowerCase().trim();
-
-            let filtered = rawSalesData.filter(s => {
-                if(yearVal && s.year_only !== yearVal) return false;
-                if(monthVal && (!s.month_only || s.month_only.slice(-2) !== monthVal)) return false;
-                if(methodVal && s.payment_method !== methodVal) return false;
-                if(dateVal && s.date_only !== dateVal) return false;
-
-                if(currentSalesCardFilter === 'daily') {
-                    if(!s.date_only) return false;
-                    let saleDate = new Date(s.date_only);
-                    let today = new Date();
-                    if(saleDate.toDateString() !== today.toDateString()) return false;
-                }
-                if(currentSalesCardFilter === 'monthly') {
-                    if(!s.date_only) return false;
-                    let saleDate = new Date(s.date_only);
-                    let today = new Date();
-                    if(saleDate.getFullYear() !== today.getFullYear() || saleDate.getMonth() !== today.getMonth()) return false;
-                }
-                if(currentSalesCardFilter === 'repair' && s.sale_type !== 'Repair') return false;
-
-                if(query) {
-                    return s.sale_id.toString().includes(query) || (s.customer_name || '').toLowerCase().includes(query) || (s.customer_phone || '').toLowerCase().includes(query);
-                }
-                return true;
-            });
-            renderSalesTable(filtered);
-        }
-
-        function resetSalesFilters() {
-            document.getElementById('filterYear').value = '';
-            document.getElementById('filterMonth').value = '';
-            document.getElementById('filterPaymentMethod').value = '';
-            document.getElementById('filterExactDate').value = '';
-            document.getElementById('searchSales').value = '';
-            currentSalesCardFilter = 'all';
-            document.querySelectorAll('.analytics-grid .card').forEach(c => c.classList.remove('active-card'));
-            document.getElementById('cardAll').classList.add('active-card');
-            applySalesFilters();
-        }
-
-        function updateAnalyticsCards(sales) {
-            let daily = 0, monthly = 0, repairTotal = 0;
-            let today = new Date();
-
-            sales.forEach(s => {
-                const amt = parseFloat(s.total_amount || 0);
-                if(s.date_only) {
-                    let saleDate = new Date(s.date_only);
-                    if(!isNaN(saleDate.getTime())) {
-                        if(saleDate.toDateString() === today.toDateString()) daily += amt;
-                        if(saleDate.getFullYear() === today.getFullYear() && saleDate.getMonth() === today.getMonth()) monthly += amt;
-                    }
-                }
-                if(s.sale_type === 'Repair') repairTotal += amt;
-            });
-
-            document.getElementById('dailySalesAmt').textContent = `Rs. ${daily.toFixed(2)}`;
-            document.getElementById('monthlySalesAmt').textContent = `Rs. ${monthly.toFixed(2)}`;
-            document.getElementById('repairSalesAmt').textContent = `Rs. ${repairTotal.toFixed(2)}`;
-            document.getElementById('totalTransactions').textContent = sales.length;
-        }
-
-        function renderSalesTable(sales) {
             const tbody = document.getElementById('salesTable');
             if(!tbody) return;
-            tbody.innerHTML = '';
-            if(sales.length === 0) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No sales found.</td></tr>`; return; }
-
-            sales.forEach(s => {
+            tbody.innerHTML = rawSalesData.length === 0 ? `<tr><td colspan="7" style="text-align:center;">No sales found.</td></tr>` : '';
+            
+            let totalRev = 0;
+            rawSalesData.forEach(s => {
+                totalRev += parseFloat(s.total_amount || 0);
                 tbody.innerHTML += `<tr>
-                    <td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td>
-                    <td><span class="badge-prod">${s.sale_type}</span></td><td>${s.payment_method}</td>
-                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${s.formatted_date}</td>
-                    <td>
-                        <div style="display:flex; gap:5px;">
-                            <button onclick="viewSale('${s.sale_id}')" style="background:#17a2b8; padding:3px 6px; font-size:11px;">View</button>
-                            <button onclick="deleteSale('${s.sale_id}')" style="background:#dc3545; padding:3px 6px; font-size:11px;">Remove</button>
-                        </div>
-                    </td>
+                    <td><b>#${s.sale_id}</b></td>
+                    <td>${s.customer_name}</td>
+                    <td>${s.customer_phone}</td>
+                    <td>${s.payment_method}</td>
+                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
+                    <td>${s.formatted_date || s.created_at}</td>
+                    <td><button onclick="deleteSale(${s.sale_id})" style="background:#dc3545; padding:3px;">Delete</button></td>
                 </tr>`;
             });
+            document.getElementById('totalTransactions').textContent = rawSalesData.length;
+            document.getElementById('totalRevenueAmt').textContent = `Rs. ${totalRev.toFixed(2)}`;
         }
 
-        async function deleteSale(saleId) {
-            if(!confirm('Delete sale record?')) return;
-            await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+        async function deleteSale(id) {
+            if(!confirm('Delete sale?')) return;
+            await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
             loadSales();
         }
 
-        function viewSale(id) {
-            const s = rawSalesData.find(item => String(item.sale_id) === String(id));
-            if(!s) return alert('Sale record not found!');
-
-            let safeItems = (s.items && Array.isArray(s.items) && s.items.length > 0) ? s.items.map(i => ({
-                name: i.name || (s.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale'),
-                qty: parseInt(i.qty || 1),
-                subtotal: parseFloat(i.subtotal || s.total_amount || 0),
-                warranty: i.warranty || 'No Warranty',
-                imei: i.imei || 'N/A'
-            })) : [{
-                name: s.sale_type === 'Repair' ? 'Repair Job Service' : 'Product Sale',
-                qty: 1,
-                subtotal: parseFloat(s.total_amount || 0),
-                warranty: 'No Warranty',
-                imei: 'N/A'
-            }];
-
-            generateAutoReceiptHTML({
-                customer_name: s.customer_name || 'Cash Customer',
-                customer_phone: s.customer_phone || 'N/A',
-                payment_method: s.payment_method || 'Cash',
-                total_amount: parseFloat(s.total_amount || 0),
-                total_discount: parseFloat(s.discount || 0),
-                amount_paid: parseFloat(s.total_amount || 0),
-                change_due: 0,
-                items: safeItems,
-                branch: currentUser ? currentUser.shop_name : "SHA MOBILE",
-                branch_phone: currentUser ? currentUser.shop_phone : "0720641351"
-            });
-        }
-
-        // --- REPAIRS (Advance Bill & Return Bill) ---
-        async function loadRepairs() {
-            const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
-            allRepairs = await res.json();
-            renderRepairsTable(allRepairs);
-        }
-
-        function renderRepairsTable(repairs) {
-            const tbody = document.getElementById('repairsTable');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            if(repairs.length === 0) { tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No repairs.</td></tr>`; return; }
-            repairs.forEach(r => {
-                const rId = r.id || r.repair_id;
-                tbody.innerHTML += `<tr><td><b>#${rId}</b></td><td>${r.customer_name}</td><td>${r.customer_phone}</td><td>${r.device_model}</td><td>${r.issue_description}</td><td>-</td><td>Rs. ${parseFloat(r.advance_cost).toFixed(2)}</td><td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td><td>${r.status}</td><td><button onclick="deleteRepair(${rId})" style="background:#dc3545; padding:3px;">Delete</button></td></tr>`;
-            });
-        }
-
-        async function addRepair(e) {
-            e.preventDefault();
-            const customerName = document.getElementById('repCustomer').value.trim();
-            const customerPhone = document.getElementById('repPhone').value.trim();
-            const deviceModel = document.getElementById('repDevice').value.trim();
-            const issueInput = document.getElementById('repIssue').value.trim();
-            const warrantyInput = document.getElementById('repWarranty').value.trim() || 'No Warranty';
-            const advanceCost = parseFloat(document.getElementById('repAdvance').value) || 0;
-            const totalCost = parseFloat(document.getElementById('repTotalCost').value) || 0;
-
-            const data = {
-                shop_id: currentUser.shop_id, customer_name: customerName,
-                customer_phone: customerPhone, device_model: deviceModel,
-                issue_description: `${issueInput} [Warranty: ${warrantyInput}]`,
-                advance_cost: advanceCost, total_cost: totalCost
-            };
-            const res = await fetch('/api/repairs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            const result = await res.json();
-            if(res.ok) {
-                const rId = result.repair_id;
-                alert('Repair job added successfully!');
-                
-                // Issue Advance Bill when accepting repair
-                if(advanceCost > 0) {
-                    generateAutoReceiptHTML({
-                        customer_name: customerName,
-                        customer_phone: customerPhone,
-                        payment_method: 'Advance Cash',
-                        total_amount: advanceCost,
-                        total_discount: 0,
-                        amount_paid: advanceCost,
-                        change_due: 0,
-                        items: [{ name: `Repair Advance Intake: #${rId} (${deviceModel} - ${issueInput})`, qty: 1, subtotal: advanceCost, warranty: warrantyInput, imei: 'N/A' }],
-                        branch: currentUser.shop_name,
-                        branch_phone: currentUser.shop_phone
-                    });
-                }
-
-                document.getElementById('repairForm').reset();
-                loadRepairs();
-            }
-        }
-
-        async function deleteRepair(id) {
-            if(!confirm('Delete repair job?')) return;
-            await fetch(`/api/repairs/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-            loadRepairs();
-        }
-
-        function populateRepairBillingDropdown() {
-            const select = document.getElementById('repBillingSelect');
-            if(!select) return;
-            select.innerHTML = '';
-            allRepairs.forEach(r => {
-                const rId = r.id || r.repair_id;
-                select.innerHTML += `<option value="${rId}">Job #${rId} - ${r.customer_name} (${r.device_model}) - Due: Rs. ${(r.total_cost - r.advance_cost).toFixed(2)}</option>`;
-            });
-        }
-
-        function selectRepairForBilling() {
-            const rId = document.getElementById('repBillingSelect').value;
-            selectedBillingRepair = allRepairs.find(r => (r.id || r.repair_id) == rId);
-            if(selectedBillingRepair) {
-                document.getElementById('repBillCustomer').value = selectedBillingRepair.customer_name;
-                document.getElementById('repBillPhone').value = selectedBillingRepair.customer_phone;
-                document.getElementById('repBillDeviceIssue').value = selectedBillingRepair.device_model;
-                document.getElementById('repBillTotal').value = selectedBillingRepair.total_cost;
-                document.getElementById('repBillAdvance').value = selectedBillingRepair.advance_cost;
-                calculateRepBalanceFromTotal();
-            }
-        }
-
-        function calculateRepBalanceFromTotal() {
-            if(!selectedBillingRepair) return;
-            const total = parseFloat(document.getElementById('repBillTotal').value) || 0;
-            const adv = parseFloat(selectedBillingRepair.advance_cost || 0);
-            const bal = Math.max(0, total - adv);
-            document.getElementById('repBillBalance').value = bal.toFixed(2);
-            document.getElementById('repBillAmountPaid').value = bal.toFixed(2);
-        }
-
-        function calculateRepChangeDue() {
-            const bal = parseFloat(document.getElementById('repBillBalance').value) || 0;
-            const paid = parseFloat(document.getElementById('repBillAmountPaid').value) || 0;
-            document.getElementById('repBillChangeDue').value = Math.max(0, paid - bal).toFixed(2);
-        }
-
-        async function completeRepairCheckout() {
-            if(!selectedBillingRepair) return alert('Select a repair job!');
-            const rId = selectedBillingRepair.id || selectedBillingRepair.repair_id;
-            const bal = parseFloat(document.getElementById('repBillBalance').value) || 0;
-            const payMethod = document.getElementById('repBillPaymentMethod').value;
-
-            const res = await fetch('/api/sales', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    shop_id: currentUser.shop_id, customer_name: selectedBillingRepair.customer_name, customer_phone: selectedBillingRepair.customer_phone,
-                    payment_method: payMethod, total_amount: bal,
-                    items: [{ type: 'repair', repair_id: rId, name: `Repair Return / Completion: Job #${rId} (${selectedBillingRepair.device_model})`, subtotal: bal, qty: 1 }]
-                })
-            });
-            if(res.ok) {
-                await fetch(`/api/repairs/${rId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status: 'Delivered' }) });
-                
-                // Issue Final Return Bill upon delivery
-                generateAutoReceiptHTML({
-                    customer_name: selectedBillingRepair.customer_name,
-                    customer_phone: selectedBillingRepair.customer_phone,
-                    payment_method: payMethod,
-                    total_amount: bal,
-                    total_discount: 0,
-                    amount_paid: parseFloat(document.getElementById('repBillAmountPaid').value) || bal,
-                    change_due: parseFloat(document.getElementById('repBillChangeDue').value) || 0,
-                    items: [{ name: `Repair Return & Final Settlement: Job #${rId} (${selectedBillingRepair.device_model})`, qty: 1, subtotal: bal, warranty: '1 Month', imei: 'N/A' }],
-                    branch: currentUser.shop_name,
-                    branch_phone: currentUser.shop_phone
-                });
-
-                loadRepairs(); loadSales();
-            }
-        }
-
-        async function loadCredits() {
-            const res = await fetch(`/api/credits?shop_id=${currentUser.shop_id}`);
-            allCredits = await res.json();
-            const tbody = document.getElementById('creditTable');
-            if(!tbody) return;
-            tbody.innerHTML = allCredits.length === 0 ? `<tr><td colspan="9" style="text-align:center;">No credit records.</td></tr>` : '';
-            allCredits.forEach(c => {
-                tbody.innerHTML += `<tr><td>#${c.credit_id}</td><td>${c.customer_name}</td><td>${c.customer_phone}</td><td>${c.item_details}</td><td>Rs. ${c.total_amount}</td><td>Rs. ${c.paid_amount}</td><td><b>Rs. ${c.balance_due}</b></td><td>${c.status}</td><td><button onclick="payCredit(${c.credit_id})" style="background:#28a745; padding:3px;">Pay</button></td></tr>`;
-            });
-        }
-
-        async function payCredit(id) {
-            const amt = prompt('Enter payment amount:');
-            if(!amt) return;
-            await fetch(`/api/credits/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, additional_payment: parseFloat(amt) }) });
-            loadCredits();
-        }
-
-        async function exportDataBackup() {
-            const [p, s, r] = await Promise.all([
-                fetch(`/api/products?shop_id=${currentUser.shop_id}`).then(res=>res.json()),
-                fetch(`/api/sales?shop_id=${currentUser.shop_id}`).then(res=>res.json()),
-                fetch(`/api/repairs?shop_id=${currentUser.shop_id}`).then(res=>res.json())
-            ]);
-            const a = document.createElement('a');
-            a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ products: p, sales: s, repairs: r }, null, 2));
-            a.download = `backup_${currentUser.shop_name}.json`; document.body.appendChild(a); a.click(); a.remove();
-        }
-
-        async function restoreDataBackup() {
-            const f = document.getElementById('backupFileInput').files[0];
-            if(!f) return alert('Select a file!');
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                await fetch('/api/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, ...JSON.parse(e.target.result) }) });
-                alert('Restored successfully!'); initApp();
-            };
-            reader.readAsText(f);
+        function toggleTheme() {
+            const current = document.body.getAttribute('data-theme');
+            document.body.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
         }
 
         window.onload = initApp;
