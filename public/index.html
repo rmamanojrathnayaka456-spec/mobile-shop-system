@@ -404,13 +404,14 @@
             if(btn) btn.classList.remove('inactive');
 
             if(tabNum !== 2) clearBillingFields();
+            
+            // Fetch fresh data whenever switching tabs
             if(tabNum === 2) { loadInventory(); loadRepairs(); }
             else if(tabNum === 3) loadInventory();
             else if(tabNum === 4) loadSales();
             else if(tabNum === 5) loadRepairs();
             else if(tabNum === 6) { loadSales(); loadRepairs(); }
             else if(tabNum === 7) loadCredits();
-            else if(tabNum === 8) { /* Backup & Restore */ }
         }
 
         function switchRepairSubTab(type, btn) {
@@ -449,8 +450,11 @@
         async function loadInventory() {
             if(!currentUser) return;
             const shopId = currentUser.shop_id || 1;
-            const res = await fetch(`/api/products?shop_id=${shopId}`);
-            allProducts = await res.json();
+            try {
+                const res = await fetch(`/api/products?shop_id=${shopId}`);
+                allProducts = await res.json();
+                if(!Array.isArray(allProducts)) allProducts = [];
+            } catch(e) { allProducts = []; }
             renderInventory(allProducts);
         }
 
@@ -476,8 +480,8 @@
                     <td>${p.stock} ${isOut ? '(OUT)' : ''}</td><td>${p.imei || '-'}</td>
                     <td>
                         <div style="display:flex; gap:5px;">
-                            <button onclick="printExistingBarcode('${parsed.name}', '${p.product_code || p.product_id}', ${p.selling_price})" style="background:#17a2b8; padding:3px; width:auto; font-size:11px;">Barcode</button>
-                            <button onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:3px; width:auto; font-size:11px;">Delete</button>
+                            <button type="button" onclick="printExistingBarcode('${parsed.name}', '${p.product_code || p.product_id}', ${p.selling_price})" style="background:#17a2b8; padding:3px; width:auto; font-size:11px;">Barcode</button>
+                            <button type="button" onclick="deleteProduct(${p.product_id})" style="background:#dc3545; padding:3px; width:auto; font-size:11px;">Delete</button>
                         </div>
                     </td>
                 </tr>`;
@@ -570,13 +574,17 @@
             }
         }
 
-        function handleBillingSearch() {
+        // Updated function to show dropdown immediately on click or typing
+        async function handleBillingSearch() {
+            if(!allProducts || allProducts.length === 0) {
+                await loadInventory();
+            }
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
             const container = document.getElementById('customDropdownList');
             container.innerHTML = '';
-            if(!query) { container.style.display = 'none'; return; }
 
-            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.brand && p.brand.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
+            const filtered = query === "" ? allProducts : allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.brand && p.brand.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
+            
             if(filtered.length === 0) { container.style.display = 'none'; return; }
 
             filtered.forEach(p => {
@@ -598,7 +606,16 @@
             container.style.display = 'block';
         }
 
-        function openBillingDropdown() { handleBillingSearch(); }
+        function openBillingDropdown() { 
+            handleBillingSearch(); 
+        }
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', function(e) {
+            if (!document.getElementById('billingSearch').contains(e.target) && !document.getElementById('customDropdownList').contains(e.target)) {
+                document.getElementById('customDropdownList').style.display = 'none';
+            }
+        });
 
         function selectBillingProductById(val) {
             if(!val.startsWith('prod_')) return;
@@ -653,7 +670,7 @@
             let total = 0;
             cart.forEach((item, idx) => {
                 total += item.subtotal;
-                tbody.innerHTML += `<tr><td>${item.name} <br><small style="color:#007bff;">[Warranty: ${item.warranty}]</small></td><td>${item.qty}</td><td>Rs. ${item.subtotal.toFixed(2)}</td><td><button onclick="cart.splice(${idx},1);renderCart();" style="background:#dc3545; padding:2px 5px;">X</button></td></tr>`;
+                tbody.innerHTML += `<tr><td>${item.name} <br><small style="color:#007bff;">[Warranty: ${item.warranty}]</small></td><td>${item.qty}</td><td>Rs. ${item.subtotal.toFixed(2)}</td><td><button type="button" onclick="cart.splice(${idx},1);renderCart();" style="background:#dc3545; padding:2px 5px;">X</button></td></tr>`;
             });
             document.getElementById('cartTotal').textContent = total.toFixed(2);
             document.getElementById('amountPaid').value = total.toFixed(2);
@@ -733,9 +750,13 @@
         async function loadSales() {
             if(!currentUser) return;
             const shopId = currentUser.shop_id || 1;
-            const res = await fetch(`/api/sales?shop_id=${shopId}`);
-            rawSalesData = await res.json();
-            populateYearDropdown(); applySalesFilters();
+            try {
+                const res = await fetch(`/api/sales?shop_id=${shopId}`);
+                rawSalesData = await res.json();
+                if(!Array.isArray(rawSalesData)) rawSalesData = [];
+            } catch(e) { rawSalesData = []; }
+            populateYearDropdown(); 
+            applySalesFilters();
         }
 
         function populateYearDropdown() {
@@ -806,8 +827,8 @@
                     <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${s.formatted_date}</td>
                     <td>
                         <div style="display:flex; gap:5px;">
-                            <button onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px 6px; font-size:11px;">View</button>
-                            <button onclick="deleteSale('${deleteKey}')" style="background:#dc3545; padding:3px 6px; font-size:11px;">Remove</button>
+                            <button type="button" onclick="viewSale(${s.sale_id})" style="background:#17a2b8; padding:3px 6px; font-size:11px;">View</button>
+                            <button type="button" onclick="deleteSale('${deleteKey}')" style="background:#dc3545; padding:3px 6px; font-size:11px;">Remove</button>
                         </div>
                     </td>
                 </tr>`;
@@ -834,8 +855,11 @@
         async function loadRepairs() {
             if(!currentUser) return;
             const shopId = currentUser.shop_id || 1;
-            const res = await fetch(`/api/repairs?shop_id=${shopId}`);
-            allRepairs = await res.json();
+            try {
+                const res = await fetch(`/api/repairs?shop_id=${shopId}`);
+                allRepairs = await res.json();
+                if(!Array.isArray(allRepairs)) allRepairs = [];
+            } catch(e) { allRepairs = []; }
             renderRepairsTable(allRepairs);
         }
 
@@ -846,7 +870,7 @@
             if(repairs.length === 0) { tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">No repairs.</td></tr>`; return; }
             repairs.forEach(r => {
                 const rId = r.id || r.repair_id;
-                tbody.innerHTML += `<tr><td><b>#${rId}</b></td><td>${r.customer_name}</td><td>${r.customer_phone}</td><td>${r.device_model}</td><td>${r.issue_description}</td><td>-</td><td>Rs. ${parseFloat(r.advance_cost).toFixed(2)}</td><td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td><td>${r.status}</td><td><button onclick="deleteRepair(${rId})" style="background:#dc3545; padding:3px;">Delete</button></td></tr>`;
+                tbody.innerHTML += `<tr><td><b>#${rId}</b></td><td>${r.customer_name}</td><td>${r.customer_phone}</td><td>${r.device_model}</td><td>${r.issue_description}</td><td>-</td><td>Rs. ${parseFloat(r.advance_cost).toFixed(2)}</td><td>Rs. ${parseFloat(r.total_cost).toFixed(2)}</td><td>${r.status}</td><td><button type="button" onclick="deleteRepair(${rId})" style="background:#dc3545; padding:3px;">Delete</button></td></tr>`;
             });
         }
 
@@ -985,13 +1009,16 @@
         async function loadCredits() {
             if(!currentUser) return;
             const shopId = currentUser.shop_id || 1;
-            const res = await fetch(`/api/credits?shop_id=${shopId}`);
-            allCredits = await res.json();
+            try {
+                const res = await fetch(`/api/credits?shop_id=${shopId}`);
+                allCredits = await res.json();
+                if(!Array.isArray(allCredits)) allCredits = [];
+            } catch(e) { allCredits = []; }
             const tbody = document.getElementById('creditTable');
             if(!tbody) return;
             tbody.innerHTML = allCredits.length === 0 ? `<tr><td colspan="9" style="text-align:center;">No credit records.</td></tr>` : '';
             allCredits.forEach(c => {
-                tbody.innerHTML += `<tr><td>#${c.credit_id}</td><td>${c.customer_name}</td><td>${c.customer_phone}</td><td>${c.item_details}</td><td>Rs. ${c.total_amount}</td><td>Rs. ${c.paid_amount}</td><td><b>Rs. ${c.balance_due}</b></td><td>${c.status}</td><td><button onclick="payCredit(${c.credit_id})" style="background:#28a745; padding:3px;">Pay</button></td></tr>`;
+                tbody.innerHTML += `<tr><td>#${c.credit_id}</td><td>${c.customer_name}</td><td>${c.customer_phone}</td><td>${c.item_details}</td><td>Rs. ${c.total_amount}</td><td>Rs. ${c.paid_amount}</td><td><b>Rs. ${c.balance_due}</b></td><td>${c.status}</td><td><button type="button" onclick="payCredit(${c.credit_id})" style="background:#28a745; padding:3px;">Pay</button></td></tr>`;
             });
         }
 
