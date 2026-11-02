@@ -22,7 +22,7 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Auto Create Tables & Columns
+// Auto Create Tables & Columns safely
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -78,13 +78,13 @@ db.query(`
         customer_name VARCHAR(100),
         customer_phone VARCHAR(20),
         payment_method VARCHAR(50),
-        sale_type VARCHAR(20) DEFAULT 'Product',
-        discount DECIMAL(10, 2) DEFAULT 0,
         total_amount DECIMAL(10, 2) NOT NULL,
-        items LONGTEXT,
+        items TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`);
+`, () => {
+    db.query("ALTER TABLE sales ADD COLUMN items TEXT", () => {});
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -173,7 +173,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs (Ensuring Sale ID does not shift)
+// Sales APIs (Compatible with standard setup)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id ASC', [shopId], (err, results) => {
@@ -189,11 +189,8 @@ app.get('/api/sales', (req, res) => {
 
             return {
                 ...row,
-                sale_id: row.sale_id, // Preserves exact database ID without re-indexing
+                sale_id: row.sale_id,
                 items: parsedItems,
-                delete_key: sqlDateTime,
-                sale_type: row.sale_type || 'Product',
-                discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
                 date_only: cDate.toLocaleDateString('en-CA'),
                 month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
@@ -205,24 +202,13 @@ app.get('/api/sales', (req, res) => {
 });
 
 app.post('/api/sales', (req, res) => {
-    const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
-    let containsRepair = false, containsProduct = false;
-    if (items && Array.isArray(items)) {
-        items.forEach(item => {
-            if (item.type === 'repair') containsRepair = true;
-            if (item.type === 'product') containsProduct = true;
-        });
-    }
-    let sale_type = 'Product';
-    if (containsRepair && containsProduct) sale_type = 'Mixed';
-    else if (containsRepair) sale_type = 'Repair';
-
+    const { shop_id, customer_name, customer_phone, payment_method, total_amount, items } = req.body;
     const finalShopId = shop_id || 1;
     const itemsJson = JSON.stringify(items || []);
 
     db.query(
-        'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [finalShopId, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, itemsJson],
+        'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, total_amount, items) VALUES (?, ?, ?, ?, ?, ?)',
+        [finalShopId, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', total_amount, itemsJson],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             if (items && Array.isArray(items)) {
