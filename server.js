@@ -157,23 +157,23 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs
+// Sales APIs (Using dedicated unique sale_id primary key)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
-        const formatted = (results || []).map((row, index) => {
-            const realId = row.sale_id || (index + 1);
+        const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            const pad = (n) => String(n).padStart(2, '0');
-            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
-
             return {
-                ...row, sale_id: realId, delete_key: sqlDateTime, sale_type: row.sale_type || 'Product',
-                discount: row.discount || 0, formatted_date: cDate.toLocaleString(),
-                date_only: cDate.toLocaleDateString('en-CA'), month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
+                ...row,
+                sale_type: row.sale_type || 'Product',
+                discount: row.discount || 0,
+                formatted_date: cDate.toLocaleString(),
+                date_only: cDate.toLocaleDateString('en-CA'),
+                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
+                year_only: cDate.getFullYear().toString()
             };
         });
         res.json(formatted);
@@ -198,6 +198,7 @@ app.post('/api/sales', (req, res) => {
         [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
+            const newSaleId = result.insertId;
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     if (item.type === 'product' && item.product_id) {
@@ -207,14 +208,15 @@ app.post('/api/sales', (req, res) => {
                     }
                 });
             }
-            res.json({ message: 'Sale recorded', sale_id: result.insertId });
+            res.json({ message: 'Sale recorded', sale_id: newSaleId });
         }
     );
 });
 
 app.delete('/api/sales/:id', (req, res) => {
-    const deleteKey = decodeURIComponent(req.params.id);
-    db.query('DELETE FROM sales WHERE created_at = ? AND shop_id = ? LIMIT 1', [deleteKey, req.query.shop_id], (err) => {
+    const saleId = req.params.id;
+    const shopId = req.query.shop_id;
+    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
     });
@@ -222,7 +224,7 @@ app.delete('/api/sales/:id', (req, res) => {
 
 // Repairs APIs
 app.get('/api/repairs', (req, res) => {
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY created_at DESC', [req.query.shop_id], (err, results) => {
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -241,7 +243,7 @@ app.post('/api/repairs', (req, res) => {
 });
 
 app.put('/api/repairs/:id', (req, res) => {
-    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.query.shop_id], (err) => {
+    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.body.shop_id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Updated' });
     });
