@@ -175,25 +175,20 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales APIs
+// Sales GET API (Ensuring stable Sale IDs based on creation order)
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id ASC', [shopId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         
         const formatted = (results || []).map((row, index) => {
-            const realId = row.sale_id || (index + 1);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            
-            const pad = (n) => String(n).padStart(2, '0');
-            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
-
             return {
                 ...row,
-                sale_id: realId,
-                delete_key: sqlDateTime,
+                sale_id: index + 1, // ස්ථිරවම අනුපිළිවෙලට ID එක පෙන්වීම සඳහා
+                db_id: row.sale_id, // සැබෑ ඩාටාබේස් ID එක ඩිලීට් කිරීමට
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
@@ -201,10 +196,20 @@ app.get('/api/sales', (req, res) => {
                 month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
             };
         });
-        res.json(formatted);
+        res.json(formatted.reverse()); // අලුත්ම සේල් එක උඩින් පෙන්වීමට
     });
 });
 
+// Sales DELETE API (Using db_id to delete the exact record)
+app.delete('/api/sales/:id', (req, res) => {
+    const dbId = req.params.id;
+    const shopId = req.query.shop_id;
+    
+    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [dbId, shopId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Removed' });
+    });
+});
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
     

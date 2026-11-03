@@ -1988,13 +1988,13 @@
             });
         }
 
-        async function deleteSale(deleteKey) {
-            if(!confirm('Delete sale record?')) return;
-            try {
-                const res = await fetch(`/api/sales/${deleteKey}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-                if(res.ok) { loadSales(); }
-            } catch(err) { console.error(err); }
-        }
+       async function deleteSale(dbId) {
+    if(!confirm('Delete sale record?')) return;
+    try {
+        const res = await fetch(`/api/sales/${dbId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+        if(res.ok) { loadSales(); }
+    } curs(err) { console.error(err); }
+}
 
         async function addRepair(e) {
             e.preventDefault();
