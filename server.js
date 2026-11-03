@@ -99,11 +99,7 @@ db.query(`
         sale_items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`, (err) => {
-    if(!err) {
-        db.query("ALTER TABLE sales ADD COLUMN sale_items LONGTEXT", () => {});
-    }
-});
+`);
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -146,7 +142,7 @@ app.post('/api/login', (req, res) => {
 });
 
 app.get('/api/products', (req, res) => {
-    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id], (err, results) => {
+    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -156,7 +152,7 @@ app.post('/api/products', (req, res) => {
     const { shop_id, name, brand, color, category, cost_price, selling_price, stock, imei } = req.body;
     db.query(
         'INSERT INTO products (shop_id, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [shop_id, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
+        [shop_id || 1, name || 'Unknown', brand || 'N/A', color || 'N/A', category || 'General', cost_price || 0, selling_price || 0, stock || 1, imei || 'N/A'],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             const pId = result.insertId;
@@ -169,14 +165,14 @@ app.post('/api/products', (req, res) => {
 });
 
 app.delete('/api/products/:id', (req, res) => {
-    db.query('DELETE FROM products WHERE product_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
+    db.query('DELETE FROM products WHERE product_id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
 });
 
 app.get('/api/repair-parts', (req, res) => {
-    db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [req.query.shop_id], (err, results) => {
+    db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -186,7 +182,7 @@ app.post('/api/repair-parts', (req, res) => {
     const { shop_id, part_name, device_model, cost_price, selling_price, stock } = req.body;
     db.query(
         'INSERT INTO repair_parts (shop_id, part_name, device_model, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)',
-        [shop_id, part_name, device_model || 'Universal', cost_price || 0, selling_price || 0, stock || 1],
+        [shop_id || 1, part_name, device_model || 'Universal', cost_price || 0, selling_price || 0, stock || 1],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Repair part added', part_id: result.insertId });
@@ -195,16 +191,14 @@ app.post('/api/repair-parts', (req, res) => {
 });
 
 app.delete('/api/repair-parts/:id', (req, res) => {
-    db.query('DELETE FROM repair_parts WHERE part_id = ? AND shop_id = ?', [req.params.id, req.query.shop_id], (err) => {
+    db.query('DELETE FROM repair_parts WHERE part_id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
 });
 
 app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id;
-    if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
-
+    const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err.message);
@@ -250,7 +244,7 @@ app.post('/api/sales', (req, res) => {
 
     db.query(
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, sale_items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [shop_id, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, itemsJson],
+        [shop_id || 1, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, itemsJson],
         (err, result) => {
             if (err) {
                 console.error("Sales Insert Error:", err.message);
@@ -260,9 +254,9 @@ app.post('/api/sales', (req, res) => {
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     if (item.type === 'product' && item.product_id) {
-                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ? AND shop_id = ?', [item.qty, item.product_id, shop_id]);
+                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ?', [item.qty, item.product_id]);
                     } else if (item.type === 'repair' && item.repair_id) {
-                        db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ? AND shop_id = ?', [item.repair_id, shop_id]);
+                        db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ?', [item.repair_id]);
                     }
                 });
             }
@@ -272,16 +266,14 @@ app.post('/api/sales', (req, res) => {
 });
 
 app.delete('/api/sales/:id', (req, res) => {
-    const saleId = req.params.id;
-    const shopId = req.query.shop_id;
-    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err) => {
+    db.query('DELETE FROM sales WHERE sale_id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
     });
 });
 
 app.get('/api/repairs', (req, res) => {
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id DESC', [req.query.shop_id], (err, results) => {
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id DESC', [req.query.shop_id || 1], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -291,7 +283,7 @@ app.post('/api/repairs', (req, res) => {
     const { shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost } = req.body;
     db.query(
         'INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost || 0, total_cost],
+        [shop_id || 1, customer_name, customer_phone, device_model, issue_description, advance_cost || 0, total_cost],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Repair added', repair_id: result.insertId });
@@ -300,14 +292,14 @@ app.post('/api/repairs', (req, res) => {
 });
 
 app.put('/api/repairs/:id', (req, res) => {
-    db.query('UPDATE repairs SET status = ? WHERE repair_id = ? AND shop_id = ?', [req.body.status, req.params.id, req.body.shop_id], (err) => {
+    db.query('UPDATE repairs SET status = ? WHERE repair_id = ?', [req.body.status, req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Updated' });
     });
 });
 
 app.delete('/api/repairs/:id', (req, res) => {
-    db.query('DELETE FROM repairs WHERE repair_id = ? AND shop_id = ?', [req.params.id, req.body.shop_id], (err) => {
+    db.query('DELETE FROM repairs WHERE repair_id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Deleted' });
     });
@@ -315,14 +307,15 @@ app.delete('/api/repairs/:id', (req, res) => {
 
 app.post('/api/restore', (req, res) => {
     const { shop_id, products, sales, repairs, repair_parts } = req.body;
-    db.query('DELETE FROM products WHERE shop_id = ?', [shop_id], () => {
-        db.query('DELETE FROM sales WHERE shop_id = ?', [shop_id], () => {
-            db.query('DELETE FROM repairs WHERE shop_id = ?', [shop_id], () => {
-                db.query('DELETE FROM repair_parts WHERE shop_id = ?', [shop_id], () => {
-                    if (products) products.forEach(p => db.query('INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, p.product_code, p.name, p.brand, p.color, p.category, p.cost_price, p.selling_price, p.stock, p.imei], ()=>{}));
-                    if (sales) sales.forEach(s => db.query('INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, sale_items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, s.customer_name, s.customer_phone, s.payment_method, s.sale_type || 'Product', s.discount || 0, s.total_amount, JSON.stringify(s.items || [])], ()=>{}));
-                    if (repairs) repairs.forEach(r => db.query('INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [shop_id, r.customer_name, r.customer_phone, r.device_model, r.issue_description, r.advance_cost || 0, r.total_cost, r.status || 'Pending'], ()=>{}));
-                    if (repair_parts) repair_parts.forEach(rp => db.query('INSERT INTO repair_parts (shop_id, part_name, device_model, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)', [shop_id, rp.part_name, rp.device_model, rp.cost_price, rp.selling_price, rp.stock], ()=>{}));
+    const sId = shop_id || 1;
+    db.query('DELETE FROM products WHERE shop_id = ?', [sId], () => {
+        db.query('DELETE FROM sales WHERE shop_id = ?', [sId], () => {
+            db.query('DELETE FROM repairs WHERE shop_id = ?', [sId], () => {
+                db.query('DELETE FROM repair_parts WHERE shop_id = ?', [sId], () => {
+                    if (products) products.forEach(p => db.query('INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [sId, p.product_code, p.name, p.brand, p.color, p.category, p.cost_price, p.selling_price, p.stock, p.imei], ()=>{}));
+                    if (sales) sales.forEach(s => db.query('INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, sale_items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [sId, s.customer_name, s.customer_phone, s.payment_method, s.sale_type || 'Product', s.discount || 0, s.total_amount, JSON.stringify(s.items || [])], ()=>{}));
+                    if (repairs) repairs.forEach(r => db.query('INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [sId, r.customer_name, r.customer_phone, r.device_model, r.issue_description, r.advance_cost || 0, r.total_cost, r.status || 'Pending'], ()=>{}));
+                    if (repair_parts) repair_parts.forEach(rp => db.query('INSERT INTO repair_parts (shop_id, part_name, device_model, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)', [sId, rp.part_name, rp.device_model, rp.cost_price, rp.selling_price, rp.stock], ()=>{}));
                     res.json({ success: true, message: 'Restored successfully' });
                 });
             });
