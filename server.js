@@ -180,25 +180,20 @@ app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err.message);
-            return res.json([]); // වැරදුනොත් හිස් ඇරේ එකක් යැවීම සඳහා
+            return res.json([]);
         }
         
         const formatted = (results || []).map((row, index) => {
-            const realId = row.sale_id || (index + 1);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            
-            const pad = (n) => String(n).padStart(2, '0');
-            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
-
             return {
                 ...row,
-                sale_id: realId,
-                delete_key: sqlDateTime,
+                sale_id: row.sale_id, // ඩාටාබේස් එකේ රියල් ID එකම පෙන්වීම සඳහා
+                total_amount: parseFloat(row.total_amount || 0), // අංකයක් ලෙස සහතික කිරීම සඳහා
+                discount: parseFloat(row.discount || 0),
                 sale_type: row.sale_type || 'Product',
-                discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
                 date_only: cDate.toLocaleDateString('en-CA'),
                 month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
@@ -208,12 +203,11 @@ app.get('/api/sales', (req, res) => {
     });
 });
 
-// Sales DELETE API (Using db_id to delete the exact record)
 app.delete('/api/sales/:id', (req, res) => {
-    const dbId = req.params.id;
+    const saleId = req.params.id;
     const shopId = req.query.shop_id;
     
-    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [dbId, shopId], (err) => {
+    db.query('DELETE FROM sales WHERE sale_id = ? AND shop_id = ?', [saleId, shopId], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Removed' });
     });

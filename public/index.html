@@ -1988,14 +1988,117 @@
             });
         }
 
-                async function deleteSale(dbId) {
-    if(!confirm('Delete sale record?')) return;
+   async function deleteSale(saleId) {
+    if(!confirm(`Delete sale record #${saleId}?`)) return;
     try {
-        const res = await fetch(`/api/sales/${dbId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
-        if(res.ok) { loadSales(); }
+        const res = await fetch(`/api/sales/${saleId}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+        if(res.ok) { 
+            loadSales(); 
+        } else {
+            alert('Failed to delete sale.');
+        }
     } catch(err) { 
         console.error(err); 
     }
+}
+
+function viewSale(saleId) {
+    const sale = rawSalesData.find(s => s.sale_id == saleId);
+    if(!sale) return alert('Sale record not found!');
+
+    lastSaleData = {
+        customer_name: sale.customer_name || 'Cash Customer',
+        customer_phone: sale.customer_phone || 'N/A',
+        payment_method: sale.payment_method || 'Cash',
+        total_amount: parseFloat(sale.total_amount || 0),
+        total_discount: parseFloat(sale.discount || 0),
+        amount_paid: parseFloat(sale.total_amount || 0),
+        change_due: 0,
+        items: sale.sale_items ? JSON.parse(sale.sale_items) : [],
+        branch: currentUser.shop_name || "SHA MOBILE",
+        branch_phone: currentUser.shop_phone
+    };
+
+    generateAutoMessage(lastSaleData);
+    document.getElementById('receiptModalTitle').textContent = `Sale Details (#${sale.sale_id})`;
+}
+
+function renderSalesTable() {
+    const tbody = document.getElementById('salesTable');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    
+    const query = document.getElementById('searchSales') ? document.getElementById('searchSales').value.toLowerCase().trim() : '';
+    
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    
+    const todayStr = `${y}-${m}-${d}`;
+    const thisMonthStr = `${y}-${m}`;
+
+    let displaySales = rawSalesData.filter(s => {
+        const sDateOnly = s.date_only || (s.formatted_date ? s.formatted_date.substring(0, 10) : '');
+        const sMonthOnly = s.month_only || (s.formatted_date ? s.formatted_date.substring(0, 7) : '');
+
+        let matchesFilter = true;
+        if(currentSalesFilter === 'daily') {
+            matchesFilter = (sDateOnly === todayStr);
+        } else if(currentSalesFilter === 'monthly') {
+            matchesFilter = (sMonthOnly === thisMonthStr);
+        } else if(currentSalesFilter === 'repair') {
+            matchesFilter = (sDateOnly === todayStr && s.sale_type === 'Repair');
+        } else if(['Cash', 'Card', 'Bank Transfer', 'Koko'].includes(currentSalesFilter)) {
+            matchesFilter = (sDateOnly === todayStr && s.payment_method === currentSalesFilter);
+        } else {
+            matchesFilter = true;
+        }
+
+        if(!matchesFilter) return false;
+
+        if(query) {
+            const sId = (s.sale_id || '').toString();
+            const cName = (s.customer_name || '').toLowerCase();
+            const cPhone = (s.customer_phone || '').toLowerCase();
+            const sType = (s.sale_type || 'Product').toLowerCase();
+            const pMethod = (s.payment_method || '').toLowerCase();
+            
+            const cleanQuery = query.replace('#', '');
+            return sId === cleanQuery || sId.includes(cleanQuery) || cName.includes(query) || cPhone.includes(query) || sType.includes(query) || pMethod.includes(query);
+        }
+
+        return true;
+    });
+
+    if(displaySales.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No sales found matching your search.</td></tr>`;
+        return;
+    }
+
+    displaySales.forEach((s) => {
+        const sId = s.sale_id;
+        let badgeClass = 'badge-prod';
+        let stype = s.sale_type || 'Product';
+        if(stype === 'Repair') badgeClass = 'badge-rep';
+        else if(stype === 'Mixed') badgeClass = 'badge-mix';
+
+        tbody.innerHTML += `<tr>
+            <td><b>#${sId}</b></td>
+            <td>${s.customer_name}</td>
+            <td>${s.customer_phone}</td>
+            <td><span class="${badgeClass}">${stype}</span></td>
+            <td>${s.payment_method}</td>
+            <td>Rs. ${parseFloat(s.total_amount || 0).toFixed(2)}</td>
+            <td>${s.formatted_date || s.created_at}</td>
+            <td>
+                <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                    <button onclick="viewSale(${sId})" style="background:#17a2b8; padding:3px 6px; width:auto; font-size:11px;">View</button>
+                    <button onclick="deleteSale(${sId})" style="background:#dc3545; padding:3px 6px; width:auto; font-size:11px;">Remove</button>
+                </div>
+            </td>
+        </tr>`;
+    });
 }
 
         async function addRepair(e) {
