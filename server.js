@@ -85,6 +85,7 @@ db.query(`
     )
 `);
 
+// Drop and recreate sales table to ensure clean schema structure
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -95,12 +96,12 @@ db.query(`
         sale_type VARCHAR(20) DEFAULT 'Product',
         discount DECIMAL(10, 2) DEFAULT 0,
         total_amount DECIMAL(10, 2) NOT NULL,
-        sale_items TEXT,
+        sale_items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, (err) => {
     if(!err) {
-        db.query("ALTER TABLE sales ADD COLUMN sale_items TEXT", () => {});
+        db.query("ALTER TABLE sales ADD COLUMN sale_items LONGTEXT", () => {});
     }
 });
 
@@ -202,7 +203,7 @@ app.delete('/api/repair-parts/:id', (req, res) => {
 
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
-    if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
+    if (!shopId) return.status(400).json({ error: 'Missing shop_id' });
 
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
         if (err) {
