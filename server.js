@@ -175,20 +175,28 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Sales GET API (Ensuring stable Sale IDs based on creation order)
+// Sales APIs
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id;
     if (!shopId) return res.status(400).json({ error: 'Missing shop_id' });
 
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id ASC', [shopId], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY created_at DESC', [shopId], (err, results) => {
+        if (err) {
+            console.error("Sales Fetch Error:", err.message);
+            return res.json([]); // වැරදුනොත් හිස් ඇරේ එකක් යැවීම සඳහා
+        }
         
         const formatted = (results || []).map((row, index) => {
+            const realId = row.sale_id || (index + 1);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
+            
+            const pad = (n) => String(n).padStart(2, '0');
+            const sqlDateTime = `${cDate.getFullYear()}-${pad(cDate.getMonth() + 1)}-${pad(cDate.getDate())} ${pad(cDate.getHours())}:${pad(cDate.getMinutes())}:${pad(cDate.getSeconds())}`;
+
             return {
                 ...row,
-                sale_id: index + 1, // ස්ථිරවම අනුපිළිවෙලට ID එක පෙන්වීම සඳහා
-                db_id: row.sale_id, // සැබෑ ඩාටාබේස් ID එක ඩිලීට් කිරීමට
+                sale_id: realId,
+                delete_key: sqlDateTime,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
@@ -196,7 +204,7 @@ app.get('/api/sales', (req, res) => {
                 month_only: cDate.toLocaleDateString('en-CA').substring(0, 7)
             };
         });
-        res.json(formatted.reverse()); // අලුත්ම සේල් එක උඩින් පෙන්වීමට
+        res.json(formatted);
     });
 });
 
