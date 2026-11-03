@@ -363,6 +363,7 @@
         let rawReceiptPlaintext = "";
         let selectedBillingRepair = null;
         let selectedBillingValue = "";
+        let selectedProductNameStr = "";
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -467,7 +468,7 @@
             document.getElementById('billingPrice').value = '';
             document.getElementById('billingDiscountDisplay').value = '0.00';
             document.getElementById('billingQty').value = '1';
-            selectedOriginalPrice = 0; selectedCostPrice = 0; selectedBillingValue = "";
+            selectedOriginalPrice = 0; selectedCostPrice = 0; selectedBillingValue = ""; selectedProductNameStr = "";
         }
 
         function parseProductItem(fullName) {
@@ -701,6 +702,7 @@
                 div.innerHTML = `<b>#${p.product_code || p.product_id}</b> - ${p.brand ? '['+p.brand+'] ' : ''}${parsed.name} - <b>Rs. ${p.selling_price}</b> ${isOut ? '<span style="color:#ef4444;">[OUT OF STOCK]</span>' : (isLow ? '<span style="color:#f59e0b;">[LOW STOCK: '+p.stock+']</span>' : '[Stock: '+p.stock+']')}`;
                 div.onclick = () => {
                     selectedBillingValue = 'prod_' + p.product_id;
+                    selectedProductNameStr = parsed.name;
                     document.getElementById('billingSearch').value = parsed.name;
                     container.style.display = 'none';
                     selectBillingProductById(selectedBillingValue);
@@ -716,6 +718,7 @@
                 div.innerHTML = `[Repair] #${rId} - ${r.customer_name} (${r.device_model}) - Due: Rs. ${balanceDue.toFixed(2)} [${r.status}]`;
                 div.onclick = () => {
                     selectedBillingValue = 'rep_' + rId;
+                    selectedProductNameStr = `Repair Job #${rId} (${r.device_model})`;
                     document.getElementById('billingSearch').value = `Repair Job #${rId} - ${r.customer_name}`;
                     container.style.display = 'none';
                     selectBillingProductById(selectedBillingValue);
@@ -733,6 +736,7 @@
                     selectedOriginalPrice = parseFloat(p.selling_price);
                     selectedCostPrice = parseFloat(p.cost_price || 0);
                     const parsed = parseProductItem(p.name);
+                    selectedProductNameStr = parsed.name;
                     selectedProductWarranty = parsed.warranty;
                     document.getElementById('billingProductWarranty').value = selectedProductWarranty;
                     document.getElementById('billingImeiGroup').style.display = (p.imei && p.imei !== 'N/A') ? 'block' : 'none';
@@ -746,6 +750,7 @@
                 if(r) {
                     selectedOriginalPrice = parseFloat(r.total_cost) - parseFloat(r.advance_cost || 0);
                     selectedCostPrice = 0;
+                    selectedProductNameStr = `Repair Job #${r.id || r.repair_id} (${r.device_model})`;
                     document.getElementById('billingProductWarranty').value = 'No Warranty';
                     document.getElementById('billingImeiGroup').style.display = 'none';
                     document.getElementById('costPriceDisplay').value = '0.00';
@@ -778,9 +783,8 @@
             if(val.startsWith('prod_')) {
                 const p = allProducts.find(item => item.product_id == val.replace('prod_', ''));
                 if(!p || p.stock < qty) return alert('Not enough stock!');
-                const parsed = parseProductItem(p.name);
                 cart.push({
-                    type: 'product', product_id: p.product_id, name: parsed.name, brand: p.brand || '',
+                    type: 'product', product_id: p.product_id, name: selectedProductNameStr || parseProductItem(p.name).name, brand: p.brand || '',
                     warranty: selectedProductWarranty, imei: document.getElementById('billingImei').value.trim() || p.imei || 'N/A',
                     originalPrice: selectedOriginalPrice, price, qty, discount: discount * qty, subtotal: price * qty
                 });
@@ -789,7 +793,7 @@
                 if(!r) return;
                 const rId = r.id || r.repair_id;
                 cart.push({
-                    type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, brand: '',
+                    type: 'repair', repair_id: rId, name: selectedProductNameStr || `Repair Job #${rId} (${r.device_model})`, brand: '',
                     warranty: 'No Warranty', imei: 'N/A', originalPrice: selectedOriginalPrice, price, qty: 1, subtotal: price,
                     total_cost: parseFloat(r.total_cost), advance_cost: parseFloat(r.advance_cost || 0), balance_due: price
                 });
@@ -875,17 +879,20 @@
                     <tbody>`;
             
             sale.items.forEach(i => {
-                let displayName = i.brand ? `[${i.brand}] ${i.name}` : i.name;
+                let displayName = i.name || 'Product Item';
+                if (i.brand && !displayName.includes(i.brand)) {
+                    displayName = `[${i.brand}] ${displayName}`;
+                }
                 htmlMsg += `
                     <tr>
-                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; color: #1e293b;">
+                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; color: #1e293b; background-color: #ffffff;">
                             <div style="font-weight: bold; color: #1e293b;">${displayName}</div>
                             <div style="font-size: 11px; color: #2563eb; margin-top: 2px;">Warranty: ${i.warranty || 'No Warranty'}</div>
-                            <div style="font-size: 11px; color: #f59e0b; margin-top: 1px;">IMEI: ${i.imei || 'N/A'}</div>
-                            ${i.originalPrice && i.originalPrice > i.price ? `<div style="font-size: 10px; color: #94a3b8; text-decoration: line-through; margin-top: 1px;">Original: Rs. ${(i.originalPrice * i.qty).toFixed(2)}</div>` : ''}
+                            <div style="font-size: 11px; color: #d97706; margin-top: 1px;">IMEI: ${i.imei || 'N/A'}</div>
+                            ${i.originalPrice && i.originalPrice > i.price ? `<div style="font-size: 10px; color: #64748b; text-decoration: line-through; margin-top: 1px;">Original: Rs. ${(i.originalPrice * i.qty).toFixed(2)}</div>` : ''}
                         </td>
-                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: center; vertical-align: top; color: #1e293b;">${i.qty}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: right; vertical-align: top; font-weight: bold; color: #1e293b;">Rs. ${i.subtotal.toFixed(2)}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: center; vertical-align: top; color: #1e293b; background-color: #ffffff;">${i.qty}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: right; vertical-align: top; font-weight: bold; color: #1e293b; background-color: #ffffff;">Rs. ${i.subtotal.toFixed(2)}</td>
                     </tr>`;
             });
 
