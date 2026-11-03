@@ -780,8 +780,8 @@
                 if(!p || p.stock < qty) return alert('Not enough stock!');
                 const parsed = parseProductItem(p.name);
                 cart.push({
-                    type: 'product', product_id: p.product_id, name: `${p.brand ? '['+p.brand+'] ' : ''}${parsed.name}`,
-                    warranty: selectedProductWarranty, imei: document.getElementById('billingImei').value.trim(),
+                    type: 'product', product_id: p.product_id, name: parsed.name, brand: p.brand || '',
+                    warranty: selectedProductWarranty, imei: document.getElementById('billingImei').value.trim() || p.imei || 'N/A',
                     originalPrice: selectedOriginalPrice, price, qty, discount: discount * qty, subtotal: price * qty
                 });
             } else if(val.startsWith('rep_')) {
@@ -789,8 +789,8 @@
                 if(!r) return;
                 const rId = r.id || r.repair_id;
                 cart.push({
-                    type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`,
-                    warranty: 'No Warranty', imei: '', originalPrice: selectedOriginalPrice, price, qty: 1, subtotal: price,
+                    type: 'repair', repair_id: rId, name: `Repair Job #${rId} (${r.device_model})`, brand: '',
+                    warranty: 'No Warranty', imei: 'N/A', originalPrice: selectedOriginalPrice, price, qty: 1, subtotal: price,
                     total_cost: parseFloat(r.total_cost), advance_cost: parseFloat(r.advance_cost || 0), balance_due: price
                 });
             }
@@ -851,17 +851,64 @@
 
         function generateAutoMessage(sale) {
             let saleIdDisplay = sale.sale_id ? `#${sale.sale_id}` : '#--';
-            let htmlMsg = `<div style="font-family: Arial; font-size: 13px; color: #1e293b;">
-                <h3 style="text-align:center; color:#2563eb; margin:0;">${sale.branch.toUpperCase()}</h3>
-                ${sale.branch_phone ? `<div style="text-align:center; font-size:12px; color:#475569;">Contact: ${sale.branch_phone}</div>` : ''}
-                <hr style="border:0; border-top:1px solid #cbd5e1; margin:8px 0;">
-                <p style="color:#1e293b;"><b>Sale ID:</b> ${saleIdDisplay} | <b>Date:</b> ${new Date().toLocaleString()}<br><b>Customer:</b> ${sale.customer_name} | <b>Phone:</b> ${sale.customer_phone}<br><b>Method:</b> ${sale.payment_method}</p>
-                <table style="width:100%; border-collapse:collapse; margin-bottom:10px; color:#1e293b;">
-                    <tr style="background:#2563eb; color:#ffffff;"><th style="padding:6px;">Item</th><th style="padding:6px;">Qty</th><th style="padding:6px;">Total</th></tr>`;
+            let htmlMsg = `<div style="font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; line-height: 1.4;">
+                <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 12px;">
+                    <h2 style="margin: 0; color: #2563eb; font-size: 18px;">${sale.branch.toUpperCase()}</h2>
+                    ${sale.branch_phone ? `<div style="font-size: 12px; color: #475569; margin-top: 3px;">Contact: ${sale.branch_phone}</div>` : ''}
+                    <div style="font-size: 10px; text-transform: uppercase; color: #64748b; margin-top: 4px; font-weight: bold; letter-spacing: 1px;">Official Sales Receipt</div>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; border: 1px solid #cbd5e1;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span><b>Date:</b> ${new Date().toLocaleString()}</span> <span><b>Sale ID:</b> ${saleIdDisplay}</span></div>
+                    <div><b>Customer:</b> ${sale.customer_name} | <b>Phone:</b> ${sale.customer_phone}</div>
+                </div>
+
+                <div style="font-weight: bold; font-size: 11px; color: #475569; margin-bottom: 6px; text-transform: uppercase;">Purchased Items</div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px;">
+                    <thead>
+                        <tr style="background: #2563eb; color: #ffffff;">
+                            <th style="padding: 6px 8px; text-align: left;">Description</th>
+                            <th style="padding: 6px 8px; text-align: center; width: 40px;">Qty</th>
+                            <th style="padding: 6px 8px; text-align: right;">Total (Rs.)</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
             sale.items.forEach(i => {
-                htmlMsg += `<tr><td style="padding:6px; border:1px solid #cbd5e1; color:#1e293b;">${i.name}<br><small style="color:#2563eb;">Warranty: ${i.warranty}</small></td><td style="padding:6px; border:1px solid #cbd5e1; text-align:center; color:#1e293b;">${i.qty}</td><td style="padding:6px; border:1px solid #cbd5e1; text-align:right; color:#1e293b;">Rs. ${i.subtotal.toFixed(2)}</td></tr>`;
+                let displayName = i.brand ? `[${i.brand}] ${i.name}` : i.name;
+                htmlMsg += `
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1;">
+                            <div style="font-weight: bold; color: #000000;">${displayName}</div>
+                            <div style="font-size: 11px; color: #2563eb; margin-top: 2px;">Warranty: ${i.warranty || 'No Warranty'}</div>
+                            <div style="font-size: 11px; color: #f59e0b; margin-top: 1px;">IMEI: ${i.imei || 'N/A'}</div>
+                            ${i.originalPrice && i.originalPrice > i.price ? `<div style="font-size: 10px; color: #94a3b8; text-decoration: line-through; margin-top: 1px;">Original: Rs. ${(i.originalPrice * i.qty).toFixed(2)}</div>` : ''}
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: center; vertical-align: top;">${i.qty}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: right; vertical-align: top; font-weight: bold;">Rs. ${i.subtotal.toFixed(2)}</td>
+                    </tr>`;
             });
-            htmlMsg += `</table><h4 style="text-align:right; color:#1e293b;">Total: Rs. ${sale.total_amount.toFixed(2)}<br>Paid: Rs. ${(sale.amount_paid||0).toFixed(2)}<br>Change: Rs. ${(sale.change_due||0).toFixed(2)}</h4></div>`;
+
+            htmlMsg += `
+                    </tbody>
+                </table>
+
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px; border: 1px solid #cbd5e1; margin-bottom: 12px;">
+                    ${sale.total_discount > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #ef4444;"><span>Total Discount:</span> <span>- Rs. ${sale.total_discount.toFixed(2)}</span></div>` : ''}
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #2563eb; border-top: 1px dashed #cbd5e1; padding-top: 6px; margin-top: 4px;">
+                        <span>Total Payable:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px;"><span>Amount Paid:</span> <b>Rs. ${(sale.amount_paid || 0).toFixed(2)}</b></div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #10b981;"><span>Change Due:</span> <b>Rs. ${(sale.change_due || 0).toFixed(2)}</b></div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px;"><span>Payment Method:</span> <b>${sale.payment_method}</b></div>
+                </div>
+
+                <div style="text-align: center; font-size: 11px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                    Thank you for your business!<br>
+                    <b>${sale.branch.toUpperCase()}</b>
+                </div>
+            </div>`;
+
             document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';
         }
