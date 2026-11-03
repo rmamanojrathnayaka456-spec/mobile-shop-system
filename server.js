@@ -99,7 +99,11 @@ db.query(`
         sale_items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`);
+`, (err) => {
+    if(!err) {
+        db.query("ALTER TABLE sales ADD COLUMN sale_items LONGTEXT", () => {});
+    }
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -142,7 +146,8 @@ app.post('/api/login', (req, res) => {
 });
 
 app.get('/api/products', (req, res) => {
-    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [req.query.shop_id || 1], (err, results) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT * FROM products WHERE shop_id = ? ORDER BY product_id DESC', [shopId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -172,7 +177,8 @@ app.delete('/api/products/:id', (req, res) => {
 });
 
 app.get('/api/repair-parts', (req, res) => {
-    db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [req.query.shop_id || 1], (err, results) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [shopId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
@@ -241,10 +247,11 @@ app.post('/api/sales', (req, res) => {
     else if (containsRepair) sale_type = 'Repair';
 
     const itemsJson = JSON.stringify(items || []);
+    const sId = shop_id || 1;
 
     db.query(
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, sale_items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [shop_id || 1, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, itemsJson],
+        [sId, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, itemsJson],
         (err, result) => {
             if (err) {
                 console.error("Sales Insert Error:", err.message);
@@ -273,7 +280,8 @@ app.delete('/api/sales/:id', (req, res) => {
 });
 
 app.get('/api/repairs', (req, res) => {
-    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id DESC', [req.query.shop_id || 1], (err, results) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT repair_id AS id, repair_id, shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status, created_at FROM repairs WHERE shop_id = ? ORDER BY repair_id DESC', [shopId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results || []);
     });
