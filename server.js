@@ -31,7 +31,7 @@ db.query(`
 `, (err) => {
     if (!err) {
         db.query("ALTER TABLE shops ADD COLUMN shop_phone VARCHAR(50) DEFAULT ''", () => {});
-        for (let i = 1; i <= 10; i++) {
+        for (let i = 1; i <= 15; i++) {
             db.query(`INSERT INTO shops (shop_id, shop_name, status) VALUES (?, ?, 'ACTIVE') ON DUPLICATE KEY UPDATE shop_id=shop_id`, [i, `Shop ${i}`]);
         }
     }
@@ -49,7 +49,8 @@ db.query(`
         const defaultUsers = [
             ['system01', 'sysKey@01', 1], ['system02', 'mobPass@02', 2], ['system03', 'shopPin@03', 3],
             ['system04', 'posCode@04', 4], ['system05', 'storeKey@05', 5], ['system06', 'branch@06', 6],
-            ['system07', 'login@07', 7], ['system08', 'access@08', 8], ['system09', 'secure@09', 9], ['system10', 'admin@10', 10]
+            ['system07', 'login@07', 7], ['system08', 'access@08', 8], ['system09', 'secure@09', 9], ['system10', 'admin@10', 10],
+            ['system11', 'shop11@key', 11], ['system12', 'shop12@key', 12], ['system13', 'shop13@key', 13], ['system14', 'shop14@key', 14], ['system15', 'shop15@key', 15]
         ];
         defaultUsers.forEach(user => {
             db.query(`INSERT INTO users (username, password, shop_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password)`, user);
