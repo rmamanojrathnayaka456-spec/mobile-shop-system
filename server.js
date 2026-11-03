@@ -9,7 +9,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MySQL Connection Pool with Aiven SSL Support
 const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -22,7 +21,6 @@ const db = mysql.createPool({
     queueLimit: 0
 });
 
-// Initialize Database Tables Automatically on Startup
 db.query(`
     CREATE TABLE IF NOT EXISTS shops (
         shop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -176,7 +174,6 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Repair Parts APIs
 app.get('/api/repair-parts', (req, res) => {
     db.query('SELECT * FROM repair_parts WHERE shop_id = ? ORDER BY part_id DESC', [req.query.shop_id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
