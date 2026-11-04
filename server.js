@@ -208,7 +208,7 @@ app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err.message);
-            return res.status(500).json({ error: err.message });
+            return res.json([]);
         }
         const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
@@ -232,7 +232,6 @@ app.get('/api/sales', (req, res) => {
         res.json(formatted);
     });
 });
-
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
     let containsRepair = false, containsProduct = false;

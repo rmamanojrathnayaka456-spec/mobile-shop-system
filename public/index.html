@@ -939,14 +939,13 @@
         function copyReceiptText() { alert('Receipt copied!'); }
         function sendWhatsAppMessage() { window.open('https://wa.me/?text=' + encodeURIComponent('Receipt ID: ' + (lastSaleData.sale_id||'') + '\nTotal: Rs. ' + document.getElementById('cartTotal').textContent), '_blank'); }
 
-        async function loadSales() {
+       async function loadSales() {
             try {
-                const res = await fetch('/api/sales');
+                const shopId = currentUser ? currentUser.shop_id : 1;
+                const res = await fetch(`/api/sales?shop_id=${shopId}`);
                 const data = await res.json();
                 
                 rawSalesData = Array.isArray(data) ? data : [];
-                console.log("Loaded Sales Data:", rawSalesData);
-                
                 populateYearDropdown();
                 applySalesFilters();
             } catch(e) {
