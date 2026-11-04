@@ -12,7 +12,7 @@
             --bg-color: #f1f5f9; --container-bg: #ffffff; --text-color: #1e293b; --section-bg: #f8fafc; --border-color: #cbd5e1; --input-bg: #ffffff; --input-text: #1e293b; --table-header-bg: #0f172a; --table-header-color: #ffffff; --card-bg: #ffffff;
         }
         [data-theme="dark"] {
-            --bg-color: #0f172a; --container-bg: #1e293b; --text-color: #f1f5f9; --section-bg: #1e293b; --border-color: #334155; --input-bg: #0f172a; --input-text: #f1f5f9; --table-header-bg: #1e293b; --table-header-color: #ffffff; --card-bg: #1e293b;
+            --bg-color: #0f172a; --container-bg: #1e1e1e; --text-color: #f1f5f9; --section-bg: #1e293b; --border-color: #334155; --input-bg: #0f172a; --input-text: #f1f5f9; --table-header-bg: #1e1e1e; --table-header-color: #ffffff; --card-bg: #1e1e1e;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: background 0.3s, color 0.3s; }
         .container { max-width: 1320px; margin: auto; background: var(--container-bg); padding: 30px; border-radius: 14px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
@@ -479,7 +479,8 @@
         }
 
         async function loadInventory() {
-            const res = await fetch(`/api/products?shop_id=${currentUser.shop_id}`);
+            const shopId = currentUser ? currentUser.shop_id : 1;
+            const res = await fetch(`/api/products?shop_id=${shopId}`);
             allProducts = await res.json();
             renderInventory(allProducts);
             checkLowStockBanner();
@@ -529,7 +530,7 @@
         }
 
         function printExistingBarcode(name, code, price) {
-            currentBarcodeData = { shop: currentUser.shop_name || "SHA MOBILE", name, code, price };
+            currentBarcodeData = { shop: currentUser ? currentUser.shop_name : "SHA MOBILE", name, code, price };
             document.getElementById('bcPrintQty').value = 1;
             showBarcodeModal();
         }
@@ -551,6 +552,7 @@
 
         async function addProduct(e) {
             e.preventDefault();
+            const shopId = currentUser ? currentUser.shop_id : 1;
             const baseName = document.getElementById('pName').value.trim();
             const warranty = document.getElementById('pWarranty').value.trim() || 'No Warranty';
             const finalName = `${baseName} [Warranty: ${warranty}]`;
@@ -558,7 +560,7 @@
             const price = document.getElementById('pPrice').value;
 
             const data = {
-                shop_id: currentUser.shop_id, name: finalName,
+                shop_id: shopId, name: finalName,
                 brand: document.getElementById('pBrand').value, color: document.getElementById('pColor').value,
                 category: document.getElementById('pCategory').value, cost_price: document.getElementById('pCost').value,
                 selling_price: price, stock: stockQty, imei: document.getElementById('pImei').value || 'N/A'
@@ -566,7 +568,7 @@
             const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             const result = await res.json();
             if(res.ok) {
-                currentBarcodeData = { shop: currentUser.shop_name || "SHA MOBILE", name: baseName, code: result.product_code, price };
+                currentBarcodeData = { shop: currentUser ? currentUser.shop_name : "SHA MOBILE", name: baseName, code: result.product_code, price };
                 document.getElementById('bcPrintQty').value = stockQty;
                 showBarcodeModal();
                 document.getElementById('productForm').reset();
@@ -596,12 +598,13 @@
 
         async function deleteProduct(id) {
             if(!confirm('Delete product?')) return;
-            await fetch(`/api/products/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            await fetch(`/api/products/${id}`, { method: 'DELETE' });
             loadInventory();
         }
 
         async function loadRepairParts() {
-            const res = await fetch(`/api/repair-parts?shop_id=${currentUser.shop_id}`);
+            const shopId = currentUser ? currentUser.shop_id : 1;
+            const res = await fetch(`/api/repair-parts?shop_id=${shopId}`);
             allRepairParts = await res.json();
             renderRepairParts(allRepairParts);
         }
@@ -624,8 +627,9 @@
 
         async function addRepairPart(e) {
             e.preventDefault();
+            const shopId = currentUser ? currentUser.shop_id : 1;
             const data = {
-                shop_id: currentUser.shop_id,
+                shop_id: shopId,
                 part_name: document.getElementById('partName').value.trim(),
                 device_model: document.getElementById('partDevice').value.trim(),
                 cost_price: document.getElementById('partCost').value,
@@ -642,7 +646,7 @@
 
         async function deleteRepairPart(id) {
             if(!confirm('Delete repair part?')) return;
-            await fetch(`/api/repair-parts/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            await fetch(`/api/repair-parts/${id}`, { method: 'DELETE' });
             loadRepairParts();
         }
 
@@ -823,9 +827,10 @@
             const paymentMethod = document.getElementById('paymentMethod').value;
             const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
             const change = Math.max(0, paid - total);
+            const shopId = currentUser ? currentUser.shop_id : 1;
 
             const payload = {
-                shop_id: Number(currentUser.shop_id),
+                shop_id: Number(shopId),
                 customer_name: name,
                 customer_phone: phone,
                 payment_method: paymentMethod,
@@ -844,7 +849,7 @@
                     sale_id: data.sale_id,
                     customer_name: name, customer_phone: phone, payment_method: paymentMethod,
                     total_amount: total, total_discount: discount, amount_paid: paid, change_due: change,
-                    items: [...cart], branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone
+                    items: [...cart], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                 };
                 generateAutoMessage(lastSaleData);
                 cart = []; renderCart(); loadInventory(); loadSales(); loadRepairs();
@@ -926,13 +931,15 @@
 
         async function loadSales() {
             try {
-                const res = await fetch(`/api/sales?shop_id=${currentUser.shop_id}`);
+                const shopId = currentUser ? currentUser.shop_id : 1;
+                const res = await fetch(`/api/sales?shop_id=${shopId}`);
                 rawSalesData = await res.json();
                 if(!Array.isArray(rawSalesData)) rawSalesData = [];
                 populateYearDropdown();
                 applySalesFilters();
             } catch(e) {
                 rawSalesData = [];
+                renderSalesTable([]);
             }
         }
 
@@ -1046,12 +1053,13 @@
 
         async function deleteSale(id) {
             if(!confirm(`Are you sure you want to delete Sale #${id}?`)) return;
-            const res = await fetch(`/api/sales/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/sales/${id}`, { method: 'DELETE' });
             if(res.ok) { loadSales(); }
         }
 
         async function loadRepairs() {
-            const res = await fetch(`/api/repairs?shop_id=${currentUser.shop_id}`);
+            const shopId = currentUser ? currentUser.shop_id : 1;
+            const res = await fetch(`/api/repairs?shop_id=${shopId}`);
             allRepairs = await res.json();
             renderRepairsTable(allRepairs);
         }
@@ -1082,6 +1090,7 @@
 
         async function addRepair(e) {
             e.preventDefault();
+            const shopId = currentUser ? currentUser.shop_id : 1;
             const issueInput = document.getElementById('repIssue').value.trim();
             const warranty = document.getElementById('repWarranty').value.trim() || 'No Warranty';
             const customerName = document.getElementById('repCustomer').value.trim();
@@ -1091,7 +1100,7 @@
             const totalCost = parseFloat(document.getElementById('repTotalCost').value) || 0;
 
             const data = {
-                shop_id: currentUser.shop_id, customer_name: customerName,
+                shop_id: shopId, customer_name: customerName,
                 customer_phone: customerPhone, device_model: deviceModel,
                 issue_description: `${issueInput} [Warranty: ${warranty}]`,
                 advance_cost: advanceCost, total_cost: totalCost
@@ -1106,7 +1115,7 @@
                     repair_id: rId, customer_name: customerName, customer_phone: customerPhone,
                     device_model: deviceModel, issue: issueInput, warranty: warranty,
                     total_cost: totalCost, advance_cost: advanceCost, balance_due: Math.max(0, totalCost - advanceCost),
-                    branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone
+                    branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                 });
 
                 document.getElementById('repairForm').reset();
@@ -1155,12 +1164,12 @@
         }
 
         async function updateRepairStatus(id, status) {
-            await fetch(`/api/repairs/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status }) });
+            await fetch(`/api/repairs/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
         }
 
         async function deleteRepair(id) {
             if(!confirm('Delete repair?')) return;
-            await fetch(`/api/repairs/${id}?shop_id=${currentUser.shop_id}`, { method: 'DELETE' });
+            await fetch(`/api/repairs/${id}`, { method: 'DELETE' });
             loadRepairs();
         }
 
@@ -1223,11 +1232,12 @@
             const change = Math.max(0, paid - bal);
             const paymentMethod = document.getElementById('repBillPaymentMethod').value;
             const parsed = parseRepairIssue(selectedBillingRepair.issue_description);
+            const shopId = currentUser ? currentUser.shop_id : 1;
 
             const res = await fetch('/api/sales', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    shop_id: Number(currentUser.shop_id),
+                    shop_id: Number(shopId),
                     customer_name: selectedBillingRepair.customer_name,
                     customer_phone: selectedBillingRepair.customer_phone,
                     payment_method: paymentMethod,
@@ -1238,14 +1248,14 @@
             });
             const data = await res.json();
             if(res.ok) {
-                await fetch(`/api/repairs/${rId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, status: 'Delivered' }) });
+                await fetch(`/api/repairs/${rId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Delivered' }) });
                 
                 lastSaleData = {
                     sale_id: data.sale_id,
                     customer_name: selectedBillingRepair.customer_name, customer_phone: selectedBillingRepair.customer_phone,
                     payment_method: paymentMethod, total_amount: bal, total_discount: 0, amount_paid: paid, change_due: change,
                     items: [{ name: `Repair Final Checkout (#${rId})`, warranty: parsed.warranty, qty: 1, subtotal: bal }],
-                    branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone
+                    branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                 };
                 generateAutoMessage(lastSaleData);
                 loadRepairs(); loadSales();
@@ -1282,30 +1292,32 @@
                 sale_id: sale.sale_id,
                 customer_name: sale.customer_name, customer_phone: sale.customer_phone, payment_method: sale.payment_method,
                 total_amount: sale.total_amount, total_discount: sale.discount || 0, amount_paid: sale.total_amount, change_due: 0,
-                items: sale.items || [], branch: currentUser.shop_name || "SHA MOBILE", branch_phone: currentUser.shop_phone
+                items: sale.items || [], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
             };
             generateAutoMessage(lastSaleData);
             document.getElementById('receiptModalTitle').textContent = `Sale Details (#${sale.sale_id})`;
         }
 
         async function exportDataBackup() {
+            const shopId = currentUser ? currentUser.shop_id : 1;
             const [p, s, r, rp] = await Promise.all([
-                fetch(`/api/products?shop_id=${currentUser.shop_id}`).then(res=>res.json()),
-                fetch(`/api/sales?shop_id=${currentUser.shop_id}`).then(res=>res.json()),
-                fetch(`/api/repairs?shop_id=${currentUser.shop_id}`).then(res=>res.json()),
-                fetch(`/api/repair-parts?shop_id=${currentUser.shop_id}`).then(res=>res.json())
+                fetch(`/api/products?shop_id=${shopId}`).then(res=>res.json()),
+                fetch(`/api/sales?shop_id=${shopId}`).then(res=>res.json()),
+                fetch(`/api/repairs?shop_id=${shopId}`).then(res=>res.json()),
+                fetch(`/api/repair-parts?shop_id=${shopId}`).then(res=>res.json())
             ]);
             const a = document.createElement('a');
             a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ products: p, sales: s, repairs: r, repair_parts: rp }, null, 2));
-            a.download = `backup_${currentUser.shop_name}.json`; document.body.appendChild(a); a.click(); a.remove();
+            a.download = `backup_${currentUser ? currentUser.shop_name : 'shop'}.json`; document.body.appendChild(a); a.click(); a.remove();
         }
 
         async function restoreDataBackup() {
             const f = document.getElementById('backupFileInput').files[0];
             if(!f) return alert('Select file!');
+            const shopId = currentUser ? currentUser.shop_id : 1;
             const reader = new FileReader();
             reader.onload = async (e) => {
-                await fetch('/api/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: currentUser.shop_id, ...JSON.parse(e.target.result) }) });
+                await fetch('/api/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: shopId, ...JSON.parse(e.target.result) }) });
                 alert('Restored successfully!'); loadInventory(); loadSales(); loadRepairs(); loadRepairParts();
             };
             reader.readAsText(f);
