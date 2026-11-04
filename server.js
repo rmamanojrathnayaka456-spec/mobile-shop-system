@@ -242,32 +242,47 @@ app.post('/api/sales', (req, res) => {
             if (item.type === 'product') containsProduct = true;
         });
     }
-    let sale_type = 'Product';
-    if (containsRepair && containsProduct) sale_type = 'Mixed';
-    else if (containsRepair) sale_type = 'Repair';
+  app.post('/api/sales', (req, res) => {
+    let { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items, sale_type } = req.body;
+    
+    let containsRepair = false, containsProduct = false;
+    if (items && Array.isArray(items)) {
+        items.forEach(item => {
+            if (item.type === 'repair') containsRepair = true;
+            if (item.type === 'product') containsProduct = true;
+        });
+    }
+    
+    let finalSaleType = sale_type || 'Product';
+    if (!sale_type) {
+        if (containsRepair && containsProduct) finalSaleType = 'Mixed';
+        else if (containsRepair) finalSaleType = 'Repair';
+    }
 
     const itemsJson = JSON.stringify(items || []);
-    const sId = shop_id || 1;
+    const sId = shop_id || (currentUser ? currentUser.shop_id : 1) || 1;
 
     db.query(
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, sale_items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [sId, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, total_amount, itemsJson],
+        [sId, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', finalSaleType, discount || 0, total_amount || 0, itemsJson],
         (err, result) => {
             if (err) {
                 console.error("Sales Insert Error:", err.message);
                 return res.status(500).json({ error: err.message });
             }
             const newSaleId = result.insertId;
+            
+            // Stock Update & Repair Status Change
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     if (item.type === 'product' && item.product_id) {
-                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ?', [item.qty, item.product_id]);
+                        db.query('UPDATE products SET stock = stock - ? WHERE product_id = ?', [item.qty || 1, item.product_id]);
                     } else if (item.type === 'repair' && item.repair_id) {
                         db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ?', [item.repair_id]);
                     }
                 });
             }
-            res.json({ message: 'Sale recorded', sale_id: newSaleId });
+            res.json({ success: true, message: 'Sale recorded', sale_id: newSaleId });
         }
     );
 });
