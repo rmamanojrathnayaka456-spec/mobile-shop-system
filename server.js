@@ -206,7 +206,8 @@ app.get('/api/sales', (req, res) => {
             return res.json([]);
         }
         const formatted = (results || []).map((row, index) => {
-            const actualId = row.sale_id || row.id || (results.length - index);
+            // Handle any primary key column name variation (sale_id, id, invoice_id)
+            const actualId = row.sale_id || row.id || row.invoice_id || (results.length - index);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             let parsedItems = [];
             try {
@@ -273,22 +274,21 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Universal delete sale route supporting both sale_id and id primary keys
+// Robust delete sale route trying all possible primary key column names safely
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
-    db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err) => {
-        if (err) {
-            // Fallback if column sale_id doesn't exist
-            db.query('DELETE FROM sales WHERE id = ?', [saleId], (err2) => {
-                if (err2) {
-                    console.error("Delete Sale Error:", err2.message);
-                    return res.status(500).json({ error: err2.message });
+    db.query('DELETE FROM sales WHERE sale_id = ?', [saleId], (err1) => {
+        if (!err1) return res.json({ success: true, message: 'Deleted successfully' });
+        db.query('DELETE FROM sales WHERE id = ?', [saleId], (err2) => {
+            if (!err2) return res.json({ success: true, message: 'Deleted successfully' });
+            db.query('DELETE FROM sales WHERE invoice_id = ?', [saleId], (err3) => {
+                if (err3) {
+                    console.error("Delete Sale Error:", err3.message);
+                    return res.status(500).json({ error: err3.message });
                 }
-                res.json({ success: true, message: 'Sale deleted successfully' });
+                res.json({ success: true, message: 'Deleted successfully' });
             });
-            return;
-        }
-        res.json({ success: true, message: 'Sale deleted successfully' });
+        });
     });
 });
 
