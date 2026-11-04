@@ -989,16 +989,19 @@
 
             rawSalesData.forEach(s => {
                 const sTotal = parseFloat(s.total_amount || 0);
-                if(s.date_only === todayStr) {
+                const sDateOnly = s.date_only || (s.created_at ? new Date(s.created_at).toLocaleDateString('en-CA') : '');
+                const sMonthOnly = s.month_only || sDateOnly.substring(0, 7);
+
+                if(sDateOnly === todayStr) {
                     daily += sTotal;
-                    if(s.sale_type === 'Repair') repair += sTotal;
+                    if(s.sale_type === 'Repair' || s.sale_type === 'repair') repair += sTotal;
                     const pm = (s.payment_method || 'Cash').trim();
                     if(pm === 'Cash') eCash += sTotal;
                     else if(pm === 'Card') eCard += sTotal;
                     else if(pm === 'Bank Transfer') eBank += sTotal;
                     else if(pm === 'Koko') eKoko += sTotal;
                 }
-                if(s.month_only === thisMonthStr) monthly += sTotal;
+                if(sMonthOnly === thisMonthStr) monthly += sTotal;
             });
 
             document.getElementById('dailySalesAmt').textContent = `Rs. ${daily.toFixed(2)}`;
@@ -1012,14 +1015,18 @@
             document.getElementById('eodKoko').textContent = `Rs. ${eKoko.toFixed(2)}`;
 
             let filtered = rawSalesData.filter(s => {
-                if(yearVal && s.year_only !== yearVal) return false;
-                if(monthVal && (!s.month_only || s.month_only.slice(-2) !== monthVal)) return false;
-                if(dateVal && s.date_only !== dateVal) return false;
+                const sDateOnly = s.date_only || (s.created_at ? new Date(s.created_at).toLocaleDateString('en-CA') : '');
+                const sMonthOnly = s.month_only || sDateOnly.substring(0, 7);
+                const sYearOnly = s.year_only || sDateOnly.substring(0, 4);
 
-                if(currentSalesFilter === 'daily' && s.date_only !== todayStr) return false;
-                if(currentSalesFilter === 'monthly' && s.month_only !== thisMonthStr) return false;
-                if(currentSalesFilter === 'repair' && (s.date_only !== todayStr || s.sale_type !== 'Repair')) return false;
-                if(['Cash', 'Card', 'Bank Transfer', 'Koko'].includes(currentSalesFilter) && (s.date_only !== todayStr || s.payment_method !== currentSalesFilter)) return false;
+                if(yearVal && sYearOnly !== yearVal) return false;
+                if(monthVal && (!sMonthOnly || sMonthOnly.slice(-2) !== monthVal)) return false;
+                if(dateVal && sDateOnly !== dateVal) return false;
+
+                if(currentSalesFilter === 'daily' && sDateOnly !== todayStr) return false;
+                if(currentSalesFilter === 'monthly' && sMonthOnly !== thisMonthStr) return false;
+                if(currentSalesFilter === 'repair' && (sDateOnly !== todayStr || (s.sale_type !== 'Repair' && s.sale_type !== 'repair'))) return false;
+                if(['Cash', 'Card', 'Bank Transfer', 'Koko'].includes(currentSalesFilter) && (sDateOnly !== todayStr || s.payment_method !== currentSalesFilter)) return false;
 
                 if(query) {
                     const cleanQuery = query.replace('#', '');
@@ -1062,7 +1069,7 @@
             if(sales.length === 0) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No sales found.</td></tr>`; return; }
             sales.forEach(s => {
                 let badgeClass = 'badge-prod';
-                if(s.sale_type === 'Repair') badgeClass = 'badge-rep';
+                if(s.sale_type === 'Repair' || s.sale_type === 'repair') badgeClass = 'badge-rep';
                 else if(s.sale_type === 'Mixed') badgeClass = 'badge-mix';
 
                 tbody.innerHTML += `<tr style="cursor:pointer;" onclick="viewSale(${s.sale_id})">
@@ -1204,6 +1211,7 @@
 
         async function updateRepairStatus(id, status) {
             await fetch(`/api/repairs/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+            loadRepairs();
         }
 
         async function deleteRepair(id) {
@@ -1297,7 +1305,7 @@
                     branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                 };
                 generateAutoMessage(lastSaleData);
-                loadRepairs(); loadSales();
+                await loadRepairs(); await loadSales();
             }
         }
 

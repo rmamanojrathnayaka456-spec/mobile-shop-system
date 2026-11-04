@@ -84,11 +84,7 @@ db.query(`
         selling_price DECIMAL(10, 2) DEFAULT 0,
         stock INT DEFAULT 1
     )
-`, (err) => {
-    if(!err) {
-        db.query("ALTER TABLE repair_parts ADD COLUMN selling_price DECIMAL(10, 2) DEFAULT 0", () => {});
-    }
-});
+`);
 
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
@@ -277,12 +273,20 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
+// Universal delete sale route supporting both sale_id and id primary keys
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
     db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err) => {
         if (err) {
-            console.error("Delete Sale Error:", err.message);
-            return res.status(500).json({ error: err.message });
+            // Fallback if column sale_id doesn't exist
+            db.query('DELETE FROM sales WHERE id = ?', [saleId], (err2) => {
+                if (err2) {
+                    console.error("Delete Sale Error:", err2.message);
+                    return res.status(500).json({ error: err2.message });
+                }
+                res.json({ success: true, message: 'Sale deleted successfully' });
+            });
+            return;
         }
         res.json({ success: true, message: 'Sale deleted successfully' });
     });
