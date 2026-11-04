@@ -86,7 +86,6 @@ db.query(`
     )
 `);
 
-// 1. Sales Table Creation (Safe & Complete Structure)
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
         sale_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -101,75 +100,10 @@ db.query(`
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 `, (err) => {
-    if (!err) {
+    if(!err) {
         db.query("ALTER TABLE sales ADD COLUMN sale_items LONGTEXT", () => {});
         db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'", () => {});
     }
-});
-
-// 2. Sales Post Route with Debug Logging
-app.post('/api/sales', (req, res) => {
-    console.log("Incoming Sale Data:", req.body);
-    const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
-    
-    let containsRepair = false, containsProduct = false;
-    if (items && Array.isArray(items)) {
-        items.forEach(item => {
-            if (item.type === 'repair') containsRepair = true;
-            if (item.type === 'product') containsProduct = true;
-        });
-    }
-    let sale_type = 'Product';
-    if (containsRepair && containsProduct) sale_type = 'Mixed';
-    else if (containsRepair) sale_type = 'Repair';
-
-    const itemsJson = JSON.stringify(items || []);
-    const sId = shop_id || 1;
-    const finalTotal = total_amount || 0;
-
-    db.query(
-        'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, sale_items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [sId, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', sale_type, discount || 0, finalTotal, itemsJson],
-        (err, result) => {
-            if (err) {
-                console.error("Sales Insert Database Error:", err.message);
-                return res.status(500).json({ error: err.message });
-            }
-            console.log("Sale successfully inserted with ID:", result.insertId);
-            res.json({ message: 'Sale recorded', sale_id: result.insertId });
-        }
-    );
-});
-
-// 3. Sales Get Route (Fallback for all shops if needed)
-app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM sales WHERE shop_id = ? OR shop_id = 1 ORDER BY sale_id DESC', [shopId], (err, results) => {
-        if (err) {
-            console.error("Sales Fetch Error:", err.message);
-            return res.json([]);
-        }
-        const formatted = (results || []).map((row) => {
-            const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            let parsedItems = [];
-            try {
-                parsedItems = row.sale_items ? JSON.parse(row.sale_items) : [];
-            } catch (e) {
-                parsedItems = [];
-            }
-            return {
-                ...row,
-                sale_type: row.sale_type || 'Product',
-                discount: row.discount || 0,
-                formatted_date: cDate.toLocaleString(),
-                date_only: cDate.toLocaleDateString('en-CA'),
-                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
-                year_only: cDate.getFullYear().toString(),
-                items: parsedItems
-            };
-        });
-        res.json(formatted);
-    });
 });
 
 db.query(`
@@ -271,50 +205,33 @@ app.delete('/api/repair-parts/:id', (req, res) => {
 });
 
 app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id;
-    let query = 'SELECT * FROM sales';
-    let params = [];
-    if (shopId) {
-        query += ' WHERE shop_id = ? OR shop_id = 1';
-        params.push(shopId);
-    }
-    query += ' ORDER BY sale_id DESC';
-    
-    db.query(query, params, (err, results) => {
-        if (err || !results || results.length === 0) {
-            // Fallback: fetch all sales if filtered query returns empty
-            db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err2, allResults) => {
-                if (err2) return res.json([]);
-                formatAndSendSales(allResults, res);
-            });
-            return;
+    db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
+        if (err) {
+            console.error("Sales Fetch Error:", err.message);
+            return res.json([]);
         }
-        formatAndSendSales(results, res);
+        const formatted = (results || []).map((row) => {
+            const cDate = row.created_at ? new Date(row.created_at) : new Date();
+            let parsedItems = [];
+            try {
+                parsedItems = row.sale_items ? JSON.parse(row.sale_items) : [];
+            } catch (e) {
+                parsedItems = [];
+            }
+            return {
+                ...row,
+                sale_type: row.sale_type || 'Product',
+                discount: row.discount || 0,
+                formatted_date: cDate.toLocaleString(),
+                date_only: cDate.toLocaleDateString('en-CA'),
+                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
+                year_only: cDate.getFullYear().toString(),
+                items: parsedItems
+            };
+        });
+        res.json(formatted);
     });
 });
-
-function formatAndSendSales(results, res) {
-    const formatted = (results || []).map((row) => {
-        const cDate = row.created_at ? new Date(row.created_at) : new Date();
-        let parsedItems = [];
-        try {
-            parsedItems = row.sale_items ? JSON.parse(row.sale_items) : [];
-        } catch (e) {
-            parsedItems = [];
-        }
-        return {
-            ...row,
-            sale_type: row.sale_type || 'Product',
-            discount: row.discount || 0,
-            formatted_date: cDate.toLocaleString(),
-            date_only: cDate.toLocaleDateString('en-CA'),
-            month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
-            year_only: cDate.getFullYear().toString(),
-            items: parsedItems
-        };
-    });
-    res.json(formatted);
-}
 
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;

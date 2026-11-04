@@ -839,22 +839,32 @@
                 items: cart
             };
 
-            const res = await fetch('/api/sales', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if(res.ok) {
-                lastSaleData = {
-                    sale_id: data.sale_id,
-                    customer_name: name, customer_phone: phone, payment_method: paymentMethod,
-                    total_amount: total, total_discount: discount, amount_paid: paid, change_due: change,
-                    items: [...cart], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
-                };
-                generateAutoMessage(lastSaleData);
-                cart = []; renderCart(); loadInventory(); loadSales(); loadRepairs();
-            } else {
-                alert('Checkout failed: ' + (data.error || 'Unknown error'));
+            try {
+                const res = await fetch('/api/sales', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if(res.ok) {
+                    lastSaleData = {
+                        sale_id: data.sale_id,
+                        customer_name: name, customer_phone: phone, payment_method: paymentMethod,
+                        total_amount: total, total_discount: discount, amount_paid: paid, change_due: change,
+                        items: [...cart], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
+                    };
+                    generateAutoMessage(lastSaleData);
+                    cart = []; 
+                    renderCart(); 
+                    await loadInventory(); 
+                    await loadSales(); 
+                    await loadRepairs();
+                } else {
+                    alert('Checkout failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error("Checkout network error:", err);
+                alert("Network error during checkout!");
             }
         }
 
@@ -929,71 +939,18 @@
         function copyReceiptText() { alert('Receipt copied!'); }
         function sendWhatsAppMessage() { window.open('https://wa.me/?text=' + encodeURIComponent('Receipt ID: ' + (lastSaleData.sale_id||'') + '\nTotal: Rs. ' + document.getElementById('cartTotal').textContent), '_blank'); }
 
-       async function loadSales() {
+        async function loadSales() {
             try {
-                const shopId = currentUser ? currentUser.shop_id : 1;
-                const res = await fetch(`/api/sales?shop_id=${shopId}`);
+                const res = await fetch('/api/sales');
                 const data = await res.json();
                 
-                // Ensure rawSalesData is always a valid array
-                rawSalesData = Array.isArray(data) ? data : (data.sales || []);
-                
+                rawSalesData = Array.isArray(data) ? data : [];
                 populateYearDropdown();
                 applySalesFilters();
             } catch(e) {
                 console.error("Error loading sales:", e);
                 rawSalesData = [];
                 renderSalesTable([]);
-            }
-        }
-
-        async function completeCheckout() {
-            if(cart.length === 0) return alert('Cart is empty!');
-            const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
-            const discount = cart.reduce((sum, item) => sum + (item.discount || 0), 0);
-            const name = document.getElementById('custName').value.trim() || 'Cash Customer';
-            const phone = document.getElementById('custPhone').value.trim() || 'N/A';
-            const paymentMethod = document.getElementById('paymentMethod').value;
-            const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
-            const change = Math.max(0, paid - total);
-            const shopId = currentUser ? currentUser.shop_id : 1;
-
-            const payload = {
-                shop_id: Number(shopId),
-                customer_name: name,
-                customer_phone: phone,
-                payment_method: paymentMethod,
-                discount: discount,
-                total_amount: total,
-                items: cart
-            };
-
-            try {
-                const res = await fetch('/api/sales', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                
-                if(res.ok) {
-                    lastSaleData = {
-                        sale_id: data.sale_id,
-                        customer_name: name, customer_phone: phone, payment_method: paymentMethod,
-                        total_amount: total, total_discount: discount, amount_paid: paid, change_due: change,
-                        items: [...cart], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
-                    };
-                    generateAutoMessage(lastSaleData);
-                    cart = []; 
-                    renderCart(); 
-                    await loadInventory(); 
-                    await loadSales(); 
-                    await loadRepairs();
-                } else {
-                    alert('Checkout failed: ' + (data.error || 'Unknown error'));
-                }
-            } catch (err) {
-                console.error("Checkout network error:", err);
-                alert("Network error during checkout!");
             }
         }
 
@@ -1356,7 +1313,7 @@
             const shopId = currentUser ? currentUser.shop_id : 1;
             const [p, s, r, rp] = await Promise.all([
                 fetch(`/api/products?shop_id=${shopId}`).then(res=>res.json()),
-                fetch(`/api/sales?shop_id=${shopId}`).then(res=>res.json()),
+                fetch('/api/sales').then(res=>res.json()),
                 fetch(`/api/repairs?shop_id=${shopId}`).then(res=>res.json()),
                 fetch(`/api/repair-parts?shop_id=${shopId}`).then(res=>res.json())
             ]);
