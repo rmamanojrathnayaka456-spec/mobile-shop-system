@@ -239,7 +239,8 @@ app.get('/api/sales', (req, res) => {
 
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
-    db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err) => {
+    // table එකේ sale_id හෝ id කුමක් වුවත් ඩීලීට් වීමට සේකසා ඇත
+    db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err, result) => {
         if (err) {
             console.error("Delete Sale Error:", err.message);
             return res.status(500).json({ error: err.message });
