@@ -945,6 +945,8 @@
                 const data = await res.json();
                 
                 rawSalesData = Array.isArray(data) ? data : [];
+                console.log("Loaded Sales Data:", rawSalesData);
+                
                 populateYearDropdown();
                 applySalesFilters();
             } catch(e) {

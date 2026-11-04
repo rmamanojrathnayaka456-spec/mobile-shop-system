@@ -208,7 +208,7 @@ app.get('/api/sales', (req, res) => {
     db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err.message);
-            return res.json([]);
+            return res.status(500).json({ error: err.message });
         }
         const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
