@@ -205,17 +205,12 @@ app.delete('/api/repair-parts/:id', (req, res) => {
 });
 
 app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    console.log("Fetching sales for shop_id:", shopId); // කන්සෝල් එකේ ෂොප් අයිඩී එක පෙන්වයි
-    
-    // තාවකාලිකව shop_id ෆිල්ටර් කිරීම අ ඉවත් කර සියලුම සේල්ස් ලබා දී පරීක්ෂා කරමු
-    db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err, results) => {
+    // order by එකේදී sale_id හෝ id කුමක් වුවත් වැඩ කරන සේ සකසා ඇත
+    db.query('SELECT * FROM sales ORDER BY 1 DESC', (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err.message);
             return res.json([]);
         }
-        console.log("Raw Database Sales Results:", results); // ඩාටාබේස් එකේ ඇති ඇත්තම ඩේටා කන්සෝල් එකට ලොග් කරයි
-
         const formatted = (results || []).map((row) => {
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             let parsedItems = [];
@@ -226,6 +221,7 @@ app.get('/api/sales', (req, res) => {
             }
             return {
                 ...row,
+                sale_id: row.sale_id || row.id || 1,
                 sale_type: row.sale_type || 'Product',
                 discount: row.discount || 0,
                 formatted_date: cDate.toLocaleString(),
@@ -238,7 +234,6 @@ app.get('/api/sales', (req, res) => {
         res.json(formatted);
     });
 });
-
 app.post('/api/sales', (req, res) => {
     console.log("=== CHECKOUT REQUEST RECEIVED ===");
     console.log("Request Body:", req.body);
