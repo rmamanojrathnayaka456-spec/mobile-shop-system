@@ -204,34 +204,50 @@ app.delete('/api/repair-parts/:id', (req, res) => {
 });
 
 app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id || 1;
-    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY sale_id DESC', [shopId], (err, results) => {
-        if (err) {
-            console.error("Sales Fetch Error:", err.message);
-            return res.json([]);
+    const shopId = req.query.shop_id;
+    let query = 'SELECT * FROM sales';
+    let params = [];
+    if (shopId) {
+        query += ' WHERE shop_id = ? OR shop_id = 1';
+        params.push(shopId);
+    }
+    query += ' ORDER BY sale_id DESC';
+    
+    db.query(query, params, (err, results) => {
+        if (err || !results || results.length === 0) {
+            // Fallback: fetch all sales if filtered query returns empty
+            db.query('SELECT * FROM sales ORDER BY sale_id DESC', (err2, allResults) => {
+                if (err2) return res.json([]);
+                formatAndSendSales(allResults, res);
+            });
+            return;
         }
-        const formatted = (results || []).map((row) => {
-            const cDate = row.created_at ? new Date(row.created_at) : new Date();
-            let parsedItems = [];
-            try {
-                parsedItems = row.sale_items ? JSON.parse(row.sale_items) : [];
-            } catch (e) {
-                parsedItems = [];
-            }
-            return {
-                ...row,
-                sale_type: row.sale_type || 'Product',
-                discount: row.discount || 0,
-                formatted_date: cDate.toLocaleString(),
-                date_only: cDate.toLocaleDateString('en-CA'),
-                month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
-                year_only: cDate.getFullYear().toString(),
-                items: parsedItems
-            };
-        });
-        res.json(formatted);
+        formatAndSendSales(results, res);
     });
 });
+
+function formatAndSendSales(results, res) {
+    const formatted = (results || []).map((row) => {
+        const cDate = row.created_at ? new Date(row.created_at) : new Date();
+        let parsedItems = [];
+        try {
+            parsedItems = row.sale_items ? JSON.parse(row.sale_items) : [];
+        } catch (e) {
+            parsedItems = [];
+        }
+        return {
+            ...row,
+            sale_type: row.sale_type || 'Product',
+            discount: row.discount || 0,
+            formatted_date: cDate.toLocaleString(),
+            date_only: cDate.toLocaleDateString('en-CA'),
+            month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
+            year_only: cDate.getFullYear().toString(),
+            items: parsedItems
+        };
+    });
+    res.json(formatted);
+}
 
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
