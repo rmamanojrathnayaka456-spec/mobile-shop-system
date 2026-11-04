@@ -232,6 +232,7 @@ app.get('/api/sales', (req, res) => {
         res.json(formatted);
     });
 });
+
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
     let containsRepair = false, containsProduct = false;
