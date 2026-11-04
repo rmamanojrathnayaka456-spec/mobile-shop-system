@@ -233,15 +233,6 @@ app.get('/api/sales', (req, res) => {
     });
 });
 
-app.post('/api/sales', (req, res) => {
-    const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items } = req.body;
-    let containsRepair = false, containsProduct = false;
-    if (items && Array.isArray(items)) {
-        items.forEach(item => {
-            if (item.type === 'repair') containsRepair = true;
-            if (item.type === 'product') containsProduct = true;
-        });
-    }
   app.post('/api/sales', (req, res) => {
     let { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items, sale_type } = req.body;
     
