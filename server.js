@@ -239,8 +239,11 @@ app.get('/api/sales', (req, res) => {
     });
 });
 
-  app.post('/api/sales', (req, res) => {
-    let { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items, sale_type } = req.body;
+app.post('/api/sales', (req, res) => {
+    console.log("=== CHECKOUT REQUEST RECEIVED ===");
+    console.log("Request Body:", req.body);
+
+    const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items, sale_type } = req.body;
     
     let containsRepair = false, containsProduct = false;
     if (items && Array.isArray(items)) {
@@ -257,19 +260,18 @@ app.get('/api/sales', (req, res) => {
     }
 
     const itemsJson = JSON.stringify(items || []);
-    const sId = shop_id || (currentUser ? currentUser.shop_id : 1) || 1;
+    const sId = shop_id || 1;
 
     db.query(
         'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, sale_items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [sId, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', finalSaleType, discount || 0, total_amount || 0, itemsJson],
         (err, result) => {
             if (err) {
-                console.error("Sales Insert Error:", err.message);
+                console.error("DATABASE INSERT ERROR (Sales):", err.message);
                 return res.status(500).json({ error: err.message });
             }
-            const newSaleId = result.insertId;
+            console.log("SUCCESSFULLY INSERTED SALE ID:", result.insertId);
             
-            // Stock Update & Repair Status Change
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     if (item.type === 'product' && item.product_id) {
@@ -279,7 +281,7 @@ app.get('/api/sales', (req, res) => {
                     }
                 });
             }
-            res.json({ success: true, message: 'Sale recorded', sale_id: newSaleId });
+            res.json({ success: true, message: 'Sale recorded', sale_id: result.insertId });
         }
     );
 });
