@@ -205,7 +205,6 @@ app.delete('/api/repair-parts/:id', (req, res) => {
 });
 
 app.get('/api/sales', (req, res) => {
-    // ඩාටාබේස් ටේබල් එකේ සැබෑ ප්‍රයිමරි කී එක (sale_id හෝ id) නිවැරදිව ලබා ගැනීමට
     db.query('SELECT * FROM sales ORDER BY 1 DESC', (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err.message);
@@ -235,6 +234,17 @@ app.get('/api/sales', (req, res) => {
             };
         });
         res.json(formatted);
+    });
+});
+
+app.delete('/api/sales/:id', (req, res) => {
+    const saleId = req.params.id;
+    db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err) => {
+        if (err) {
+            console.error("Delete Sale Error:", err.message);
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ success: true, message: 'Sale deleted successfully' });
     });
 });
 

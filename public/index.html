@@ -1052,7 +1052,7 @@
             applySalesFilters();
         }
 
-        function renderSalesTable(sales) {
+       function renderSalesTable(sales) {
             const tbody = document.getElementById('salesTable');
             if(!tbody) return;
             tbody.innerHTML = '';
@@ -1062,15 +1062,24 @@
                 if(s.sale_type === 'Repair') badgeClass = 'badge-rep';
                 else if(s.sale_type === 'Mixed') badgeClass = 'badge-mix';
 
-                tbody.innerHTML += `<tr>
-                    <td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td>
-                    <td><span class="${badgeClass}">${s.sale_type}</span></td><td>${s.payment_method}</td>
-                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${s.formatted_date}</td>
-                    <td><button onclick="deleteSale(${s.sale_id})" style="background:#ef4444; padding:5px 10px; font-size:11px; border-radius:6px;">Remove</button></td>
+                tbody.innerHTML += `<tr style="cursor:pointer;" onclick="viewSale(${s.sale_id})">
+                    <td><b>#${s.sale_id}</b></td>
+                    <td>${s.customer_name}</td>
+                    <td>${s.customer_phone}</td>
+                    <td><span class="${badgeClass}">${s.sale_type}</span></td>
+                    <td>${s.payment_method}</td>
+                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
+                    <td>${s.formatted_date}</td>
+                    <td onclick="event.stopPropagation()">
+                        <div style="display:flex; gap:6px;">
+                            <button onclick="viewSale(${s.sale_id})" style="background:#06b6d4; padding:5px 8px; font-size:11px; border-radius:6px; width:auto;">View</button>
+                            <button onclick="deleteSale(${s.sale_id})" style="background:#ef4444; padding:5px 8px; font-size:11px; border-radius:6px; width:auto;">Remove</button>
+                        </div>
+                    </td>
                 </tr>`;
             });
         }
-
+        
         async function deleteSale(id) {
             if(!confirm(`Are you sure you want to delete Sale #${id}?`)) return;
             const res = await fetch(`/api/sales/${id}`, { method: 'DELETE' });
