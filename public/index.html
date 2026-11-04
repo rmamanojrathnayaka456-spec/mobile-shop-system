@@ -945,13 +945,14 @@
         function copyReceiptText() { alert('Receipt copied!'); }
         function sendWhatsAppMessage() { window.open('https://wa.me/?text=' + encodeURIComponent('Receipt ID: ' + (lastSaleData.sale_id||'') + '\nTotal: Rs. ' + document.getElementById('cartTotal').textContent), '_blank'); }
 
-        async function loadSales() {
+      async function loadSales() {
             try {
+                // shop_id එක අයින් කර කෙලින්ම /api/sales රික්වෙස්ට් කරමු (සර්වර් එකේ දැන් සියලුම සේල්ස් ලබා දීමට සකසා ඇත)
                 const res = await fetch('/api/sales');
                 const data = await res.json();
                 
                 rawSalesData = Array.isArray(data) ? data : [];
-                console.log("Loaded Sales Data:", rawSalesData);
+                console.log("Successfully Loaded Sales Data:", rawSalesData);
                 
                 populateYearDropdown();
                 applySalesFilters();
