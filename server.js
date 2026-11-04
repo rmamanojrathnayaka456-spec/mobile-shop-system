@@ -205,13 +205,14 @@ app.delete('/api/repair-parts/:id', (req, res) => {
 });
 
 app.get('/api/sales', (req, res) => {
-    // order by එකේදී sale_id හෝ id කුමක් වුවත් වැඩ කරන සේ සකසා ඇත
+    // ඩාටාබේස් ටේබල් එකේ සැබෑ ප්‍රයිමරි කී එක (sale_id හෝ id) නිවැරදිව ලබා ගැනීමට
     db.query('SELECT * FROM sales ORDER BY 1 DESC', (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err.message);
             return res.json([]);
         }
-        const formatted = (results || []).map((row) => {
+        const formatted = (results || []).map((row, index) => {
+            const actualId = row.sale_id || row.id || (results.length - index);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             let parsedItems = [];
             try {
@@ -221,9 +222,11 @@ app.get('/api/sales', (req, res) => {
             }
             return {
                 ...row,
-                sale_id: row.sale_id || row.id || 1,
+                sale_id: actualId,
                 sale_type: row.sale_type || 'Product',
-                discount: row.discount || 0,
+                payment_method: (row.payment_method || 'Cash').trim(),
+                discount: parseFloat(row.discount || 0),
+                total_amount: parseFloat(row.total_amount || 0),
                 formatted_date: cDate.toLocaleString(),
                 date_only: cDate.toLocaleDateString('en-CA'),
                 month_only: cDate.toLocaleDateString('en-CA').substring(0, 7),
@@ -234,6 +237,7 @@ app.get('/api/sales', (req, res) => {
         res.json(formatted);
     });
 });
+
 app.post('/api/sales', (req, res) => {
     console.log("=== CHECKOUT REQUEST RECEIVED ===");
     console.log("Request Body:", req.body);
