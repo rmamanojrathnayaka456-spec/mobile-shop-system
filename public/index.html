@@ -98,9 +98,8 @@
             <button class="tab-btn inactive" onclick="switchTab(3, this)">3. Stock Inventory</button>
             <button class="tab-btn inactive" onclick="switchTab(4, this)">4. Sales History & EOD</button>
             <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repair Jobs</button>
-            <button class="tab-btn inactive" onclick="switchTab(6, this)">6. Repair Parts</button>
-            <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Customer History</button>
-            <button class="tab-btn inactive" onclick="switchTab(8, this)">8. Backup & Restore</button>
+            <button class="tab-btn inactive" onclick="switchTab(7, this)">6. Customer History</button>
+            <button class="tab-btn inactive" onclick="switchTab(8, this)">7. Backup & Restore</button>
         </div>
 
         <!-- Tab 1: Add Product -->
@@ -225,13 +224,16 @@
             </table>
         </div>
 
-        <!-- Tab 5: Repair Jobs -->
+        <!-- Tab 5: Repair Jobs (Includes Repair Parts Sub-Tab) -->
         <div id="tab5" class="section">
-            <h3>5. Repair Jobs Management</h3>
+            <h3>5. Repair Jobs & Repair Parts Management</h3>
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" onclick="switchRepairSubTab('list', this)">Repair Jobs List</button>
                 <button class="sub-tab-btn" onclick="switchRepairSubTab('billing', this)">Repair Billing & Checkout</button>
+                <button class="sub-tab-btn" onclick="switchRepairSubTab('parts', this)">Repair Parts Inventory</button>
             </div>
+            
+            <!-- Sub-Tab 1: Repair Jobs List -->
             <div id="repListSubSection">
                 <form id="repairForm" onsubmit="addRepair(event)" style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px;">
                     <input type="text" id="repCustomer" placeholder="Customer Name" required>
@@ -247,6 +249,8 @@
                 <input type="text" id="searchRepair" placeholder="Search Repair by ID, Name, Phone..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #2563eb;">
                 <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="repairsTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody></table>
             </div>
+
+            <!-- Sub-Tab 2: Repair Billing -->
             <div id="repBillingSubSection" style="display:none;">
                 <div style="background: var(--container-bg); padding: 25px; border: 1px solid var(--border-color); border-radius: 10px;">
                     <h4>Repair Checkout & Final Bill Generation</h4>
@@ -273,29 +277,27 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Sub-Tab 3: Repair Parts Inventory (Standalone) -->
+            <div id="repPartsSubSection" style="display:none;">
+                <form id="repairPartForm" onsubmit="addRepairPart(event)" style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px;">
+                    <label>Part Name:</label><input type="text" id="partName" placeholder="e.g. iPhone 11 OLED Display" required>
+                    <label>Compatible Device:</label><input type="text" id="partDevice" placeholder="e.g. iPhone 11 / Samsung A54" required>
+                    <label>Cost Price (Rs.):</label><input type="number" id="partCost" placeholder="0.00" step="0.01" required>
+                    <label>Stock Quantity:</label><input type="number" id="partStock" value="1" min="1" required>
+                    <button type="submit" style="background:#10b981; margin-top:15px; padding:12px; border-radius:8px;">Add Repair Part</button>
+                </form>
+                <input type="text" id="searchRepairParts" placeholder="Search Repair Parts by Name, Device..." onkeyup="filterRepairParts()" style="margin-bottom: 15px; border: 2px solid #2563eb;">
+                <table>
+                    <thead><tr><th>Part ID</th><th>Part Name</th><th>Compatible Device</th><th>Cost (Rs.)</th><th>Stock</th><th>Action</th></tr></thead>
+                    <tbody id="repairPartsTable"><tr><td colspan="6" style="text-align:center;">Loading...</td></tr></tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Tab 6: Repair Parts -->
-        <div id="tab6" class="section">
-            <h3>6. Repair Parts Inventory & Sourcing</h3>
-            <form id="repairPartForm" onsubmit="addRepairPart(event)" style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px;">
-                <label>Part Name:</label><input type="text" id="partName" placeholder="e.g. iPhone 11 OLED Display" required>
-                <label>Compatible Device:</label><input type="text" id="partDevice" placeholder="e.g. iPhone 11 / Samsung A54" required>
-                <label>Cost Price (Rs.):</label><input type="number" id="partCost" placeholder="0.00" step="0.01" required>
-                <label>Selling Price (Rs.):</label><input type="number" id="partPrice" placeholder="0.00" step="0.01" required>
-                <label>Stock Quantity:</label><input type="number" id="partStock" value="1" min="1" required>
-                <button type="submit" style="background:#10b981; margin-top:15px; padding:12px; border-radius:8px;">Add Repair Part</button>
-            </form>
-            <input type="text" id="searchRepairParts" placeholder="Search Repair Parts by Name, Device..." onkeyup="filterRepairParts()" style="margin-bottom: 15px; border: 2px solid #2563eb;">
-            <table>
-                <thead><tr><th>Part ID</th><th>Part Name</th><th>Compatible Device</th><th>Cost (Rs.)</th><th>Price (Rs.)</th><th>Stock</th><th>Action</th></tr></thead>
-                <tbody id="repairPartsTable"><tr><td colspan="7" style="text-align:center;">Loading...</td></tr></tbody>
-            </table>
-        </div>
-
-        <!-- Tab 7: Customer History -->
+        <!-- Tab 6: Customer History -->
         <div id="tab7" class="section">
-            <h3>7. Customer History</h3>
+            <h3>6. Customer History</h3>
             <input type="text" id="searchCustomerHistory" placeholder="Type customer name or phone number..." onkeyup="filterCustomerHistory()" style="margin-bottom: 20px; border: 2px solid #2563eb; font-weight: bold;">
             <h4 style="color:#2563eb; margin-top:20px;">🛍️ Purchase History</h4>
             <table><thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Payment</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead><tbody id="custSalesTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
@@ -303,9 +305,9 @@
             <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Total (Rs.)</th><th>Status</th></tr></thead><tbody id="custRepairsTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
         </div>
 
-        <!-- Tab 8: Backup & Restore -->
+        <!-- Tab 7: Backup & Restore -->
         <div id="tab8" class="section">
-            <h3>8. Data Backup & Restore</h3>
+            <h3>7. Data Backup & Restore</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px;">
                 <div style="background: var(--container-bg); padding: 25px; border: 1px solid var(--border-color); border-radius: 10px;">
                     <h4 style="color: #2563eb; margin-top:0;">📥 Download Backup</h4>
@@ -440,21 +442,25 @@
             else if(tabNum === 3) loadInventory();
             else if(tabNum === 4) loadSales();
             else if(tabNum === 5) loadRepairs();
-            else if(tabNum === 6) loadRepairParts();
             else if(tabNum === 7) { loadSales(); loadRepairs(); filterCustomerHistory(); }
         }
 
         function switchRepairSubTab(type, btn) {
             document.querySelectorAll('#tab5 .sub-tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            document.getElementById('repListSubSection').style.display = 'none';
+            document.getElementById('repBillingSubSection').style.display = 'none';
+            document.getElementById('repPartsSubSection').style.display = 'none';
+
             if(type === 'list') {
                 document.getElementById('repListSubSection').style.display = 'block';
-                document.getElementById('repBillingSubSection').style.display = 'none';
-            } else {
-                document.getElementById('repListSubSection').style.display = 'none';
+            } else if(type === 'billing') {
                 document.getElementById('repBillingSubSection').style.display = 'block';
                 document.getElementById('repBillingSearch').value = '';
                 populateRepairBillingDropdown();
+            } else if(type === 'parts') {
+                document.getElementById('repPartsSubSection').style.display = 'block';
+                loadRepairParts();
             }
         }
 
@@ -537,7 +543,7 @@
 
         function switchStockSubTab(type, btn) {
             currentStockFilter = type;
-            document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#tab3 .sub-tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             filterStock();
         }
@@ -619,12 +625,12 @@
             const tbody = document.getElementById('repairPartsTable');
             if(!tbody) return;
             tbody.innerHTML = '';
-            if(parts.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No repair parts found.</td></tr>`; return; }
+            if(parts.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No repair parts found.</td></tr>`; return; }
             parts.forEach(p => {
                 const isOut = p.stock <= 0;
                 tbody.innerHTML += `<tr class="${isOut ? 'out-of-stock' : ''}">
                     <td><b>#${p.part_id}</b></td><td>${p.part_name}</td><td>${p.device_model}</td>
-                    <td>Rs. ${parseFloat(p.cost_price).toFixed(2)}</td><td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
+                    <td>Rs. ${parseFloat(p.cost_price).toFixed(2)}</td>
                     <td>${p.stock} ${isOut ? '(OUT)' : ''}</td>
                     <td><button onclick="deleteRepairPart(${p.part_id})" style="background:#ef4444; padding:5px 8px; border-radius:6px; font-size:11px;">Delete</button></td>
                 </tr>`;
@@ -639,7 +645,7 @@
                 part_name: document.getElementById('partName').value.trim(),
                 device_model: document.getElementById('partDevice').value.trim(),
                 cost_price: document.getElementById('partCost').value,
-                selling_price: document.getElementById('partPrice').value,
+                selling_price: 0,
                 stock: document.getElementById('partStock').value
             };
             const res = await fetch('/api/repair-parts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -945,15 +951,11 @@
         function copyReceiptText() { alert('Receipt copied!'); }
         function sendWhatsAppMessage() { window.open('https://wa.me/?text=' + encodeURIComponent('Receipt ID: ' + (lastSaleData.sale_id||'') + '\nTotal: Rs. ' + document.getElementById('cartTotal').textContent), '_blank'); }
 
-      async function loadSales() {
+        async function loadSales() {
             try {
-                // shop_id එක අයින් කර කෙලින්ම /api/sales රික්වෙස්ට් කරමු (සර්වර් එකේ දැන් සියලුම සේල්ස් ලබා දීමට සකසා ඇත)
                 const res = await fetch('/api/sales');
                 const data = await res.json();
-                
                 rawSalesData = Array.isArray(data) ? data : [];
-                console.log("Successfully Loaded Sales Data:", rawSalesData);
-                
                 populateYearDropdown();
                 applySalesFilters();
             } catch(e) {
@@ -986,16 +988,17 @@
             let eCash = 0, eCard = 0, eBank = 0, eKoko = 0;
 
             rawSalesData.forEach(s => {
+                const sTotal = parseFloat(s.total_amount || 0);
                 if(s.date_only === todayStr) {
-                    daily += parseFloat(s.total_amount || 0);
-                    if(s.sale_type === 'Repair') repair += parseFloat(s.total_amount || 0);
-                    const amt = parseFloat(s.total_amount || 0);
-                    if(s.payment_method === 'Cash') eCash += amt;
-                    else if(s.payment_method === 'Card') eCard += amt;
-                    else if(s.payment_method === 'Bank Transfer') eBank += amt;
-                    else if(s.payment_method === 'Koko') eKoko += amt;
+                    daily += sTotal;
+                    if(s.sale_type === 'Repair') repair += sTotal;
+                    const pm = (s.payment_method || 'Cash').trim();
+                    if(pm === 'Cash') eCash += sTotal;
+                    else if(pm === 'Card') eCard += sTotal;
+                    else if(pm === 'Bank Transfer') eBank += sTotal;
+                    else if(pm === 'Koko') eKoko += sTotal;
                 }
-                if(s.month_only === thisMonthStr) monthly += parseFloat(s.total_amount || 0);
+                if(s.month_only === thisMonthStr) monthly += sTotal;
             });
 
             document.getElementById('dailySalesAmt').textContent = `Rs. ${daily.toFixed(2)}`;
@@ -1052,7 +1055,7 @@
             applySalesFilters();
         }
 
-       function renderSalesTable(sales) {
+        function renderSalesTable(sales) {
             const tbody = document.getElementById('salesTable');
             if(!tbody) return;
             tbody.innerHTML = '';
@@ -1063,13 +1066,9 @@
                 else if(s.sale_type === 'Mixed') badgeClass = 'badge-mix';
 
                 tbody.innerHTML += `<tr style="cursor:pointer;" onclick="viewSale(${s.sale_id})">
-                    <td><b>#${s.sale_id}</b></td>
-                    <td>${s.customer_name}</td>
-                    <td>${s.customer_phone}</td>
-                    <td><span class="${badgeClass}">${s.sale_type}</span></td>
-                    <td>${s.payment_method}</td>
-                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td>
-                    <td>${s.formatted_date}</td>
+                    <td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td>
+                    <td><span class="${badgeClass}">${s.sale_type}</span></td><td>${s.payment_method}</td>
+                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${s.formatted_date}</td>
                     <td onclick="event.stopPropagation()">
                         <div style="display:flex; gap:6px;">
                             <button onclick="viewSale(${s.sale_id})" style="background:#06b6d4; padding:5px 8px; font-size:11px; border-radius:6px; width:auto;">View</button>
@@ -1079,11 +1078,22 @@
                 </tr>`;
             });
         }
-        
+
         async function deleteSale(id) {
             if(!confirm(`Are you sure you want to delete Sale #${id}?`)) return;
-            const res = await fetch(`/api/sales/${id}`, { method: 'DELETE' });
-            if(res.ok) { loadSales(); }
+            try {
+                const res = await fetch(`/api/sales/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if(res.ok && result.success) {
+                    await loadSales();
+                    alert('Sale deleted successfully!');
+                } else {
+                    alert('Failed to delete sale: ' + (result.error || 'Unknown error'));
+                }
+            } catch(e) {
+                console.error("Delete sale error:", e);
+                alert("Network error while deleting sale.");
+            }
         }
 
         async function loadRepairs() {

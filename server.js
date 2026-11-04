@@ -81,10 +81,14 @@ db.query(`
         part_name VARCHAR(100) NOT NULL,
         device_model VARCHAR(100),
         cost_price DECIMAL(10, 2),
-        selling_price DECIMAL(10, 2) NOT NULL DEFAULT 0,
+        selling_price DECIMAL(10, 2) DEFAULT 0,
         stock INT DEFAULT 1
     )
-`);
+`, (err) => {
+    if(!err) {
+        db.query("ALTER TABLE repair_parts ADD COLUMN selling_price DECIMAL(10, 2) DEFAULT 0", () => {});
+    }
+});
 
 db.query(`
     CREATE TABLE IF NOT EXISTS sales (
@@ -99,12 +103,7 @@ db.query(`
         sale_items LONGTEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
-`, (err) => {
-    if(!err) {
-        db.query("ALTER TABLE sales ADD COLUMN sale_items LONGTEXT", () => {});
-        db.query("ALTER TABLE sales ADD COLUMN sale_type VARCHAR(20) DEFAULT 'Product'", () => {});
-    }
-});
+`);
 
 db.query(`
     CREATE TABLE IF NOT EXISTS repairs (
@@ -237,24 +236,8 @@ app.get('/api/sales', (req, res) => {
     });
 });
 
-app.delete('/api/sales/:id', (req, res) => {
-    const saleId = req.params.id;
-    // table එකේ sale_id හෝ id කුමක් වුවත් ඩීලීට් වීමට සේකසා ඇත
-    db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err, result) => {
-        if (err) {
-            console.error("Delete Sale Error:", err.message);
-            return res.status(500).json({ error: err.message });
-        }
-        res.json({ success: true, message: 'Sale deleted successfully' });
-    });
-});
-
 app.post('/api/sales', (req, res) => {
-    console.log("=== CHECKOUT REQUEST RECEIVED ===");
-    console.log("Request Body:", req.body);
-
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items, sale_type } = req.body;
-    
     let containsRepair = false, containsProduct = false;
     if (items && Array.isArray(items)) {
         items.forEach(item => {
@@ -262,7 +245,6 @@ app.post('/api/sales', (req, res) => {
             if (item.type === 'product') containsProduct = true;
         });
     }
-    
     let finalSaleType = sale_type || 'Product';
     if (!sale_type) {
         if (containsRepair && containsProduct) finalSaleType = 'Mixed';
@@ -277,11 +259,10 @@ app.post('/api/sales', (req, res) => {
         [sId, customer_name || 'Cash Customer', customer_phone || 'N/A', payment_method || 'Cash', finalSaleType, discount || 0, total_amount || 0, itemsJson],
         (err, result) => {
             if (err) {
-                console.error("DATABASE INSERT ERROR (Sales):", err.message);
+                console.error("Sales Insert Error:", err.message);
                 return res.status(500).json({ error: err.message });
             }
-            console.log("SUCCESSFULLY INSERTED SALE ID:", result.insertId);
-            
+            const newSaleId = result.insertId;
             if (items && Array.isArray(items)) {
                 items.forEach(item => {
                     if (item.type === 'product' && item.product_id) {
@@ -291,15 +272,19 @@ app.post('/api/sales', (req, res) => {
                     }
                 });
             }
-            res.json({ success: true, message: 'Sale recorded', sale_id: result.insertId });
+            res.json({ success: true, message: 'Sale recorded', sale_id: newSaleId });
         }
     );
 });
 
 app.delete('/api/sales/:id', (req, res) => {
-    db.query('DELETE FROM sales WHERE sale_id = ?', [req.params.id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Removed' });
+    const saleId = req.params.id;
+    db.query('DELETE FROM sales WHERE sale_id = ? OR id = ?', [saleId, saleId], (err) => {
+        if (err) {
+            console.error("Delete Sale Error:", err.message);
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ success: true, message: 'Sale deleted successfully' });
     });
 });
 
@@ -347,7 +332,7 @@ app.post('/api/restore', (req, res) => {
                     if (products) products.forEach(p => db.query('INSERT INTO products (shop_id, product_code, name, brand, color, category, cost_price, selling_price, stock, imei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [sId, p.product_code, p.name, p.brand, p.color, p.category, p.cost_price, p.selling_price, p.stock, p.imei], ()=>{}));
                     if (sales) sales.forEach(s => db.query('INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, sale_items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [sId, s.customer_name, s.customer_phone, s.payment_method, s.sale_type || 'Product', s.discount || 0, s.total_amount, JSON.stringify(s.items || [])], ()=>{}));
                     if (repairs) repairs.forEach(r => db.query('INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [sId, r.customer_name, r.customer_phone, r.device_model, r.issue_description, r.advance_cost || 0, r.total_cost, r.status || 'Pending'], ()=>{}));
-                    if (repair_parts) repair_parts.forEach(rp => db.query('INSERT INTO repair_parts (shop_id, part_name, device_model, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)', [sId, rp.part_name, rp.device_model, rp.cost_price, rp.selling_price, rp.stock], ()=>{}));
+                    if (repair_parts) repair_parts.forEach(rp => db.query('INSERT INTO repair_parts (shop_id, part_name, device_model, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)', [sId, rp.part_name, rp.device_model, rp.cost_price, rp.selling_price || 0, rp.stock], ()=>{}));
                     res.json({ success: true, message: 'Restored successfully' });
                 });
             });
