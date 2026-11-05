@@ -62,7 +62,7 @@
         
         #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; }
         
-        /* Strict single modal isolation for printing */
+        /* Strict single modal isolation for printing - ONLY print receipt container */
         @media print {
             body * { visibility: hidden !important; display: none !important; }
             #receiptModal.printing-active, #receiptModal.printing-active * { visibility: visible !important; display: block !important; }
@@ -71,8 +71,11 @@
             #receiptModal.printing-active { position: fixed !important; left: 0 !important; top: 0 !important; width: 100vw !important; height: 100vh !important; background: #ffffff !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
             #barcodeModal.printing-active { position: fixed !important; left: 0 !important; top: 0 !important; width: 100vw !important; height: 100vh !important; background: #ffffff !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
             
+            #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 80mm !important; max-width: 80mm !important; margin: 0 auto !important; padding: 0 !important; max-height: none !important; overflow: visible !important; }
+            #receiptModalTitle, #printHideBtn { display: none !important; visibility: hidden !important; }
+            
             .printable { position: relative !important; width: 80mm !important; max-width: 80mm !important; font-family: Arial, sans-serif !important; font-size: 12px !important; color: #000 !important; background: #fff !important; padding: 5px !important; box-shadow: none !important; margin: 0 auto !important; }
-            #printHideBtn, #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
+            #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
         }
     </style>
 </head>
@@ -1132,8 +1135,63 @@
         }
 
         function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
-        function copyReceiptText() { alert('Receipt copied!'); }
-        function sendWhatsAppMessage() { window.open('https://wa.me/?text=' + encodeURIComponent('Receipt ID: ' + (lastSaleData.sale_id||'') + '\nTotal: Rs. ' + lastSaleData.total_amount), '_blank'); }
+        
+        function copyReceiptText() {
+            if(!lastSaleData) return alert('No receipt data to copy!');
+            let text = `*${lastSaleData.branch.toUpperCase()} - OFFICIAL RECEIPT*\n`;
+            if(lastSaleData.branch_phone) text += `Contact: ${lastSaleData.branch_phone}\n`;
+            text += `--------------------------------\n`;
+            text += `Date: ${new Date().toLocaleString()}\n`;
+            text += `Sale ID: #${lastSaleData.sale_id || '--'}\n`;
+            text += `Customer: ${lastSaleData.customer_name} (${lastSaleData.customer_phone})\n`;
+            text += `--------------------------------\n`;
+            lastSaleData.items.forEach(i => {
+                text += `• ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n`;
+                text += `  Warranty: ${i.warranty || 'No Warranty'}\n`;
+            });
+            text += `--------------------------------\n`;
+            if(lastSaleData.total_discount > 0) text += `Discount/Return: -Rs. ${lastSaleData.total_discount.toFixed(2)}\n`;
+            text += `Total Payable: Rs. ${lastSaleData.total_amount.toFixed(2)}\n`;
+            text += `Amount Paid: Rs. ${(lastSaleData.amount_paid||0).toFixed(2)}\n`;
+            text += `Change Due: Rs. ${(lastSaleData.change_due||0).toFixed(2)}\n`;
+            text += `Payment Method: ${lastSaleData.payment_method}\n`;
+            text += `--------------------------------\n`;
+            text += `Thank you for your business!`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Receipt text copied to clipboard!');
+            });
+        }
+
+        function sendWhatsAppMessage() {
+            if(!lastSaleData) return alert('No receipt data!');
+            let phone = lastSaleData.customer_phone || '';
+            // Clean phone number for WhatsApp URL format (remove spaces, leading zeros if needed or keep standard format)
+            phone = phone.replace(/[^0-9]/g, '');
+            
+            let text = `*${lastSaleData.branch.toUpperCase()} - OFFICIAL RECEIPT*\n`;
+            if(lastSaleData.branch_phone) text += `Contact: ${lastSaleData.branch_phone}\n`;
+            text += `--------------------------------\n`;
+            text += `Date: ${new Date().toLocaleString()}\n`;
+            text += `Sale ID: #${lastSaleData.sale_id || '--'}\n`;
+            text += `Customer: ${lastSaleData.customer_name}\n`;
+            text += `--------------------------------\n`;
+            lastSaleData.items.forEach(i => {
+                text += `• ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n`;
+                text += `  Warranty: ${i.warranty || 'No Warranty'}\n`;
+            });
+            text += `--------------------------------\n`;
+            if(lastSaleData.total_discount > 0) text += `Discount/Return: -Rs. ${lastSaleData.total_discount.toFixed(2)}\n`;
+            text += `Total Payable: Rs. ${lastSaleData.total_amount.toFixed(2)}\n`;
+            text += `Amount Paid: Rs. ${(lastSaleData.amount_paid||0).toFixed(2)}\n`;
+            text += `Change Due: Rs. ${(lastSaleData.change_due||0).toFixed(2)}\n`;
+            text += `Payment Method: ${lastSaleData.payment_method}\n`;
+            text += `--------------------------------\n`;
+            text += `Thank you for your business!`;
+
+            let waUrl = `https://wa.me/${phone ? phone : ''}?text=` + encodeURIComponent(text);
+            window.open(waUrl, '_blank');
+        }
 
         async function loadSales() {
             try {
