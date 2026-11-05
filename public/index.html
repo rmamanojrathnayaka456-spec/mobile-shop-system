@@ -12,10 +12,10 @@
             --bg-color: #f1f5f9; --container-bg: #ffffff; --text-color: #1e293b; --section-bg: #f8fafc; --border-color: #cbd5e1; --input-bg: #ffffff; --input-text: #1e293b; --table-header-bg: #0f172a; --table-header-color: #ffffff; --card-bg: #ffffff;
         }
         [data-theme="dark"] {
-            --bg-color: #0f172a; --container-bg: #1e1e1e; --text-color: #f1f5f9; --section-bg: #1e293b; --border-color: #334155; --input-bg: #0f172a; --input-text: #f1f5f9; --table-header-bg: #1e1e1e; --table-header-color: #ffffff; --card-bg: #1e1e1e;
+            --bg-color: #121824; --container-bg: #1a2234; --text-color: #e2e8f0; --section-bg: #151c2a; --border-color: #2a364f; --input-bg: #121824; --input-text: #f1f5f9; --table-header-bg: #151c2a; --table-header-color: #ffffff; --card-bg: #1a2234;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: background 0.3s, color 0.3s; }
-        .container { max-width: 1320px; margin: auto; background: var(--container-bg); padding: 30px; border-radius: 14px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+        .container { max-width: 1320px; margin: auto; background: var(--container-bg); padding: 30px; border-radius: 14px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
         #loginScreen { max-width: 420px; margin: 100px auto; background: var(--container-bg); color: var(--text-color); padding: 40px; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); text-align: center; border: 1px solid var(--border-color); }
         #loginScreen h2 { color: #2563eb; margin-bottom: 25px; font-weight: 700; }
         .login-group { margin-bottom: 20px; text-align: left; }
@@ -30,14 +30,13 @@
         button:hover { background: #1d4ed8; }
         .tabs { display: flex; gap: 6px; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; }
         .tab-btn { padding: 9px 14px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: auto; font-size: 13px; }
-        .tab-btn.inactive { background: #e2e8f0; color: #475569; }
-        [data-theme="dark"] .tab-btn.inactive { background: #334155; color: #cbd5e1; }
+        .tab-btn.inactive { background: var(--section-bg); color: var(--text-color); border: 1px solid var(--border-color); }
         .category-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .cat-btn { padding: 10px 18px; background: var(--section-bg); border: 1px solid var(--border-color); border-radius: 20px; cursor: pointer; font-weight: 600; width: auto; color: var(--text-color); }
         .cat-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
         .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .sub-tab-btn { padding: 9px 16px; background: #64748b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; width: auto; }
-        .sub-tab-btn.active { background: #10b981; }
+        .sub-tab-btn { padding: 9px 16px; background: var(--section-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 8px; cursor: pointer; font-weight: 600; width: auto; }
+        .sub-tab-btn.active { background: #10b981; color: white; border-color: #10b981; }
         .section { display: none; background: var(--section-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); }
         .section.active { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: var(--container-bg); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
@@ -46,30 +45,35 @@
         .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); border-left: 5px solid #2563eb; cursor: pointer; transition: transform 0.2s; }
         .card:hover { transform: translateY(-3px); }
-        .card.active-card { border-color: #10b981 !important; background: rgba(16, 185, 129, 0.05); }
-        .card h4 { margin: 0 0 10px 0; font-size: 13px; opacity: 0.7; text-transform: uppercase; }
-        .card p { font-size: 22px; font-weight: 700; color: #2563eb; margin: 0; }
+        .card.active-card { border-color: #10b981 !important; background: rgba(16, 185, 129, 0.08); }
+        .card h4 { margin: 0 0 10px 0; font-size: 13px; opacity: 0.8; text-transform: uppercase; }
+        .card p { font-size: 22px; font-weight: 700; color: #3b82f6; margin: 0; }
         .eod-box { transition: all 0.2s; padding: 14px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-color); background: var(--card-bg); font-weight: 600; }
         .eod-box:hover { transform: translateY(-2px); border-color: #2563eb; }
         .badge-prod { background: #2563eb; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .badge-rep { background: #06b6d4; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .badge-mix { background: #f59e0b; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-ex { background: #8b5cf6; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .logout-btn { background: #ef4444; width: auto; padding: 8px 16px; font-size: 13px; border-radius: 8px; }
-        .out-of-stock { background-color: rgba(239, 68, 68, 0.1) !important; color: #ef4444; font-weight: 600; }
-        .low-stock-row { background-color: rgba(245, 158, 11, 0.08) !important; color: #b45309; font-weight: 600; }
+        .out-of-stock { background-color: rgba(239, 68, 68, 0.08) !important; color: #ef4444; font-weight: 600; }
+        .low-stock-row { background-color: rgba(245, 158, 11, 0.06) !important; font-weight: 600; }
         .low-stock-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
-        .sticker-card { background: white; color: #333; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; margin-bottom: 12px; }
+        .sticker-card { background: #ffffff; color: #1e293b; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; margin-bottom: 12px; }
         
         #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; }
+        
+        /* Strict single-page print stylesheet */
         @media print {
-            body * { visibility: hidden; }
-            .printable, .printable * { visibility: visible; }
-            .printable { position: absolute; left: 0; top: 0; width: 80mm; font-family: Arial, sans-serif; font-size: 12px; color: #000 !important; background: #fff !important; padding: 5px; }
+            body * { visibility: hidden !important; }
+            #receiptModal, #receiptModal *, #barcodeModal, #barcodeModal * { visibility: visible !important; }
+            #receiptModal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: transparent !important; display: flex !important; align-items: flex-start; justify-content: center; z-index: 99999; }
+            #barcodeModal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: transparent !important; display: flex !important; align-items: flex-start; justify-content: center; z-index: 99999; }
+            .printable { position: relative !important; left: 0 !important; top: 0 !important; width: 80mm !important; max-width: 80mm !important; font-family: Arial, sans-serif !important; font-size: 12px !important; color: #000 !important; background: #fff !important; padding: 5px !important; box-shadow: none !important; margin: 0 auto !important; }
             #printHideBtn, #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
         }
     </style>
 </head>
-<body data-theme="light">
+<body data-theme="dark">
 
     <div id="loginScreen">
         <h2>MOBILE SHOP SYSTEM</h2>
@@ -86,7 +90,7 @@
         <header>
             <h2>MOBILE SHOP SYSTEM</h2>
             <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                <button type="button" onclick="toggleTheme()" style="width: auto; padding: 8px 16px; background: #64748b; font-size: 13px; border-radius: 8px;" id="themeToggleBtn">🌙 Dark Mode</button>
+                <button type="button" onclick="toggleTheme()" style="width: auto; padding: 8px 16px; background: #64748b; font-size: 13px; border-radius: 8px;" id="themeToggleBtn">☀️ Light Mode</button>
                 <div class="user-badge" id="userDisplay">SHA MOBILE</div>
                 <button class="logout-btn" onclick="handleLogout()">Logout</button>
             </div>
@@ -98,8 +102,9 @@
             <button class="tab-btn inactive" onclick="switchTab(3, this)">3. Stock Inventory</button>
             <button class="tab-btn inactive" onclick="switchTab(4, this)">4. Sales History & EOD</button>
             <button class="tab-btn inactive" onclick="switchTab(5, this)">5. Repair Jobs</button>
-            <button class="tab-btn inactive" onclick="switchTab(7, this)">6. Customer History</button>
-            <button class="tab-btn inactive" onclick="switchTab(8, this)">7. Backup & Restore</button>
+            <button class="tab-btn inactive" onclick="switchTab(6, this)">6. Exchange Billing</button>
+            <button class="tab-btn inactive" onclick="switchTab(7, this)">7. Customer History</button>
+            <button class="tab-btn inactive" onclick="switchTab(8, this)">8. Backup & Restore</button>
         </div>
 
         <!-- Tab 1: Add Product -->
@@ -209,7 +214,6 @@
                 </div>
             </div>
 
-            <!-- Date Filter & Search Controls -->
             <div style="background: var(--container-bg); padding: 15px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
                 <div><label style="font-size:12px; font-weight:600;">Filter Year:</label><select id="filterYear" onchange="applySalesFilters()" style="width:130px;"><option value="">All Years</option></select></div>
                 <div><label style="font-size:12px; font-weight:600;">Filter Month:</label><select id="filterMonth" onchange="applySalesFilters()" style="width:140px;"><option value="">All Months</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
@@ -233,7 +237,6 @@
                 <button class="sub-tab-btn" onclick="switchRepairSubTab('parts', this)">Repair Parts Inventory</button>
             </div>
             
-            <!-- Sub-Tab 1: Repair Jobs List -->
             <div id="repListSubSection">
                 <form id="repairForm" onsubmit="addRepair(event)" style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px;">
                     <input type="text" id="repCustomer" placeholder="Customer Name" required>
@@ -250,7 +253,6 @@
                 <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="repairsTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody></table>
             </div>
 
-            <!-- Sub-Tab 2: Repair Billing -->
             <div id="repBillingSubSection" style="display:none;">
                 <div style="background: var(--container-bg); padding: 25px; border: 1px solid var(--border-color); border-radius: 10px;">
                     <h4>Repair Checkout & Final Bill Generation</h4>
@@ -278,7 +280,6 @@
                 </div>
             </div>
 
-            <!-- Sub-Tab 3: Repair Parts Inventory (Standalone) -->
             <div id="repPartsSubSection" style="display:none;">
                 <form id="repairPartForm" onsubmit="addRepairPart(event)" style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px;">
                     <label>Part Name:</label><input type="text" id="partName" placeholder="e.g. iPhone 11 OLED Display" required>
@@ -295,9 +296,44 @@
             </div>
         </div>
 
-        <!-- Tab 6: Customer History -->
+        <!-- Tab 6: Exchange Billing (NEW) -->
+        <div id="tab6" class="section">
+            <h3>6. Exchange Billing System (Return & Replace)</h3>
+            <div style="background: var(--container-bg); padding: 25px; border: 1px solid var(--border-color); border-radius: 10px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                    <div>
+                        <h4 style="color:#8b5cf6; margin-top:0;">1. Returned Item (Product Being Given Back)</h4>
+                        <label>Search Product to Return:</label>
+                        <input type="text" id="exReturnSearch" placeholder="Type name, ID..." oninput="filterExchangeReturnDropdown()" style="border: 2px solid #8b5cf6; margin-bottom: 8px;">
+                        <select id="exReturnSelect" size="5" onchange="selectExchangeReturnProduct()" style="border: 2px solid #8b5cf6; font-weight:bold; height: 130px; border-radius: 8px;"></select>
+                        <label>Returned Item Name:</label><input type="text" id="exReturnName" placeholder="Item Name" style="font-weight:bold;">
+                        <label>Return Valuation / Credit Value (Rs.):</label><input type="number" id="exReturnValue" placeholder="0.00" step="0.01" oninput="calculateExchangeDifference()" style="font-weight:bold; color:#8b5cf6;">
+                    </div>
+                    <div>
+                        <h4 style="color:#10b981; margin-top:0;">2. New Replacement Item (Product Being Taken)</h4>
+                        <label>Search Replacement Product:</label>
+                        <input type="text" id="exNewSearch" placeholder="Type name, ID..." oninput="filterExchangeNewDropdown()" style="border: 2px solid #10b981; margin-bottom: 8px;">
+                        <select id="exNewSelect" size="5" onchange="selectExchangeNewProduct()" style="border: 2px solid #10b981; font-weight:bold; height: 130px; border-radius: 8px;"></select>
+                        <label>New Item Name:</label><input type="text" id="exNewName" placeholder="New Item Name" disabled style="font-weight:bold;">
+                        <label>New Item Price (Rs.):</label><input type="number" id="exNewPrice" placeholder="0.00" step="0.01" oninput="calculateExchangeDifference()" style="font-weight:bold; color:#10b981;">
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; background: var(--section-bg); padding: 20px; border-radius: 10px; border: 1px solid var(--border-color);">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div><label>Customer Name:</label><input type="text" id="exCustName" placeholder="Cash Customer"></div>
+                        <div><label>Customer Phone:</label><input type="text" id="exCustPhone" placeholder="07X XXXXXXX"></div>
+                        <div><label>Payment Method:</label><select id="exPaymentMethod"><option value="Cash">Cash</option><option value="Card">Card</option><option value="Bank Transfer">Bank Transfer</option><option value="Koko">Koko</option></select></div>
+                    </div>
+                    <h3 style="margin-top: 20px;">Price Difference / Balance Payable by Customer: Rs. <span id="exDiffTotal" style="color:#10b981;">0.00</span></h3>
+                    <button type="button" onclick="completeExchangeCheckout()" style="background:#8b5cf6; margin-top: 15px; padding: 14px; border-radius: 8px; font-size: 15px;">Complete Exchange & Print Bill</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 7: Customer History -->
         <div id="tab7" class="section">
-            <h3>6. Customer History</h3>
+            <h3>7. Customer History</h3>
             <input type="text" id="searchCustomerHistory" placeholder="Type customer name or phone number..." onkeyup="filterCustomerHistory()" style="margin-bottom: 20px; border: 2px solid #2563eb; font-weight: bold;">
             <h4 style="color:#2563eb; margin-top:20px;">🛍️ Purchase History</h4>
             <table><thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Payment</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead><tbody id="custSalesTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
@@ -305,9 +341,9 @@
             <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Total (Rs.)</th><th>Status</th></tr></thead><tbody id="custRepairsTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
         </div>
 
-        <!-- Tab 7: Backup & Restore -->
+        <!-- Tab 8: Backup & Restore -->
         <div id="tab8" class="section">
-            <h3>7. Data Backup & Restore</h3>
+            <h3>8. Data Backup & Restore</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px;">
                 <div style="background: var(--container-bg); padding: 25px; border: 1px solid var(--border-color); border-radius: 10px;">
                     <h4 style="color: #2563eb; margin-top:0;">📥 Download Backup</h4>
@@ -324,7 +360,7 @@
 
     <!-- Modals -->
     <div id="barcodeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; overflow-y:auto;">
-        <div class="printable" style="background:white; color:#333; padding:25px; border-radius:12px; width:340px; text-align:center; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); max-height:90vh; overflow-y:auto; margin:auto;">
+        <div class="printable" style="background:#ffffff; color:#1e293b; padding:25px; border-radius:12px; width:340px; text-align:center; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); max-height:90vh; overflow-y:auto; margin:auto;">
             <div id="barcodeHideBtn"><label style="font-weight:bold;">Print Quantity:</label><input type="number" id="bcPrintQty" value="1" min="1" oninput="renderBarcodeStickers()" style="width:100px; text-align:center; font-weight:bold; margin-bottom:15px; border:2px solid #2563eb;"></div>
             <div id="stickersContainer"></div>
             <div id="barcodeHideBtnControls" style="display:flex; gap:10px; margin-top:15px;">
@@ -335,7 +371,7 @@
     </div>
 
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:white; color:#333; padding:25px; border-radius:12px; width:460px; max-width:95%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
+        <div class="printable" style="background:#ffffff; color:#1e293b; padding:25px; border-radius:12px; width:460px; max-width:95%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
             <h3 style="color:#2563eb; margin-top:0; text-align:center;" id="receiptModalTitle">Receipt Generated!</h3>
             <div id="receiptBoxContainer"></div>
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
@@ -366,6 +402,7 @@
         let selectedBillingRepair = null;
         let selectedBillingValue = "";
         let selectedProductNameStr = "";
+        let selectedExchangeNewProductObj = null;
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -402,7 +439,7 @@
                 document.getElementById('userDisplay').textContent = currentUser.shop_name || "SHA MOBILE";
                 loadInventory(); loadSales(); loadRepairs(); loadRepairParts();
             }
-            setTheme(localStorage.getItem('pos_theme') || 'light');
+            setTheme(localStorage.getItem('pos_theme') || 'dark');
         }
 
         function toggleTheme() {
@@ -442,6 +479,7 @@
             else if(tabNum === 3) loadInventory();
             else if(tabNum === 4) loadSales();
             else if(tabNum === 5) loadRepairs();
+            else if(tabNum === 6) { loadInventory(); populateExchangeDropdowns(); }
             else if(tabNum === 7) { loadSales(); loadRepairs(); filterCustomerHistory(); }
         }
 
@@ -880,6 +918,123 @@
             }
         }
 
+        // --- EXCHANGE BILLING LOGIC ---
+        function populateExchangeDropdowns() {
+            const retSelect = document.getElementById('exReturnSelect');
+            const newSelect = document.getElementById('exNewSelect');
+            if(!retSelect || !newSelect) return;
+            retSelect.innerHTML = '';
+            newSelect.innerHTML = '';
+
+            allProducts.forEach(p => {
+                const parsed = parseProductItem(p.name);
+                retSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Rs. ${p.selling_price})</option>`;
+                newSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Stock: ${p.stock}) - Rs. ${p.selling_price}</option>`;
+            });
+        }
+
+        function filterExchangeReturnDropdown() {
+            const q = document.getElementById('exReturnSearch').value.toLowerCase();
+            const retSelect = document.getElementById('exReturnSelect');
+            retSelect.innerHTML = '';
+            allProducts.filter(p => p.name.toLowerCase().includes(q) || (p.product_code && p.product_code.includes(q))).forEach(p => {
+                const parsed = parseProductItem(p.name);
+                retSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Rs. ${p.selling_price})</option>`;
+            });
+        }
+
+        function selectExchangeReturnProduct() {
+            const pId = document.getElementById('exReturnSelect').value;
+            const p = allProducts.find(item => item.product_id == pId);
+            if(p) {
+                const parsed = parseProductItem(p.name);
+                document.getElementById('exReturnName').value = parsed.name;
+                document.getElementById('exReturnValue').value = p.selling_price;
+                calculateExchangeDifference();
+            }
+        }
+
+        function filterExchangeNewDropdown() {
+            const q = document.getElementById('exNewSearch').value.toLowerCase();
+            const newSelect = document.getElementById('exNewSelect');
+            newSelect.innerHTML = '';
+            allProducts.filter(p => p.name.toLowerCase().includes(q) || (p.product_code && p.product_code.includes(q))).forEach(p => {
+                const parsed = parseProductItem(p.name);
+                newSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Stock: ${p.stock}) - Rs. ${p.selling_price}</option>`;
+            });
+        }
+
+        function selectExchangeNewProduct() {
+            const pId = document.getElementById('exNewSelect').value;
+            selectedExchangeNewProductObj = allProducts.find(item => item.product_id == pId);
+            if(selectedExchangeNewProductObj) {
+                const parsed = parseProductItem(selectedExchangeNewProductObj.name);
+                document.getElementById('exNewName').value = parsed.name;
+                document.getElementById('exNewPrice').value = selectedExchangeNewProductObj.selling_price;
+                calculateExchangeDifference();
+            }
+        }
+
+        function calculateExchangeDifference() {
+            const retVal = parseFloat(document.getElementById('exReturnValue').value) || 0;
+            const newPrice = parseFloat(document.getElementById('exNewPrice').value) || 0;
+            const diff = Math.max(0, newPrice - retVal);
+            document.getElementById('exDiffTotal').textContent = diff.toFixed(2);
+        }
+
+        async function completeExchangeCheckout() {
+            if(!selectedExchangeNewProductObj) return alert('Select a new replacement product!');
+            const retName = document.getElementById('exReturnName').value.trim() || 'Returned Product';
+            const retVal = parseFloat(document.getElementById('exReturnValue').value) || 0;
+            const newPrice = parseFloat(document.getElementById('exNewPrice').value) || 0;
+            const diff = Math.max(0, newPrice - retVal);
+            const name = document.getElementById('exCustName').value.trim() || 'Cash Customer';
+            const phone = document.getElementById('exCustPhone').value.trim() || 'N/A';
+            const paymentMethod = document.getElementById('exPaymentMethod').value;
+            const shopId = currentUser ? currentUser.shop_id : 1;
+
+            const exchangeItem = {
+                type: 'exchange',
+                returned_product_name: retName,
+                returned_valuation: retVal,
+                new_product_id: selectedExchangeNewProductObj.product_id,
+                name: `[EXCHANGE] New: ${parseProductItem(selectedExchangeNewProductObj.name).name} (Retrieved: ${retName})`,
+                warranty: parseProductItem(selectedExchangeNewProductObj.name).warranty,
+                price: newPrice,
+                qty: 1,
+                subtotal: diff
+            };
+
+            const payload = {
+                shop_id: Number(shopId),
+                customer_name: name,
+                customer_phone: phone,
+                payment_method: paymentMethod,
+                discount: retVal,
+                total_amount: diff,
+                sale_type: 'Exchange',
+                items: [exchangeItem]
+            };
+
+            const res = await fetch('/api/sales', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if(res.ok) {
+                lastSaleData = {
+                    sale_id: data.sale_id,
+                    customer_name: name, customer_phone: phone, payment_method: paymentMethod,
+                    total_amount: diff, total_discount: retVal, amount_paid: diff, change_due: 0,
+                    items: [exchangeItem], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
+                };
+                generateAutoMessage(lastSaleData);
+                alert('Exchange completed successfully!');
+                loadInventory(); loadSales();
+            }
+        }
+        // --- END EXCHANGE LOGIC ---
+
         function generateAutoMessage(sale) {
             let saleIdDisplay = sale.sale_id ? `#${sale.sale_id}` : '#--';
             let htmlMsg = `<div style="font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; line-height: 1.4;">
@@ -915,8 +1070,7 @@
                         <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; color: #1e293b; background-color: #ffffff;">
                             <div style="font-weight: bold; color: #1e293b;">${displayName}</div>
                             <div style="font-size: 11px; color: #2563eb; margin-top: 2px;">Warranty: ${i.warranty || 'No Warranty'}</div>
-                            <div style="font-size: 11px; color: #d97706; margin-top: 1px;">IMEI: ${i.imei || 'N/A'}</div>
-                            ${i.originalPrice && i.originalPrice > i.price ? `<div style="font-size: 10px; color: #64748b; text-decoration: line-through; margin-top: 1px;">Original: Rs. ${(i.originalPrice * i.qty).toFixed(2)}</div>` : ''}
+                            ${i.returned_valuation ? `<div style="font-size: 11px; color: #8b5cf6; margin-top: 1px;">Returned Credit: -Rs. ${i.returned_valuation.toFixed(2)}</div>` : ''}
                         </td>
                         <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: center; vertical-align: top; color: #1e293b; background-color: #ffffff;">${i.qty}</td>
                         <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: right; vertical-align: top; font-weight: bold; color: #1e293b; background-color: #ffffff;">Rs. ${i.subtotal.toFixed(2)}</td>
@@ -928,7 +1082,7 @@
                 </table>
 
                 <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px; border: 1px solid #cbd5e1; margin-bottom: 12px; color: #1e293b;">
-                    ${sale.total_discount > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #ef4444;"><span>Total Discount:</span> <span>- Rs. ${sale.total_discount.toFixed(2)}</span></div>` : ''}
+                    ${sale.total_discount > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #ef4444;"><span>Total Discount / Return Value:</span> <span>- Rs. ${sale.total_discount.toFixed(2)}</span></div>` : ''}
                     <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #2563eb; border-top: 1px dashed #cbd5e1; padding-top: 6px; margin-top: 4px;">
                         <span>Total Payable:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span>
                     </div>
@@ -949,7 +1103,7 @@
 
         function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
         function copyReceiptText() { alert('Receipt copied!'); }
-        function sendWhatsAppMessage() { window.open('https://wa.me/?text=' + encodeURIComponent('Receipt ID: ' + (lastSaleData.sale_id||'') + '\nTotal: Rs. ' + document.getElementById('cartTotal').textContent), '_blank'); }
+        function sendWhatsAppMessage() { window.open('https://wa.me/?text=' + encodeURIComponent('Receipt ID: ' + (lastSaleData.sale_id||'') + '\nTotal: Rs. ' + lastSaleData.total_amount), '_blank'); }
 
         async function loadSales() {
             try {
@@ -980,9 +1134,14 @@
             const dateVal = document.getElementById('filterExactDate').value;
             const query = document.getElementById('searchSales').value.toLowerCase().trim();
 
+            let latestDateStr = '';
+            if (rawSalesData.length > 0) {
+                latestDateStr = rawSalesData[0].date_only || '';
+            }
             const now = new Date();
-            const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-            const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            const realTodayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            const todayStr = rawSalesData.some(s => s.date_only === realTodayStr) ? realTodayStr : latestDateStr;
+            const thisMonthStr = todayStr ? todayStr.substring(0, 7) : `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
             let daily = 0, monthly = 0, repair = 0;
             let eCash = 0, eCard = 0, eBank = 0, eKoko = 0;
@@ -1071,6 +1230,7 @@
                 let badgeClass = 'badge-prod';
                 if(s.sale_type === 'Repair' || s.sale_type === 'repair') badgeClass = 'badge-rep';
                 else if(s.sale_type === 'Mixed') badgeClass = 'badge-mix';
+                else if(s.sale_type === 'Exchange') badgeClass = 'badge-ex';
 
                 tbody.innerHTML += `<tr style="cursor:pointer;" onclick="viewSale(${s.sale_id})">
                     <td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td>
@@ -1203,7 +1363,6 @@
                     </div>
                 </div>`;
 
-            rawReceiptPlaintext = `REPAIR ADVANCE RECEIPT (Job #${adv.repair_id})\nCustomer: ${adv.customer_name}\nDevice: ${adv.device_model}\nTotal: Rs.${adv.total_cost.toFixed(2)}\nAdvance: Rs.${adv.advance_cost.toFixed(2)}\nBalance: Rs.${adv.balance_due.toFixed(2)}`;
             document.getElementById('receiptModalTitle').textContent = `Repair Advance Receipt (#${adv.repair_id})`;
             document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';

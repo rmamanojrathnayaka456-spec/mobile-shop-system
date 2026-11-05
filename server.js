@@ -206,7 +206,6 @@ app.get('/api/sales', (req, res) => {
             return res.json([]);
         }
         const formatted = (results || []).map((row, index) => {
-            // Handle any primary key column name variation (sale_id, id, invoice_id)
             const actualId = row.sale_id || row.id || row.invoice_id || (results.length - index);
             const cDate = row.created_at ? new Date(row.created_at) : new Date();
             let parsedItems = [];
@@ -235,16 +234,18 @@ app.get('/api/sales', (req, res) => {
 
 app.post('/api/sales', (req, res) => {
     const { shop_id, customer_name, customer_phone, payment_method, discount, total_amount, items, sale_type } = req.body;
-    let containsRepair = false, containsProduct = false;
+    let containsRepair = false, containsProduct = false, containsExchange = false;
     if (items && Array.isArray(items)) {
         items.forEach(item => {
             if (item.type === 'repair') containsRepair = true;
             if (item.type === 'product') containsProduct = true;
+            if (item.type === 'exchange') containsExchange = true;
         });
     }
     let finalSaleType = sale_type || 'Product';
     if (!sale_type) {
-        if (containsRepair && containsProduct) finalSaleType = 'Mixed';
+        if (containsExchange) finalSaleType = 'Exchange';
+        else if (containsRepair && containsProduct) finalSaleType = 'Mixed';
         else if (containsRepair) finalSaleType = 'Repair';
     }
 
@@ -264,6 +265,14 @@ app.post('/api/sales', (req, res) => {
                 items.forEach(item => {
                     if (item.type === 'product' && item.product_id) {
                         db.query('UPDATE products SET stock = stock - ? WHERE product_id = ?', [item.qty || 1, item.product_id]);
+                    } else if (item.type === 'exchange') {
+                        // If returning an item, restore stock of returned product if applicable, and decrease stock of new item
+                        if (item.new_product_id) {
+                            db.query('UPDATE products SET stock = stock - ? WHERE product_id = ?', [item.qty || 1, item.new_product_id]);
+                        }
+                        if (item.returned_product_id) {
+                            db.query('UPDATE products SET stock = stock + 1 WHERE product_id = ?', [item.returned_product_id]);
+                        }
                     } else if (item.type === 'repair' && item.repair_id) {
                         db.query('UPDATE repairs SET status = "Delivered" WHERE repair_id = ?', [item.repair_id]);
                     }
@@ -274,7 +283,6 @@ app.post('/api/sales', (req, res) => {
     );
 });
 
-// Robust delete sale route trying all possible primary key column names safely
 app.delete('/api/sales/:id', (req, res) => {
     const saleId = req.params.id;
     db.query('DELETE FROM sales WHERE sale_id = ?', [saleId], (err1) => {
