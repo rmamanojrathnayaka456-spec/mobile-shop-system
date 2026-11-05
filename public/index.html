@@ -62,13 +62,16 @@
         
         #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; }
         
-        /* Strict single-page print stylesheet */
+        /* Strict single modal isolation for printing */
         @media print {
-            body * { visibility: hidden !important; }
-            #receiptModal, #receiptModal *, #barcodeModal, #barcodeModal * { visibility: visible !important; }
-            #receiptModal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: transparent !important; display: flex !important; align-items: flex-start; justify-content: center; z-index: 99999; }
-            #barcodeModal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: transparent !important; display: flex !important; align-items: flex-start; justify-content: center; z-index: 99999; }
-            .printable { position: relative !important; left: 0 !important; top: 0 !important; width: 80mm !important; max-width: 80mm !important; font-family: Arial, sans-serif !important; font-size: 12px !important; color: #000 !important; background: #fff !important; padding: 5px !important; box-shadow: none !important; margin: 0 auto !important; }
+            body * { visibility: hidden !important; display: none !important; }
+            #receiptModal.printing-active, #receiptModal.printing-active * { visibility: visible !important; display: block !important; }
+            #barcodeModal.printing-active, #barcodeModal.printing-active * { visibility: visible !important; display: block !important; }
+            
+            #receiptModal.printing-active { position: fixed !important; left: 0 !important; top: 0 !important; width: 100vw !important; height: 100vh !important; background: #ffffff !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+            #barcodeModal.printing-active { position: fixed !important; left: 0 !important; top: 0 !important; width: 100vw !important; height: 100vh !important; background: #ffffff !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+            
+            .printable { position: relative !important; width: 80mm !important; max-width: 80mm !important; font-family: Arial, sans-serif !important; font-size: 12px !important; color: #000 !important; background: #fff !important; padding: 5px !important; box-shadow: none !important; margin: 0 auto !important; }
             #printHideBtn, #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
         }
     </style>
@@ -296,7 +299,7 @@
             </div>
         </div>
 
-        <!-- Tab 6: Exchange Billing (NEW) -->
+        <!-- Tab 6: Exchange Billing -->
         <div id="tab6" class="section">
             <h3>6. Exchange Billing System (Return & Replace)</h3>
             <div style="background: var(--container-bg); padding: 25px; border: 1px solid var(--border-color); border-radius: 10px;">
@@ -364,7 +367,7 @@
             <div id="barcodeHideBtn"><label style="font-weight:bold;">Print Quantity:</label><input type="number" id="bcPrintQty" value="1" min="1" oninput="renderBarcodeStickers()" style="width:100px; text-align:center; font-weight:bold; margin-bottom:15px; border:2px solid #2563eb;"></div>
             <div id="stickersContainer"></div>
             <div id="barcodeHideBtnControls" style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="window.print()" style="background:#10b981; flex:1; border-radius:8px; padding:10px;">Print</button>
+                <button onclick="triggerPrint('barcodeModal')" style="background:#10b981; flex:1; border-radius:8px; padding:10px;">Print</button>
                 <button onclick="closeBarcodeModal()" style="background:#64748b; flex:1; border-radius:8px; padding:10px;">Close</button>
             </div>
         </div>
@@ -375,7 +378,7 @@
             <h3 style="color:#2563eb; margin-top:0; text-align:center;" id="receiptModalTitle">Receipt Generated!</h3>
             <div id="receiptBoxContainer"></div>
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
-                <button onclick="window.print()" style="background:#f59e0b; color:#fff; flex:1; border-radius:8px; padding:12px;">Print Bill</button>
+                <button onclick="triggerPrint('receiptModal')" style="background:#f59e0b; color:#fff; flex:1; border-radius:8px; padding:12px;">Print Bill</button>
                 <button onclick="copyReceiptText()" style="background:#2563eb; flex:1; border-radius:8px; padding:12px;">Copy</button>
                 <button onclick="sendWhatsAppMessage()" style="background:#10b981; flex:1; border-radius:8px; padding:12px;">WhatsApp</button>
                 <button onclick="closeReceiptModal()" style="background:#64748b; flex:1; border-radius:8px; padding:12px;">Close</button>
@@ -918,7 +921,7 @@
             }
         }
 
-        // --- EXCHANGE BILLING LOGIC ---
+        // --- EXCHANGE BILLING LOGIC WITH STOCK LABELS ---
         function populateExchangeDropdowns() {
             const retSelect = document.getElementById('exReturnSelect');
             const newSelect = document.getElementById('exNewSelect');
@@ -928,8 +931,12 @@
 
             allProducts.forEach(p => {
                 const parsed = parseProductItem(p.name);
+                const isOut = p.stock <= 0;
+                const isLow = p.stock > 0 && p.stock <= 2;
+                const stockLabel = isOut ? '[OUT OF STOCK]' : (isLow ? `[LOW STOCK: ${p.stock}]` : `[Stock: ${p.stock}]`);
+                
                 retSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Rs. ${p.selling_price})</option>`;
-                newSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Stock: ${p.stock}) - Rs. ${p.selling_price}</option>`;
+                newSelect.innerHTML += `<option value="${p.product_id}" ${isOut ? 'disabled style="color:#ef4444;"' : ''}>#${p.product_code || p.product_id} - ${parsed.name} ${stockLabel} - Rs. ${p.selling_price}</option>`;
             });
         }
 
@@ -960,7 +967,10 @@
             newSelect.innerHTML = '';
             allProducts.filter(p => p.name.toLowerCase().includes(q) || (p.product_code && p.product_code.includes(q))).forEach(p => {
                 const parsed = parseProductItem(p.name);
-                newSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Stock: ${p.stock}) - Rs. ${p.selling_price}</option>`;
+                const isOut = p.stock <= 0;
+                const isLow = p.stock > 0 && p.stock <= 2;
+                const stockLabel = isOut ? '[OUT OF STOCK]' : (isLow ? `[LOW STOCK: ${p.stock}]` : `[Stock: ${p.stock}]`);
+                newSelect.innerHTML += `<option value="${p.product_id}" ${isOut ? 'disabled style="color:#ef4444;"' : ''}>#${p.product_code || p.product_id} - ${parsed.name} ${stockLabel} - Rs. ${p.selling_price}</option>`;
             });
         }
 
@@ -1029,8 +1039,20 @@
                     items: [exchangeItem], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                 };
                 generateAutoMessage(lastSaleData);
-                alert('Exchange completed successfully!');
-                loadInventory(); loadSales();
+                
+                // Clear Exchange Form fields after successful checkout
+                document.getElementById('exReturnSearch').value = '';
+                document.getElementById('exReturnName').value = '';
+                document.getElementById('exReturnValue').value = '';
+                document.getElementById('exNewSearch').value = '';
+                document.getElementById('exNewName').value = '';
+                document.getElementById('exNewPrice').value = '';
+                document.getElementById('exCustName').value = '';
+                document.getElementById('exCustPhone').value = '';
+                document.getElementById('exDiffTotal').textContent = '0.00';
+                selectedExchangeNewProductObj = null;
+
+                loadInventory(); loadSales(); populateExchangeDropdowns();
             }
         }
         // --- END EXCHANGE LOGIC ---
@@ -1099,6 +1121,14 @@
 
             document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';
+        }
+
+        // --- STRICT ISOLATED PRINT FUNCTION ---
+        function triggerPrint(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('printing-active');
+            window.print();
+            modal.classList.remove('printing-active');
         }
 
         function closeReceiptModal() { document.getElementById('receiptModal').style.display = 'none'; }
