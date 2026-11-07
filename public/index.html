@@ -39,9 +39,13 @@
         .sub-tab-btn.active { background: #10b981; color: white; border-color: #10b981; }
         .section { display: none; background: var(--section-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); }
         .section.active { display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: var(--container-bg); border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
+        
+        /* Table scroll wrapper container */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--container-bg); }
+        table { width: 100%; border-collapse: collapse; background: var(--container-bg); white-space: nowrap; }
         th, td { border-bottom: 1px solid var(--border-color); padding: 12px 15px; text-align: left; font-size: 14px; }
         th { background: var(--table-header-bg); color: var(--table-header-color); font-weight: 600; text-transform: uppercase; font-size: 12px; }
+        
         .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); border-left: 5px solid #2563eb; cursor: pointer; transition: transform 0.2s; }
         .card:hover { transform: translateY(-3px); }
@@ -62,7 +66,7 @@
         
         #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; }
         
-        /* Strict single modal isolation for printing - ONLY print receipt container */
+        /* STRICT PRINT CSS: Hide everything except the active printable content */
         @media print {
             body * { visibility: hidden !important; display: none !important; }
             #receiptModal.printing-active, #receiptModal.printing-active * { visibility: visible !important; display: block !important; }
@@ -151,7 +155,7 @@
                         <label style="font-weight:600;">Search ID, Name, Brand, IMEI:</label>
                         <button type="button" onclick="toggleCameraScanner()" style="width:auto; padding:5px 12px; font-size:12px; background:#06b6d4; border-radius:6px;">Camera Scanner</button>
                     </div>
-                    <div id="qr-reader" style="display:none; margin-bottom:12px;"></div>
+                    <div id="qr-reader" style="display:none; margin-bottom:12px; background:var(--container-bg); padding:10px; border-radius:8px; border:1px solid var(--border-color);"></div>
                     <input type="text" id="billingSearch" autocomplete="off" placeholder="Type ID, Name, Brand, IMEI..." oninput="handleBillingSearch()" onfocus="openBillingDropdown()" style="border: 2px solid #2563eb;">
                     <div style="position: relative;"><div id="customDropdownList" style="display: none; position: absolute; top: 0; left: 0; width: 100%; max-height: 200px; overflow-y: auto; background: var(--input-bg); border: 2px solid #2563eb; z-index: 99; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);"></div></div>
                     
@@ -175,14 +179,16 @@
                     </select>
                     <label>Amount Paid / Cash Tendered (Rs.):</label><input type="number" id="amountPaid" placeholder="0.00" step="0.01" oninput="calculateChangeDue()" style="border: 2px solid #10b981; font-weight: bold;">
                     <label>Balance / Change Due (Rs.):</label><input type="number" id="changeDue" value="0.00" style="font-weight:bold; color:#10b981; background:rgba(16, 185, 129, 0.05);" disabled>
-                    <table><thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead><tbody id="cartTableBody"><tr><td colspan="4" style="text-align:center;">Cart is empty</td></tr></tbody></table>
+                    <div class="table-responsive">
+                        <table><thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th>Action</th></tr></thead><tbody id="cartTableBody"><tr><td colspan="4" style="text-align:center;">Cart is empty</td></tr></tbody></table>
+                    </div>
                     <h3 style="margin-top: 15px;">Total Payable: Rs. <span id="cartTotal">0.00</span></h3>
                     <button type="button" onclick="completeCheckout()" style="background: #10b981; padding: 12px; border-radius: 8px;">Checkout & Complete Sale</button>
                 </div>
             </div>
         </div>
 
-        <!-- Tab 3: Stock Inventory -->
+        <!-- Tab 3: Stock Inventory (With Horizontal Scroll) -->
         <div id="tab3" class="section">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
                 <h3>3. Stock Inventory Management</h3>
@@ -194,10 +200,12 @@
                 <button class="sub-tab-btn" onclick="switchStockSubTab('out', this)">Out of Stock</button>
             </div>
             <input type="text" id="searchStock" placeholder="Search stock by ID, Name, Brand, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #2563eb;">
-            <table>
-                <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Warranty</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
-                <tbody id="inventoryTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
-            </table>
+            <div class="table-responsive">
+                <table>
+                    <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Warranty</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
+                    <tbody id="inventoryTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Tab 4: Sales History & EOD -->
@@ -228,10 +236,12 @@
             </div>
 
             <input type="text" id="searchSales" placeholder="🔍 Search Sales by ID (#1), Customer Name, Phone..." onkeyup="applySalesFilters()" style="margin-bottom: 15px; border: 2px solid #2563eb; font-weight: 600;">
-            <table>
-                <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
-                <tbody id="salesTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
-            </table>
+            <div class="table-responsive">
+                <table>
+                    <thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Method</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead>
+                    <tbody id="salesTable"><tr><td colspan="8" style="text-align:center;">Loading...</td></tr></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Tab 5: Repair Jobs (Includes Repair Parts Sub-Tab) -->
@@ -256,7 +266,9 @@
                     <button type="submit" style="background:#10b981; margin-top:15px; padding:12px; border-radius:8px;">Add Repair Job & Print Advance Receipt</button>
                 </form>
                 <input type="text" id="searchRepair" placeholder="Search Repair by ID, Name, Phone..." onkeyup="filterRepairs()" style="margin-bottom: 15px; border: 2px solid #2563eb;">
-                <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="repairsTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody></table>
+                <div class="table-responsive">
+                    <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Advance</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="repairsTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody></table>
+                </div>
             </div>
 
             <div id="repBillingSubSection" style="display:none;">
@@ -295,10 +307,12 @@
                     <button type="submit" style="background:#10b981; margin-top:15px; padding:12px; border-radius:8px;">Add Repair Part</button>
                 </form>
                 <input type="text" id="searchRepairParts" placeholder="Search Repair Parts by Name, Device..." onkeyup="filterRepairParts()" style="margin-bottom: 15px; border: 2px solid #2563eb;">
-                <table>
-                    <thead><tr><th>Part ID</th><th>Part Name</th><th>Compatible Device</th><th>Cost (Rs.)</th><th>Stock</th><th>Action</th></tr></thead>
-                    <tbody id="repairPartsTable"><tr><td colspan="6" style="text-align:center;">Loading...</td></tr></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Part ID</th><th>Part Name</th><th>Compatible Device</th><th>Cost (Rs.)</th><th>Stock</th><th>Action</th></tr></thead>
+                        <tbody id="repairPartsTable"><tr><td colspan="6" style="text-align:center;">Loading...</td></tr></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -342,9 +356,13 @@
             <h3>7. Customer History</h3>
             <input type="text" id="searchCustomerHistory" placeholder="Type customer name or phone number..." onkeyup="filterCustomerHistory()" style="margin-bottom: 20px; border: 2px solid #2563eb; font-weight: bold;">
             <h4 style="color:#2563eb; margin-top:20px;">🛍️ Purchase History</h4>
-            <table><thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Payment</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead><tbody id="custSalesTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
+            <div class="table-responsive">
+                <table><thead><tr><th>Sale ID</th><th>Customer</th><th>Phone</th><th>Type</th><th>Payment</th><th>Total (Rs.)</th><th>Date & Time</th><th>Action</th></tr></thead><tbody id="custSalesTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
+            </div>
             <h4 style="color:#06b6d4; margin-top:25px;">🔧 Repair Jobs History</h4>
-            <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Total (Rs.)</th><th>Status</th></tr></thead><tbody id="custRepairsTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
+            <div class="table-responsive">
+                <table><thead><tr><th>Job ID</th><th>Customer</th><th>Phone</th><th>Device</th><th>Issue</th><th>Warranty</th><th>Total (Rs.)</th><th>Status</th></tr></thead><tbody id="custRepairsTable"><tr><td colspan="8" style="text-align:center;">Type customer name or phone above.</td></tr></tbody></table>
+            </div>
         </div>
 
         <!-- Tab 8: Backup & Restore -->
@@ -909,12 +927,17 @@
                         total_amount: total, total_discount: discount, amount_paid: paid, change_due: change,
                         items: [...cart], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                     };
-                    generateAutoMessage(lastSaleData);
+                    
+                    // Clear cart & Customer Name/Phone fields after successful checkout
                     cart = []; 
+                    document.getElementById('custName').value = '';
+                    document.getElementById('custPhone').value = '';
                     renderCart(); 
                     await loadInventory(); 
                     await loadSales(); 
                     await loadRepairs();
+
+                    generateAutoMessage(lastSaleData, "Official Sales Receipt");
                 } else {
                     alert('Checkout failed: ' + (data.error || 'Unknown error'));
                 }
@@ -1041,7 +1064,6 @@
                     total_amount: diff, total_discount: retVal, amount_paid: diff, change_due: 0,
                     items: [exchangeItem], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                 };
-                generateAutoMessage(lastSaleData);
                 
                 // Clear Exchange Form fields after successful checkout
                 document.getElementById('exReturnSearch').value = '';
@@ -1055,18 +1077,21 @@
                 document.getElementById('exDiffTotal').textContent = '0.00';
                 selectedExchangeNewProductObj = null;
 
+                generateAutoMessage(lastSaleData, "Exchange Receipt");
                 loadInventory(); loadSales(); populateExchangeDropdowns();
             }
         }
         // --- END EXCHANGE LOGIC ---
 
-        function generateAutoMessage(sale) {
+        function generateAutoMessage(sale, receiptTitle = "Official Sales Receipt") {
             let saleIdDisplay = sale.sale_id ? `#${sale.sale_id}` : '#--';
+            document.getElementById('receiptModalTitle').textContent = `${receiptTitle} (${saleIdDisplay})`;
+
             let htmlMsg = `<div style="font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; line-height: 1.4;">
                 <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 12px;">
                     <h2 style="margin: 0; color: #2563eb; font-size: 18px;">${sale.branch.toUpperCase()}</h2>
                     ${sale.branch_phone ? `<div style="font-size: 12px; color: #475569; margin-top: 3px;">Contact: ${sale.branch_phone}</div>` : ''}
-                    <div style="font-size: 10px; text-transform: uppercase; color: #64748b; margin-top: 4px; font-weight: bold; letter-spacing: 1px;">Official Sales Receipt</div>
+                    <div style="font-size: 10px; text-transform: uppercase; color: #64748b; margin-top: 4px; font-weight: bold; letter-spacing: 1px;">${receiptTitle}</div>
                 </div>
 
                 <div style="background: #f8f9fa; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; border: 1px solid #cbd5e1; color: #1e293b;">
@@ -1166,7 +1191,6 @@
         function sendWhatsAppMessage() {
             if(!lastSaleData) return alert('No receipt data!');
             let phone = lastSaleData.customer_phone || '';
-            // Clean phone number for WhatsApp URL format (remove spaces, leading zeros if needed or keep standard format)
             phone = phone.replace(/[^0-9]/g, '');
             
             let text = `*${lastSaleData.branch.toUpperCase()} - OFFICIAL RECEIPT*\n`;
@@ -1189,7 +1213,7 @@
             text += `--------------------------------\n`;
             text += `Thank you for your business!`;
 
-            let waUrl = `https://wa.me/${phone ? phone : ''}?text=` + encodeURIComponent(text);
+            let waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=` + encodeURIComponent(text);
             window.open(waUrl, '_blank');
         }
 
@@ -1551,7 +1575,8 @@
                     items: [{ name: `Repair Final Checkout (#${rId})`, warranty: parsed.warranty, qty: 1, subtotal: bal }],
                     branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                 };
-                generateAutoMessage(lastSaleData);
+                
+                generateAutoMessage(lastSaleData, "Repair Final Receipt");
                 await loadRepairs(); await loadSales();
             }
         }
@@ -1588,8 +1613,8 @@
                 total_amount: sale.total_amount, total_discount: sale.discount || 0, amount_paid: sale.total_amount, change_due: 0,
                 items: sale.items || [], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
             };
-            generateAutoMessage(lastSaleData);
-            document.getElementById('receiptModalTitle').textContent = `Sale Details (#${sale.sale_id})`;
+            let title = sale.sale_type === 'Repair' ? 'Repair Final Receipt' : (sale.sale_type === 'Exchange' ? 'Exchange Receipt' : 'Official Sales Receipt');
+            generateAutoMessage(lastSaleData, title);
         }
 
         async function exportDataBackup() {
