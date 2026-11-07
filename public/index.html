@@ -66,20 +66,21 @@
         
         #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; }
         
-        /* STRICT PRINT CSS: Hide everything except the active printable content */
+        /* STRICT FULL-PAGE PRINT CSS FIXED FOR NORMAL BILL SIZE */
         @media print {
             body * { visibility: hidden !important; display: none !important; }
             #receiptModal.printing-active, #receiptModal.printing-active * { visibility: visible !important; display: block !important; }
             #barcodeModal.printing-active, #barcodeModal.printing-active * { visibility: visible !important; display: block !important; }
             
-            #receiptModal.printing-active { position: fixed !important; left: 0 !important; top: 0 !important; width: 100vw !important; height: 100vh !important; background: #ffffff !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-            #barcodeModal.printing-active { position: fixed !important; left: 0 !important; top: 0 !important; width: 100vw !important; height: 100vh !important; background: #ffffff !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+            #receiptModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: #ffffff !important; z-index: 999999 !important; display: block !important; }
+            #barcodeModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: #ffffff !important; z-index: 999999 !important; display: block !important; }
             
-            #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 80mm !important; max-width: 80mm !important; margin: 0 auto !important; padding: 0 !important; max-height: none !important; overflow: visible !important; }
+            #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; max-height: none !important; overflow: visible !important; }
             #receiptModalTitle, #printHideBtn { display: none !important; visibility: hidden !important; }
             
-            .printable { position: relative !important; width: 80mm !important; max-width: 80mm !important; font-family: Arial, sans-serif !important; font-size: 12px !important; color: #000 !important; background: #fff !important; padding: 5px !important; box-shadow: none !important; margin: 0 auto !important; }
+            .printable { position: relative !important; width: 100% !important; max-width: 100% !important; font-family: Arial, sans-serif !important; font-size: 14px !important; color: #000 !important; background: #fff !important; padding: 0 !important; box-shadow: none !important; margin: 0 !important; border: none !important; }
             #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
+            @page { size: auto; margin: 5mm; }
         }
     </style>
 </head>
@@ -422,7 +423,6 @@
         let selectedOriginalPrice = 0;
         let selectedCostPrice = 0;
         let selectedProductWarranty = 'No Warranty';
-        let rawReceiptPlaintext = "";
         let selectedBillingRepair = null;
         let selectedBillingValue = "";
         let selectedProductNameStr = "";
@@ -928,7 +928,6 @@
                         items: [...cart], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                     };
                     
-                    // Clear cart & Customer Name/Phone fields after successful checkout
                     cart = []; 
                     document.getElementById('custName').value = '';
                     document.getElementById('custPhone').value = '';
@@ -947,7 +946,7 @@
             }
         }
 
-        // --- EXCHANGE BILLING LOGIC WITH STOCK LABELS ---
+        // --- EXCHANGE BILLING LOGIC WITH LOW STOCK & OUT OF STOCK COLORS ---
         function populateExchangeDropdowns() {
             const retSelect = document.getElementById('exReturnSelect');
             const newSelect = document.getElementById('exNewSelect');
@@ -961,8 +960,15 @@
                 const isLow = p.stock > 0 && p.stock <= 2;
                 const stockLabel = isOut ? '[OUT OF STOCK]' : (isLow ? `[LOW STOCK: ${p.stock}]` : `[Stock: ${p.stock}]`);
                 
+                // Return dropdown
                 retSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Rs. ${p.selling_price})</option>`;
-                newSelect.innerHTML += `<option value="${p.product_id}" ${isOut ? 'disabled style="color:#ef4444;"' : ''}>#${p.product_code || p.product_id} - ${parsed.name} ${stockLabel} - Rs. ${p.selling_price}</option>`;
+                
+                // New replacement dropdown with styling
+                let optStyle = '';
+                if(isOut) optStyle = 'color: #ef4444; font-weight: bold; background: rgba(239, 68, 68, 0.1);';
+                else if(isLow) optStyle = 'color: #f59e0b; font-weight: bold; background: rgba(245, 158, 11, 0.1);';
+
+                newSelect.innerHTML += `<option value="${p.product_id}" ${isOut ? 'disabled' : ''} style="${optStyle}">#${p.product_code || p.product_id} - ${parsed.name} ${stockLabel} - Rs. ${p.selling_price}</option>`;
             });
         }
 
@@ -996,7 +1002,12 @@
                 const isOut = p.stock <= 0;
                 const isLow = p.stock > 0 && p.stock <= 2;
                 const stockLabel = isOut ? '[OUT OF STOCK]' : (isLow ? `[LOW STOCK: ${p.stock}]` : `[Stock: ${p.stock}]`);
-                newSelect.innerHTML += `<option value="${p.product_id}" ${isOut ? 'disabled style="color:#ef4444;"' : ''}>#${p.product_code || p.product_id} - ${parsed.name} ${stockLabel} - Rs. ${p.selling_price}</option>`;
+                
+                let optStyle = '';
+                if(isOut) optStyle = 'color: #ef4444; font-weight: bold; background: rgba(239, 68, 68, 0.1);';
+                else if(isLow) optStyle = 'color: #f59e0b; font-weight: bold; background: rgba(245, 158, 11, 0.1);';
+
+                newSelect.innerHTML += `<option value="${p.product_id}" ${isOut ? 'disabled' : ''} style="${optStyle}">#${p.product_code || p.product_id} - ${parsed.name} ${stockLabel} - Rs. ${p.selling_price}</option>`;
             });
         }
 
@@ -1065,7 +1076,6 @@
                     items: [exchangeItem], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                 };
                 
-                // Clear Exchange Form fields after successful checkout
                 document.getElementById('exReturnSearch').value = '';
                 document.getElementById('exReturnName').value = '';
                 document.getElementById('exReturnValue').value = '';
@@ -1151,7 +1161,7 @@
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
-        // --- STRICT ISOLATED PRINT FUNCTION ---
+        // --- STRICT FULL-PAGE PRINT FUNCTION ---
         function triggerPrint(modalId) {
             const modal = document.getElementById(modalId);
             modal.classList.add('printing-active');
@@ -1188,10 +1198,16 @@
             });
         }
 
+        // --- FIXED WHATSAPP REDIRECT FUNCTION ---
         function sendWhatsAppMessage() {
             if(!lastSaleData) return alert('No receipt data!');
             let phone = lastSaleData.customer_phone || '';
             phone = phone.replace(/[^0-9]/g, '');
+            
+            // If phone starts with 0 in Sri Lanka (e.g. 076...), convert to 9476...
+            if(phone.startsWith('0') && phone.length === 10) {
+                phone = '94' + phone.substring(1);
+            }
             
             let text = `*${lastSaleData.branch.toUpperCase()} - OFFICIAL RECEIPT*\n`;
             if(lastSaleData.branch_phone) text += `Contact: ${lastSaleData.branch_phone}\n`;
@@ -1213,7 +1229,8 @@
             text += `--------------------------------\n`;
             text += `Thank you for your business!`;
 
-            let waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=` + encodeURIComponent(text);
+            // Using wa.me directly for reliable chat opening
+            let waUrl = `https://wa.me/${phone}?text=` + encodeURIComponent(text);
             window.open(waUrl, '_blank');
         }
 
