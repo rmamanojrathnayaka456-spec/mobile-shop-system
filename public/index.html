@@ -64,23 +64,23 @@
         .low-stock-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
         .sticker-card { background: #ffffff; color: #1e293b; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; margin-bottom: 12px; }
         
-        #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; }
+        #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; width: 58mm !important; max-width: 58mm !important; margin: 0 auto !important; }
         
-        /* STRICT FULL-PAGE PRINT CSS FIXED FOR NORMAL BILL SIZE */
+        /* 58MM THERMAL PRINTER STRICT PRINT CSS */
         @media print {
             body * { visibility: hidden !important; display: none !important; }
             #receiptModal.printing-active, #receiptModal.printing-active * { visibility: visible !important; display: block !important; }
             #barcodeModal.printing-active, #barcodeModal.printing-active * { visibility: visible !important; display: block !important; }
             
-            #receiptModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: #ffffff !important; z-index: 999999 !important; display: block !important; }
-            #barcodeModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: #ffffff !important; z-index: 999999 !important; display: block !important; }
+            #receiptModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 58mm !important; background: #ffffff !important; z-index: 999999 !important; display: block !important; }
+            #barcodeModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 58mm !important; background: #ffffff !important; z-index: 999999 !important; display: block !important; }
             
-            #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; max-height: none !important; overflow: visible !important; }
+            #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 2mm !important; max-height: none !important; overflow: visible !important; }
             #receiptModalTitle, #printHideBtn { display: none !important; visibility: hidden !important; }
             
-            .printable { position: relative !important; width: 100% !important; max-width: 100% !important; font-family: Arial, sans-serif !important; font-size: 14px !important; color: #000 !important; background: #fff !important; padding: 0 !important; box-shadow: none !important; margin: 0 !important; border: none !important; }
+            .printable { position: relative !important; width: 58mm !important; max-width: 58mm !important; font-family: Arial, sans-serif !important; font-size: 11px !important; color: #000 !important; background: #fff !important; padding: 0 !important; box-shadow: none !important; margin: 0 !important; border: none !important; }
             #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
-            @page { size: auto; margin: 5mm; }
+            @page { size: 58mm auto; margin: 0; }
         }
     </style>
 </head>
@@ -960,10 +960,8 @@
                 const isLow = p.stock > 0 && p.stock <= 2;
                 const stockLabel = isOut ? '[OUT OF STOCK]' : (isLow ? `[LOW STOCK: ${p.stock}]` : `[Stock: ${p.stock}]`);
                 
-                // Return dropdown
                 retSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Rs. ${p.selling_price})</option>`;
                 
-                // New replacement dropdown with styling
                 let optStyle = '';
                 if(isOut) optStyle = 'color: #ef4444; font-weight: bold; background: rgba(239, 68, 68, 0.1);';
                 else if(isLow) optStyle = 'color: #f59e0b; font-weight: bold; background: rgba(245, 158, 11, 0.1);';
@@ -1161,7 +1159,6 @@
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
-        // --- STRICT FULL-PAGE PRINT FUNCTION ---
         function triggerPrint(modalId) {
             const modal = document.getElementById(modalId);
             modal.classList.add('printing-active');
@@ -1198,13 +1195,11 @@
             });
         }
 
-        // --- FIXED WHATSAPP REDIRECT FUNCTION ---
         function sendWhatsAppMessage() {
             if(!lastSaleData) return alert('No receipt data!');
             let phone = lastSaleData.customer_phone || '';
             phone = phone.replace(/[^0-9]/g, '');
             
-            // If phone starts with 0 in Sri Lanka (e.g. 076...), convert to 9476...
             if(phone.startsWith('0') && phone.length === 10) {
                 phone = '94' + phone.substring(1);
             }
@@ -1229,7 +1224,6 @@
             text += `--------------------------------\n`;
             text += `Thank you for your business!`;
 
-            // Using wa.me directly for reliable chat opening
             let waUrl = `https://wa.me/${phone}?text=` + encodeURIComponent(text);
             window.open(waUrl, '_blank');
         }
