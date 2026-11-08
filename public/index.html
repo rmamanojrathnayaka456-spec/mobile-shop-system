@@ -63,27 +63,27 @@
         .low-stock-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
         .sticker-card { background: #ffffff; color: #1e293b; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; margin-bottom: 12px; }
         
-        /* CLEAN TABLE-BASED RECEIPT STYLING */
+        /* PROFESSIONAL POS THERMAL RECEIPT CSS */
         #receiptBoxContainer { background: #ffffff !important; color: #000000 !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; font-family: 'Segoe UI', Tahoma, sans-serif; text-align: left; max-height: 480px; overflow-y: auto; width: 340px !important; max-width: 100% !important; margin: 0 auto !important; font-size: 13px; line-height: 1.4; }
         
-        .rcpt-header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 12px; }
-        .rcpt-header h3 { color: #2563eb; margin: 0 0 4px 0; font-size: 16px; font-weight: 700; }
-        .rcpt-header p { margin: 0; font-size: 12px; color: #475569; }
-        .rcpt-meta { font-size: 12px; margin-bottom: 12px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; }
+        .rcpt-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+        .rcpt-header h3 { color: #000; margin: 0 0 4px 0; font-size: 16px; font-weight: 700; }
+        .rcpt-header p { margin: 0; font-size: 12px; color: #333; }
+        .rcpt-meta { font-size: 12px; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 8px; }
         .rcpt-meta div { display: flex; justify-content: space-between; margin-bottom: 3px; }
         
-        .rcpt-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-        .rcpt-table th { background: #2563eb; color: #ffffff; padding: 6px 8px; font-size: 11px; text-transform: uppercase; text-align: left; }
-        .rcpt-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px; vertical-align: top; }
-        .rcpt-item-title { font-weight: 700; color: #0f172a; }
-        .rcpt-item-sub { font-size: 11px; color: #475569; margin-top: 2px; }
+        .rcpt-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .rcpt-table th { background: #000 !important; color: #fff !important; padding: 6px 8px; font-size: 11px; text-transform: uppercase; text-align: left; }
+        .rcpt-table td { padding: 8px 6px; border-bottom: 1px solid #ddd; font-size: 12px; vertical-align: top; color: #000 !important; }
+        .rcpt-item-title { font-weight: 700; color: #000 !important; }
+        .rcpt-item-sub { font-size: 11px; color: #333 !important; margin-top: 2px; }
         
-        .rcpt-summary { border-top: 1px dashed #cbd5e1; padding-top: 8px; font-size: 12px; }
-        .rcpt-summary div { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .rcpt-summary .total-row { font-size: 14px; font-weight: 700; color: #2563eb; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; padding: 6px 0; margin-top: 6px; margin-bottom: 6px; }
-        .rcpt-footer { text-align: center; margin-top: 15px; font-size: 12px; font-weight: 600; color: #059669; border-top: 1px dashed #cbd5e1; padding-top: 8px; }
+        .rcpt-summary { border-top: 1px dashed #000; padding-top: 8px; font-size: 12px; }
+        .rcpt-summary div { display: flex; justify-content: space-between; margin-bottom: 4px; color: #000 !important; }
+        .rcpt-summary .total-row { font-size: 14px; font-weight: 700; color: #000 !important; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 0; margin-top: 6px; margin-bottom: 6px; }
+        .rcpt-footer { text-align: center; margin-top: 15px; font-size: 12px; font-weight: 600; color: #000 !important; border-top: 1px dashed #000; padding-top: 8px; }
 
-        /* STRICT THERMAL PRINTER CSS */
+        /* STRICT 58MM THERMAL PRINTER PRINT CSS */
         @media print {
             body * { visibility: hidden !important; display: none !important; }
             
@@ -96,7 +96,7 @@
             
             #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 2mm !important; max-height: none !important; overflow: visible !important; font-size: 10px !important; line-height: 1.2 !important; color: #000 !important; background: #fff !important; }
             .rcpt-table th { background: #000 !important; color: #fff !important; font-size: 9px !important; padding: 3px !important; }
-            .rcpt-table td { padding: 4px 3px !important; font-size: 10px !important; }
+            .rcpt-table td { padding: 4px 3px !important; font-size: 10px !important; color: #000 !important; }
             
             #barcodeModal.printing-active, #barcodeModal.printing-active * { visibility: visible !important; display: block !important; }
             #barcodeModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 58mm !important; background: #ffffff !important; z-index: 999999 !important; }
@@ -1118,13 +1118,13 @@
             document.getElementById('receiptModalTitle').textContent = `${receiptTitle} (${saleIdDisplay})`;
 
             let now = new Date();
-            let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
+            let dateStr = now.toLocaleString('en-US', { hour12: true });
 
             let htmlContent = `
                 <div class="rcpt-header">
                     <h3>${sale.branch.toUpperCase()}</h3>
                     <p>Contact: ${sale.branch_phone || 'N/A'}</p>
-                    <p style="font-weight:700; margin-top:4px; color:#0f172a;">${receiptTitle.toUpperCase()}</p>
+                    <p style="font-weight:700; margin-top:4px; color:#000;">${receiptTitle.toUpperCase()}</p>
                 </div>
                 <div class="rcpt-meta">
                     <div><span>Date:</span> <span>${dateStr}</span></div>
@@ -1154,7 +1154,7 @@
                             <div class="rcpt-item-sub">Warranty: ${i.warranty || 'No Warranty'}</div>
                             <div class="rcpt-item-sub">IMEI: ${i.imei || 'N/A'}</div>`;
                 if(i.returned_valuation) {
-                    htmlContent += `<div class="rcpt-item-sub" style="color:#7c3aed;">Return Val: -Rs. ${i.returned_valuation.toFixed(2)}</div>`;
+                    htmlContent += `<div class="rcpt-item-sub">Return Val: -Rs. ${i.returned_valuation.toFixed(2)}</div>`;
                 }
                 htmlContent += `</td>
                         <td style="text-align:center; font-weight:600;">${i.qty}</td>
@@ -1168,12 +1168,12 @@
                 <div class="rcpt-summary">`;
             
             if(sale.total_discount > 0) {
-                htmlContent += `<div><span>Total Discount:</span> <span style="color:#ef4444;">- Rs. ${sale.total_discount.toFixed(2)}</span></div>`;
+                htmlContent += `<div><span>Total Discount:</span> <span>- Rs. ${sale.total_discount.toFixed(2)}</span></div>`;
             }
             htmlContent += `
                     <div class="total-row"><span>TOTAL PAYABLE:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
                     <div><span>Amount Paid:</span> <span>Rs. ${(sale.amount_paid || 0).toFixed(2)}</span></div>
-                    <div><span>Change Due:</span> <span style="color:#059669; font-weight:700;">Rs. ${(sale.change_due || 0).toFixed(2)}</span></div>
+                    <div><span>Change Due:</span> <span>Rs. ${(sale.change_due || 0).toFixed(2)}</span></div>
                     <div><span>Payment Method:</span> <span><b>${sale.payment_method}</b></span></div>
                 </div>
                 <div class="rcpt-footer">
@@ -1196,7 +1196,7 @@
         function copyReceiptText() {
             if(!lastSaleData) return alert('No receipt data to copy!');
             let now = new Date();
-            let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
+            let dateStr = now.toLocaleString('en-US', { hour12: true });
             
             let text = `================================\n`;
             text += `            ${lastSaleData.branch.toUpperCase()}\n`;
@@ -1240,7 +1240,7 @@
             }
             
             let now = new Date();
-            let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
+            let dateStr = now.toLocaleString('en-US', { hour12: true });
             
             let text = `================================\n`;
             text += `            ${lastSaleData.branch.toUpperCase()}\n`;
@@ -1500,13 +1500,13 @@
 
         function generateRepairAdvanceReceipt(adv) {
             let now = new Date();
-            let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
+            let dateStr = now.toLocaleString('en-US', { hour12: true });
 
             let htmlContent = `
                 <div class="rcpt-header">
                     <h3>${adv.branch.toUpperCase()}</h3>
                     <p>Contact: ${adv.branch_phone || 'N/A'}</p>
-                    <p style="font-weight:700; margin-top:4px; color:#0f172a;">REPAIR ADVANCE RECEIPT</p>
+                    <p style="font-weight:700; margin-top:4px; color:#000;">REPAIR ADVANCE RECEIPT</p>
                 </div>
                 <div class="rcpt-meta">
                     <div><span>Date:</span> <span>${dateStr}</span></div>
@@ -1533,8 +1533,8 @@
                     </tbody>
                 </table>
                 <div class="rcpt-summary">
-                    <div><span>Advance Paid:</span> <span style="color:#f59e0b; font-weight:700;">Rs. ${adv.advance_cost.toFixed(2)}</span></div>
-                    <div class="total-row"><span>BALANCE DUE:</span> <span style="color:#ef4444;">Rs. ${adv.balance_due.toFixed(2)}</span></div>
+                    <div><span>Advance Paid:</span> <span>Rs. ${adv.advance_cost.toFixed(2)}</span></div>
+                    <div class="total-row"><span>BALANCE DUE:</span> <span>Rs. ${adv.balance_due.toFixed(2)}</span></div>
                 </div>
                 <div class="rcpt-footer">
                     Thank you for your business!
@@ -1690,7 +1690,7 @@
                 fetch(`/api/repairs?shop_id=${shopId}`).then(res=>res.json()),
                 fetch(`/api/repair-parts?shop_id=${shopId}`).then(res=>res.json())
             ]);
-            const a = document.createElement('a');
+            const a = document.getElementById('a') || document.createElement('a');
             a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ products: p, sales: s, repairs: r, repair_parts: rp }, null, 2));
             a.download = `backup_${currentUser ? currentUser.shop_name : 'shop'}.json`; document.body.appendChild(a); a.click(); a.remove();
         }
