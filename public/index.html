@@ -63,25 +63,25 @@
         .low-stock-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
         .sticker-card { background: #ffffff; color: #1e293b; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; margin-bottom: 12px; }
         
-        /* PROFESSIONAL POS THERMAL RECEIPT CSS */
+        /* PROFESSIONAL POS THERMAL RECEIPT CSS (Clean white background, pure black text) */
         #receiptBoxContainer { background: #ffffff !important; color: #000000 !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; font-family: 'Segoe UI', Tahoma, sans-serif; text-align: left; max-height: 480px; overflow-y: auto; width: 340px !important; max-width: 100% !important; margin: 0 auto !important; font-size: 13px; line-height: 1.4; }
         
-        .rcpt-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
-        .rcpt-header h3 { color: #000; margin: 0 0 4px 0; font-size: 16px; font-weight: 700; }
-        .rcpt-header p { margin: 0; font-size: 12px; color: #333; }
-        .rcpt-meta { font-size: 12px; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 8px; }
-        .rcpt-meta div { display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .rcpt-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px; background: #ffffff !important; }
+        .rcpt-header h3 { color: #000 !important; margin: 0 0 4px 0; font-size: 16px; font-weight: 700; background: transparent !important; }
+        .rcpt-header p { margin: 0; font-size: 12px; color: #000 !important; background: transparent !important; }
+        .rcpt-meta { font-size: 12px; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 8px; background: #ffffff !important; color: #000 !important; }
+        .rcpt-meta div { display: flex; justify-content: space-between; margin-bottom: 3px; background: transparent !important; color: #000 !important; }
         
-        .rcpt-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .rcpt-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; background: #ffffff !important; }
         .rcpt-table th { background: #000 !important; color: #fff !important; padding: 6px 8px; font-size: 11px; text-transform: uppercase; text-align: left; }
-        .rcpt-table td { padding: 8px 6px; border-bottom: 1px solid #ddd; font-size: 12px; vertical-align: top; color: #000 !important; }
-        .rcpt-item-title { font-weight: 700; color: #000 !important; }
-        .rcpt-item-sub { font-size: 11px; color: #333 !important; margin-top: 2px; }
+        .rcpt-table td { padding: 8px 6px; border-bottom: 1px solid #ddd; font-size: 12px; vertical-align: top; background: #ffffff !important; color: #000 !important; }
+        .rcpt-item-title { font-weight: 700; color: #000 !important; background: transparent !important; }
+        .rcpt-item-sub { font-size: 11px; color: #000 !important; background: transparent !important; margin-top: 2px; }
         
-        .rcpt-summary { border-top: 1px dashed #000; padding-top: 8px; font-size: 12px; }
-        .rcpt-summary div { display: flex; justify-content: space-between; margin-bottom: 4px; color: #000 !important; }
-        .rcpt-summary .total-row { font-size: 14px; font-weight: 700; color: #000 !important; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 0; margin-top: 6px; margin-bottom: 6px; }
-        .rcpt-footer { text-align: center; margin-top: 15px; font-size: 12px; font-weight: 600; color: #000 !important; border-top: 1px dashed #000; padding-top: 8px; }
+        .rcpt-summary { border-top: 1px dashed #000; padding-top: 8px; font-size: 12px; background: #ffffff !important; color: #000 !important; }
+        .rcpt-summary div { display: flex; justify-content: space-between; margin-bottom: 4px; background: transparent !important; color: #000 !important; }
+        .rcpt-summary .total-row { font-size: 14px; font-weight: 700; color: #000 !important; background: transparent !important; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 0; margin-top: 6px; margin-bottom: 6px; }
+        .rcpt-footer { text-align: center; margin-top: 15px; font-size: 12px; font-weight: 600; color: #000 !important; background: transparent !important; border-top: 1px dashed #000; padding-top: 8px; }
 
         /* STRICT 58MM THERMAL PRINTER PRINT CSS */
         @media print {
@@ -96,7 +96,7 @@
             
             #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 2mm !important; max-height: none !important; overflow: visible !important; font-size: 10px !important; line-height: 1.2 !important; color: #000 !important; background: #fff !important; }
             .rcpt-table th { background: #000 !important; color: #fff !important; font-size: 9px !important; padding: 3px !important; }
-            .rcpt-table td { padding: 4px 3px !important; font-size: 10px !important; color: #000 !important; }
+            .rcpt-table td { padding: 4px 3px !important; font-size: 10px !important; color: #000 !important; background: #fff !important; }
             
             #barcodeModal.printing-active, #barcodeModal.printing-active * { visibility: visible !important; display: block !important; }
             #barcodeModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 58mm !important; background: #ffffff !important; z-index: 999999 !important; }
@@ -1401,10 +1401,19 @@
                 else if(s.sale_type === 'Mixed') badgeClass = 'badge-mix';
                 else if(s.sale_type === 'Exchange') badgeClass = 'badge-ex';
 
+                // Format created_at to local date & time properly
+                let displayTime = s.formatted_date || '';
+                if(s.created_at) {
+                    let d = new Date(s.created_at);
+                    if(!isNaN(d.getTime())) {
+                        displayTime = d.toLocaleString('en-US', { hour12: true });
+                    }
+                }
+
                 tbody.innerHTML += `<tr style="cursor:pointer;" onclick="viewSale(${s.sale_id})">
                     <td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td>
                     <td><span class="${badgeClass}">${s.sale_type}</span></td><td>${s.payment_method}</td>
-                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${s.formatted_date}</td>
+                    <td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${displayTime}</td>
                     <td onclick="event.stopPropagation()">
                         <div style="display:flex; gap:6px;">
                             <button onclick="viewSale(${s.sale_id})" style="background:#06b6d4; padding:5px 8px; font-size:11px; border-radius:6px; width:auto;">View</button>
@@ -1658,7 +1667,12 @@
             const matchedSales = rawSalesData.filter(s => (s.customer_name||'').toLowerCase().includes(query) || (s.customer_phone||'').toLowerCase().includes(query));
             salesTbody.innerHTML = matchedSales.length === 0 ? `<tr><td colspan="8" style="text-align:center;">No purchases found.</td></tr>` : '';
             matchedSales.forEach(s => {
-                salesTbody.innerHTML += `<tr><td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td><td><span class="badge-prod">${s.sale_type}</span></td><td>${s.payment_method}</td><td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${s.formatted_date}</td><td><button onclick="viewSale(${s.sale_id})" style="background:#06b6d4; padding:5px 10px; border-radius:6px;">View</button></td></tr>`;
+                let displayTime = s.formatted_date || '';
+                if(s.created_at) {
+                    let d = new Date(s.created_at);
+                    if(!isNaN(d.getTime())) displayTime = d.toLocaleString('en-US', { hour12: true });
+                }
+                salesTbody.innerHTML += `<tr><td><b>#${s.sale_id}</b></td><td>${s.customer_name}</td><td>${s.customer_phone}</td><td><span class="badge-prod">${s.sale_type}</span></td><td>${s.payment_method}</td><td>Rs. ${parseFloat(s.total_amount).toFixed(2)}</td><td>${displayTime}</td><td><button onclick="viewSale(${s.sale_id})" style="background:#06b6d4; padding:5px 10px; border-radius:6px;">View</button></td></tr>`;
             });
 
             const matchedRepairs = allRepairs.filter(r => (r.customer_name||'').toLowerCase().includes(query) || (r.customer_phone||'').toLowerCase().includes(query));
@@ -1690,7 +1704,7 @@
                 fetch(`/api/repairs?shop_id=${shopId}`).then(res=>res.json()),
                 fetch(`/api/repair-parts?shop_id=${shopId}`).then(res=>res.json())
             ]);
-            const a = document.getElementById('a') || document.createElement('a');
+            const a = document.createElement('a');
             a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ products: p, sales: s, repairs: r, repair_parts: rp }, null, 2));
             a.download = `backup_${currentUser ? currentUser.shop_name : 'shop'}.json`; document.body.appendChild(a); a.click(); a.remove();
         }
