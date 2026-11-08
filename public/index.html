@@ -40,7 +40,6 @@
         .section { display: none; background: var(--section-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); }
         .section.active { display: block; }
         
-        /* Table scroll wrapper container */
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--container-bg); }
         table { width: 100%; border-collapse: collapse; background: var(--container-bg); white-space: nowrap; }
         th, td { border-bottom: 1px solid var(--border-color); padding: 12px 15px; text-align: left; font-size: 14px; }
@@ -64,7 +63,7 @@
         .low-stock-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
         .sticker-card { background: #ffffff; color: #1e293b; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; margin-bottom: 12px; }
         
-        #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; width: 58mm !important; max-width: 58mm !important; margin: 0 auto !important; }
+        #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; width: 58mm !important; max-width: 58mm !important; margin: 0 auto !important; font-size: 11px; line-height: 1.3; }
         
         /* 58MM THERMAL PRINTER STRICT PRINT CSS */
         @media print {
@@ -75,10 +74,10 @@
             #receiptModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 58mm !important; background: #ffffff !important; z-index: 999999 !important; display: block !important; }
             #barcodeModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 58mm !important; background: #ffffff !important; z-index: 999999 !important; display: block !important; }
             
-            #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 2mm !important; max-height: none !important; overflow: visible !important; }
+            #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 1mm !important; max-height: none !important; overflow: visible !important; font-family: monospace !important; font-size: 10px !important; color: #000 !important; background: #fff !important; }
             #receiptModalTitle, #printHideBtn { display: none !important; visibility: hidden !important; }
             
-            .printable { position: relative !important; width: 58mm !important; max-width: 58mm !important; font-family: Arial, sans-serif !important; font-size: 11px !important; color: #000 !important; background: #fff !important; padding: 0 !important; box-shadow: none !important; margin: 0 !important; border: none !important; }
+            .printable { position: relative !important; width: 58mm !important; max-width: 58mm !important; font-family: monospace !important; font-size: 10px !important; color: #000 !important; background: #fff !important; padding: 0 !important; box-shadow: none !important; margin: 0 !important; border: none !important; }
             #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
             @page { size: 58mm auto; margin: 0; }
         }
@@ -189,7 +188,7 @@
             </div>
         </div>
 
-        <!-- Tab 3: Stock Inventory (With Horizontal Scroll) -->
+        <!-- Tab 3: Stock Inventory -->
         <div id="tab3" class="section">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
                 <h3>3. Stock Inventory Management</h3>
@@ -245,7 +244,7 @@
             </div>
         </div>
 
-        <!-- Tab 5: Repair Jobs (Includes Repair Parts Sub-Tab) -->
+        <!-- Tab 5: Repair Jobs -->
         <div id="tab5" class="section">
             <h3>5. Repair Jobs & Repair Parts Management</h3>
             <div class="sub-tabs">
@@ -396,7 +395,7 @@
     </div>
 
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:#ffffff; color:#1e293b; padding:25px; border-radius:12px; width:460px; max-width:95%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
+        <div class="printable" style="background:#ffffff; color:#1e293b; padding:25px; border-radius:12px; width:360px; max-width:95%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
             <h3 style="color:#2563eb; margin-top:0; text-align:center;" id="receiptModalTitle">Receipt Generated!</h3>
             <div id="receiptBoxContainer"></div>
             <div id="printHideBtn" style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
@@ -936,7 +935,7 @@
                     await loadSales(); 
                     await loadRepairs();
 
-                    generateAutoMessage(lastSaleData, "Official Sales Receipt");
+                    generateAutoMessage(lastSaleData, "INVOICE / PURCHASE RECEIPT");
                 } else {
                     alert('Checkout failed: ' + (data.error || 'Unknown error'));
                 }
@@ -946,7 +945,7 @@
             }
         }
 
-        // --- EXCHANGE BILLING LOGIC WITH LOW STOCK & OUT OF STOCK COLORS ---
+        // --- EXCHANGE BILLING LOGIC ---
         function populateExchangeDropdowns() {
             const retSelect = document.getElementById('exReturnSelect');
             const newSelect = document.getElementById('exNewSelect');
@@ -1085,75 +1084,64 @@
                 document.getElementById('exDiffTotal').textContent = '0.00';
                 selectedExchangeNewProductObj = null;
 
-                generateAutoMessage(lastSaleData, "Exchange Receipt");
+                generateAutoMessage(lastSaleData, "EXCHANGE RECEIPT");
                 loadInventory(); loadSales(); populateExchangeDropdowns();
             }
         }
         // --- END EXCHANGE LOGIC ---
 
-        function generateAutoMessage(sale, receiptTitle = "Official Sales Receipt") {
+        function generateAutoMessage(sale, receiptTitle = "INVOICE / PURCHASE RECEIPT") {
             let saleIdDisplay = sale.sale_id ? `#${sale.sale_id}` : '#--';
             document.getElementById('receiptModalTitle').textContent = `${receiptTitle} (${saleIdDisplay})`;
 
-            let htmlMsg = `<div style="font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; line-height: 1.4;">
-                <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 12px;">
-                    <h2 style="margin: 0; color: #2563eb; font-size: 18px;">${sale.branch.toUpperCase()}</h2>
-                    ${sale.branch_phone ? `<div style="font-size: 12px; color: #475569; margin-top: 3px;">Contact: ${sale.branch_phone}</div>` : ''}
-                    <div style="font-size: 10px; text-transform: uppercase; color: #64748b; margin-top: 4px; font-weight: bold; letter-spacing: 1px;">${receiptTitle}</div>
-                </div>
+            let now = new Date();
+            let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
 
-                <div style="background: #f8f9fa; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; border: 1px solid #cbd5e1; color: #1e293b;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span><b>Date:</b> ${new Date().toLocaleString()}</span> <span><b>Sale ID:</b> ${saleIdDisplay}</span></div>
-                    <div><b>Customer:</b> ${sale.customer_name} | <b>Phone:</b> ${sale.customer_phone}</div>
-                </div>
+            // Thermal Monospace Layout matching user reference image exactly
+            let htmlMsg = `<div style="font-family: monospace; font-size: 11px; color: #000000; line-height: 1.3; white-space: pre-wrap;">
+================================
+            <b>${sale.branch.toUpperCase()}</b>
+      Contact: <b>${sale.branch_phone || 'N/A'}</b>
+================================
+       <b>${receiptTitle.toUpperCase()}</b>
+--------------------------------
+<b>Date:</b> ${dateStr}
+<b>Sale ID:</b> ${saleIdDisplay}
+<b>Customer Name :</b> ${sale.customer_name}
+<b>Customer Phone:</b> ${sale.customer_phone}
+--------------------------------
+<b>PURCHASED ITEMS:</b>`;
 
-                <div style="font-weight: bold; font-size: 11px; color: #475569; margin-bottom: 6px; text-transform: uppercase;">Purchased Items</div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; color: #1e293b;">
-                    <thead>
-                        <tr style="background: #2563eb; color: #ffffff;">
-                            <th style="padding: 6px 8px; text-align: left; color: #ffffff;">Description</th>
-                            <th style="padding: 6px 8px; text-align: center; width: 40px; color: #ffffff;">Qty</th>
-                            <th style="padding: 6px 8px; text-align: right; color: #ffffff;">Total (Rs.)</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            
             sale.items.forEach(i => {
                 let displayName = i.name || 'Product Item';
                 if (i.brand && !displayName.includes(i.brand)) {
                     displayName = `[${i.brand}] ${displayName}`;
                 }
                 htmlMsg += `
-                    <tr>
-                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; color: #1e293b; background-color: #ffffff;">
-                            <div style="font-weight: bold; color: #1e293b;">${displayName}</div>
-                            <div style="font-size: 11px; color: #2563eb; margin-top: 2px;">Warranty: ${i.warranty || 'No Warranty'}</div>
-                            ${i.returned_valuation ? `<div style="font-size: 11px; color: #8b5cf6; margin-top: 1px;">Returned Credit: -Rs. ${i.returned_valuation.toFixed(2)}</div>` : ''}
-                        </td>
-                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: center; vertical-align: top; color: #1e293b; background-color: #ffffff;">${i.qty}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: right; vertical-align: top; font-weight: bold; color: #1e293b; background-color: #ffffff;">Rs. ${i.subtotal.toFixed(2)}</td>
-                    </tr>`;
+- <b>${displayName}</b> (Qty: ${i.qty})
+  <b>Warranty</b>    : ${i.warranty || 'No Warranty'}
+  <b>IMEI</b>        : ${i.imei || 'N/A'}
+  <b>Total</b>       : Rs. ${i.subtotal.toFixed(2)}`;
+            if(i.returned_valuation) {
+                htmlMsg += `
+  <b>Return Val</b>  : -Rs. ${i.returned_valuation.toFixed(2)}`;
+            }
             });
 
             htmlMsg += `
-                    </tbody>
-                </table>
-
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px; border: 1px solid #cbd5e1; margin-bottom: 12px; color: #1e293b;">
-                    ${sale.total_discount > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #ef4444;"><span>Total Discount / Return Value:</span> <span>- Rs. ${sale.total_discount.toFixed(2)}</span></div>` : ''}
-                    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #2563eb; border-top: 1px dashed #cbd5e1; padding-top: 6px; margin-top: 4px;">
-                        <span>Total Payable:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px;"><span>Amount Paid:</span> <b>Rs. ${(sale.amount_paid || 0).toFixed(2)}</b></div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #10b981;"><span>Change Due:</span> <b>Rs. ${(sale.change_due || 0).toFixed(2)}</b></div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px;"><span>Payment Method:</span> <b>${sale.payment_method}</b></div>
-                </div>
-
-                <div style="text-align: center; font-size: 11px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
-                    Thank you for your business!<br>
-                    <b>${sale.branch.toUpperCase()}</b>
-                </div>
-            </div>`;
+--------------------------------`;
+            if(sale.total_discount > 0) {
+                htmlMsg += `
+<b>TOTAL DISCOUNT :</b> Rs. ${sale.total_discount.toFixed(2)}`;
+            }
+            htmlMsg += `
+<b>TOTAL PAYABLE  :</b> Rs. ${sale.total_amount.toFixed(2)}
+<b>AMOUNT PAID    :</b> Rs. ${(sale.amount_paid || 0).toFixed(2)}
+<b>CHANGE DUE     :</b> Rs. ${(sale.change_due || 0).toFixed(2)}
+<b>Payment Method :</b> ${sale.payment_method}
+================================
+    <b>Thank you for your business!</b>
+================================</div>`;
 
             document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';
@@ -1170,25 +1158,36 @@
         
         function copyReceiptText() {
             if(!lastSaleData) return alert('No receipt data to copy!');
-            let text = `*${lastSaleData.branch.toUpperCase()} - OFFICIAL RECEIPT*\n`;
-            if(lastSaleData.branch_phone) text += `Contact: ${lastSaleData.branch_phone}\n`;
+            let now = new Date();
+            let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
+            
+            let text = `================================\n`;
+            text += `            ${lastSaleData.branch.toUpperCase()}\n`;
+            text += `      Contact: ${lastSaleData.branch_phone || 'N/A'}\n`;
+            text += `================================\n`;
+            text += `       INVOICE / PURCHASE RECEIPT\n`;
             text += `--------------------------------\n`;
-            text += `Date: ${new Date().toLocaleString()}\n`;
+            text += `Date: ${dateStr}\n`;
             text += `Sale ID: #${lastSaleData.sale_id || '--'}\n`;
-            text += `Customer: ${lastSaleData.customer_name} (${lastSaleData.customer_phone})\n`;
+            text += `Customer Name : ${lastSaleData.customer_name}\n`;
+            text += `Customer Phone: ${lastSaleData.customer_phone}\n`;
             text += `--------------------------------\n`;
+            text += `PURCHASED ITEMS:\n`;
             lastSaleData.items.forEach(i => {
-                text += `• ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n`;
-                text += `  Warranty: ${i.warranty || 'No Warranty'}\n`;
+                text += `- ${i.name} (Qty: ${i.qty})\n`;
+                text += `  Warranty    : ${i.warranty || 'No Warranty'}\n`;
+                text += `  IMEI        : ${i.imei || 'N/A'}\n`;
+                text += `  Total       : Rs. ${i.subtotal.toFixed(2)}\n`;
             });
             text += `--------------------------------\n`;
-            if(lastSaleData.total_discount > 0) text += `Discount/Return: -Rs. ${lastSaleData.total_discount.toFixed(2)}\n`;
-            text += `Total Payable: Rs. ${lastSaleData.total_amount.toFixed(2)}\n`;
-            text += `Amount Paid: Rs. ${(lastSaleData.amount_paid||0).toFixed(2)}\n`;
-            text += `Change Due: Rs. ${(lastSaleData.change_due||0).toFixed(2)}\n`;
-            text += `Payment Method: ${lastSaleData.payment_method}\n`;
-            text += `--------------------------------\n`;
-            text += `Thank you for your business!`;
+            if(lastSaleData.total_discount > 0) text += `TOTAL DISCOUNT : Rs. ${lastSaleData.total_discount.toFixed(2)}\n`;
+            text += `TOTAL PAYABLE  : Rs. ${lastSaleData.total_amount.toFixed(2)}\n`;
+            text += `AMOUNT PAID    : Rs. ${(lastSaleData.amount_paid||0).toFixed(2)}\n`;
+            text += `CHANGE DUE     : Rs. ${(lastSaleData.change_due||0).toFixed(2)}\n`;
+            text += `Payment Method : ${lastSaleData.payment_method}\n`;
+            text += `================================\n`;
+            text += `    Thank you for your business!\n`;
+            text += `================================`;
             
             navigator.clipboard.writeText(text).then(() => {
                 alert('Receipt text copied to clipboard!');
@@ -1199,30 +1198,40 @@
             if(!lastSaleData) return alert('No receipt data!');
             let phone = lastSaleData.customer_phone || '';
             phone = phone.replace(/[^0-9]/g, '');
-            
             if(phone.startsWith('0') && phone.length === 10) {
                 phone = '94' + phone.substring(1);
             }
             
-            let text = `*${lastSaleData.branch.toUpperCase()} - OFFICIAL RECEIPT*\n`;
-            if(lastSaleData.branch_phone) text += `Contact: ${lastSaleData.branch_phone}\n`;
+            let now = new Date();
+            let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
+            
+            let text = `================================\n`;
+            text += `            ${lastSaleData.branch.toUpperCase()}\n`;
+            text += `      Contact: ${lastSaleData.branch_phone || 'N/A'}\n`;
+            text += `================================\n`;
+            text += `       INVOICE / PURCHASE RECEIPT\n`;
             text += `--------------------------------\n`;
-            text += `Date: ${new Date().toLocaleString()}\n`;
+            text += `Date: ${dateStr}\n`;
             text += `Sale ID: #${lastSaleData.sale_id || '--'}\n`;
-            text += `Customer: ${lastSaleData.customer_name}\n`;
+            text += `Customer Name : ${lastSaleData.customer_name}\n`;
+            text += `Customer Phone: ${lastSaleData.customer_phone}\n`;
             text += `--------------------------------\n`;
+            text += `PURCHASED ITEMS:\n`;
             lastSaleData.items.forEach(i => {
-                text += `• ${i.name} (Qty: ${i.qty}) - Rs. ${i.subtotal.toFixed(2)}\n`;
-                text += `  Warranty: ${i.warranty || 'No Warranty'}\n`;
+                text += `- ${i.name} (Qty: ${i.qty})\n`;
+                text += `  Warranty    : ${i.warranty || 'No Warranty'}\n`;
+                text += `  IMEI        : ${i.imei || 'N/A'}\n`;
+                text += `  Total       : Rs. ${i.subtotal.toFixed(2)}\n`;
             });
             text += `--------------------------------\n`;
-            if(lastSaleData.total_discount > 0) text += `Discount/Return: -Rs. ${lastSaleData.total_discount.toFixed(2)}\n`;
-            text += `Total Payable: Rs. ${lastSaleData.total_amount.toFixed(2)}\n`;
-            text += `Amount Paid: Rs. ${(lastSaleData.amount_paid||0).toFixed(2)}\n`;
-            text += `Change Due: Rs. ${(lastSaleData.change_due||0).toFixed(2)}\n`;
-            text += `Payment Method: ${lastSaleData.payment_method}\n`;
-            text += `--------------------------------\n`;
-            text += `Thank you for your business!`;
+            if(lastSaleData.total_discount > 0) text += `TOTAL DISCOUNT : Rs. ${lastSaleData.total_discount.toFixed(2)}\n`;
+            text += `TOTAL PAYABLE  : Rs. ${lastSaleData.total_amount.toFixed(2)}\n`;
+            text += `AMOUNT PAID    : Rs. ${(lastSaleData.amount_paid||0).toFixed(2)}\n`;
+            text += `CHANGE DUE     : Rs. ${(lastSaleData.change_due||0).toFixed(2)}\n`;
+            text += `Payment Method : ${lastSaleData.payment_method}\n`;
+            text += `================================\n`;
+            text += `    Thank you for your business!\n`;
+            text += `================================`;
 
             let waUrl = `https://wa.me/${phone}?text=` + encodeURIComponent(text);
             window.open(waUrl, '_blank');
@@ -1453,38 +1462,31 @@
         }
 
         function generateRepairAdvanceReceipt(adv) {
-            let htmlMsg = `
-                <div style="font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; line-height: 1.4;">
-                    <div style="text-align: center; border-bottom: 2px solid #06b6d4; padding-bottom: 10px; margin-bottom: 12px;">
-                        <h2 style="margin: 0; color: #06b6d4; font-size: 18px;">${adv.branch.toUpperCase()}</h2>
-                        ${adv.branch_phone ? `<div style="font-size: 12px; color: #475569; margin-top: 3px;">Contact: ${adv.branch_phone}</div>` : ''}
-                        <div style="font-size: 10px; text-transform: uppercase; color: #64748b; margin-top: 4px; font-weight: bold; letter-spacing: 1px;">Repair Advance Receipt (Job #${adv.repair_id})</div>
-                    </div>
+            let now = new Date();
+            let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
 
-                    <div style="background: #f8f9fa; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; border: 1px solid #cbd5e1; color:#1e293b;">
-                        <div style="color:#1e293b;"><b>Date:</b> ${new Date().toLocaleString()}</div>
-                        <div style="color:#1e293b;"><b>Customer:</b> ${adv.customer_name} (${adv.customer_phone})</div>
-                    </div>
-
-                    <div style="font-weight: bold; font-size: 11px; color: #475569; margin-bottom: 6px; text-transform: uppercase;">Device & Issue Details</div>
-                    <div style="background: #ffffff; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; color: #1e293b;">
-                        <div style="font-weight: bold; color: #1e293b;">${adv.device_model} - ${adv.issue}</div>
-                        <div style="font-size: 11px; color: #2563eb; margin-top: 3px;">Warranty: ${adv.warranty}</div>
-                    </div>
-
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 12px; border: 1px solid #cbd5e1; margin-bottom: 12px; color:#1e293b;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>Total Repair Cost:</span> <b>Rs. ${adv.total_cost.toFixed(2)}</b></div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #f59e0b;"><span>Advance Paid:</span> <b>Rs. ${adv.advance_cost.toFixed(2)}</b></div>
-                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: #10b981; border-top: 1px dashed #cbd5e1; padding-top: 6px; margin-top: 4px;">
-                            <span>Balance Due:</span> <span>Rs. ${adv.balance_due.toFixed(2)}</span>
-                        </div>
-                    </div>
-
-                    <div style="text-align: center; font-size: 11px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
-                        Thank you for your business!<br>
-                        <b>${adv.branch.toUpperCase()}</b>
-                    </div>
-                </div>`;
+            let htmlMsg = `<div style="font-family: monospace; font-size: 11px; color: #000000; line-height: 1.3; white-space: pre-wrap;">
+================================
+            <b>${adv.branch.toUpperCase()}</b>
+      Contact: <b>${adv.branch_phone || 'N/A'}</b>
+================================
+     <b>REPAIR ADVANCE RECEIPT</b>
+--------------------------------
+<b>Date:</b> ${dateStr}
+<b>Job ID:</b> #${adv.repair_id}
+<b>Customer Name :</b> ${adv.customer_name}
+<b>Customer Phone:</b> ${adv.customer_phone}
+--------------------------------
+<b>DEVICE & ISSUE DETAILS:</b>
+- <b>${adv.device_model}</b> - ${adv.issue}
+  <b>Warranty</b>    : ${adv.warranty}
+--------------------------------
+<b>Total Cost   :</b> Rs. ${adv.total_cost.toFixed(2)}
+<b>Advance Paid :</b> Rs. ${adv.advance_cost.toFixed(2)}
+<b>Balance Due  :</b> Rs. ${adv.balance_due.toFixed(2)}
+================================
+    <b>Thank you for your business!</b>
+================================</div>`;
 
             document.getElementById('receiptModalTitle').textContent = `Repair Advance Receipt (#${adv.repair_id})`;
             document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
@@ -1587,7 +1589,7 @@
                     branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
                 };
                 
-                generateAutoMessage(lastSaleData, "Repair Final Receipt");
+                generateAutoMessage(lastSaleData, "REPAIR FINAL RECEIPT");
                 await loadRepairs(); await loadSales();
             }
         }
@@ -1624,7 +1626,7 @@
                 total_amount: sale.total_amount, total_discount: sale.discount || 0, amount_paid: sale.total_amount, change_due: 0,
                 items: sale.items || [], branch: currentUser ? currentUser.shop_name : "SHA MOBILE", branch_phone: currentUser ? currentUser.shop_phone : ''
             };
-            let title = sale.sale_type === 'Repair' ? 'Repair Final Receipt' : (sale.sale_type === 'Exchange' ? 'Exchange Receipt' : 'Official Sales Receipt');
+            let title = sale.sale_type === 'Repair' ? 'REPAIR FINAL RECEIPT' : (sale.sale_type === 'Exchange' ? 'EXCHANGE RECEIPT' : 'INVOICE / PURCHASE RECEIPT');
             generateAutoMessage(lastSaleData, title);
         }
 
