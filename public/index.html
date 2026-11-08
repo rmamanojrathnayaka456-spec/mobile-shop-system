@@ -63,7 +63,7 @@
         .low-stock-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
         .sticker-card { background: #ffffff; color: #1e293b; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; margin-bottom: 12px; }
         
-        #receiptBoxContainer { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; width: 58mm !important; max-width: 58mm !important; margin: 0 auto !important; font-size: 11px; line-height: 1.3; }
+        #receiptBoxContainer { background: #ffffff !important; color: #000000 !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; width: 58mm !important; max-width: 58mm !important; margin: 0 auto !important; font-size: 11px; line-height: 1.3; white-space: pre-wrap; }
         
         /* 58MM THERMAL PRINTER STRICT PRINT CSS */
         @media print {
@@ -1097,9 +1097,7 @@
             let now = new Date();
             let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
 
-            // Thermal Monospace Layout matching user reference image exactly
-            let htmlMsg = `<div style="font-family: monospace; font-size: 11px; color: #000000; line-height: 1.3; white-space: pre-wrap;">
-================================
+            let htmlMsg = `================================
             <b>${sale.branch.toUpperCase()}</b>
       Contact: <b>${sale.branch_phone || 'N/A'}</b>
 ================================
@@ -1141,9 +1139,9 @@
 <b>Payment Method :</b> ${sale.payment_method}
 ================================
     <b>Thank you for your business!</b>
-================================</div>`;
+================================`;
 
-            document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
+            document.getElementById('receiptBoxContainer').textContent = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
@@ -1465,8 +1463,7 @@
             let now = new Date();
             let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
 
-            let htmlMsg = `<div style="font-family: monospace; font-size: 11px; color: #000000; line-height: 1.3; white-space: pre-wrap;">
-================================
+            let htmlMsg = `================================
             <b>${adv.branch.toUpperCase()}</b>
       Contact: <b>${adv.branch_phone || 'N/A'}</b>
 ================================
@@ -1486,10 +1483,10 @@
 <b>Balance Due  :</b> Rs. ${adv.balance_due.toFixed(2)}
 ================================
     <b>Thank you for your business!</b>
-================================</div>`;
+================================`;
 
             document.getElementById('receiptModalTitle').textContent = `Repair Advance Receipt (#${adv.repair_id})`;
-            document.getElementById('receiptBoxContainer').innerHTML = htmlMsg;
+            document.getElementById('receiptBoxContainer').textContent = htmlMsg;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
