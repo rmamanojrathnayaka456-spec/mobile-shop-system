@@ -63,9 +63,27 @@
         .low-stock-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
         .sticker-card { background: #ffffff; color: #1e293b; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; margin-bottom: 12px; }
         
-        #receiptBoxContainer { background: #ffffff !important; color: #000000 !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; width: 58mm !important; max-width: 58mm !important; margin: 0 auto !important; font-size: 11px; line-height: 1.3; white-space: pre-wrap; }
+        /* CLEAN TABLE-BASED RECEIPT STYLING */
+        #receiptBoxContainer { background: #ffffff !important; color: #000000 !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; font-family: 'Segoe UI', Tahoma, sans-serif; text-align: left; max-height: 480px; overflow-y: auto; width: 340px !important; max-width: 100% !important; margin: 0 auto !important; font-size: 13px; line-height: 1.4; }
         
-        /* STRICT 58MM THERMAL PRINTER CSS - PRINTS ONLY RECEIPT TEXT CONTAINER */
+        .rcpt-header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 12px; }
+        .rcpt-header h3 { color: #2563eb; margin: 0 0 4px 0; font-size: 16px; font-weight: 700; }
+        .rcpt-header p { margin: 0; font-size: 12px; color: #475569; }
+        .rcpt-meta { font-size: 12px; margin-bottom: 12px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; }
+        .rcpt-meta div { display: flex; justify-content: space-between; margin-bottom: 3px; }
+        
+        .rcpt-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        .rcpt-table th { background: #2563eb; color: #ffffff; padding: 6px 8px; font-size: 11px; text-transform: uppercase; text-align: left; }
+        .rcpt-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px; vertical-align: top; }
+        .rcpt-item-title { font-weight: 700; color: #0f172a; }
+        .rcpt-item-sub { font-size: 11px; color: #475569; margin-top: 2px; }
+        
+        .rcpt-summary { border-top: 1px dashed #cbd5e1; padding-top: 8px; font-size: 12px; }
+        .rcpt-summary div { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .rcpt-summary .total-row { font-size: 14px; font-weight: 700; color: #2563eb; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; padding: 6px 0; margin-top: 6px; margin-bottom: 6px; }
+        .rcpt-footer { text-align: center; margin-top: 15px; font-size: 12px; font-weight: 600; color: #059669; border-top: 1px dashed #cbd5e1; padding-top: 8px; }
+
+        /* STRICT THERMAL PRINTER CSS */
         @media print {
             body * { visibility: hidden !important; display: none !important; }
             
@@ -74,12 +92,12 @@
             
             #receiptModal > div { width: 58mm !important; max-width: 58mm !important; padding: 0 !important; margin: 0 !important; background: #ffffff !important; border: none !important; box-shadow: none !important; }
             
-            /* HIDE MODAL TITLE AND ALL ACTION BUTTONS DURING PRINT */
             #receiptModalTitle, #printHideBtn { display: none !important; visibility: hidden !important; }
             
-            #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 0 !important; max-height: none !important; overflow: visible !important; font-family: monospace !important; font-size: 10px !important; color: #000 !important; background: #fff !important; }
+            #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 2mm !important; max-height: none !important; overflow: visible !important; font-size: 10px !important; line-height: 1.2 !important; color: #000 !important; background: #fff !important; }
+            .rcpt-table th { background: #000 !important; color: #fff !important; font-size: 9px !important; padding: 3px !important; }
+            .rcpt-table td { padding: 4px 3px !important; font-size: 10px !important; }
             
-            /* BARCODE PRINT STYLES */
             #barcodeModal.printing-active, #barcodeModal.printing-active * { visibility: visible !important; display: block !important; }
             #barcodeModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 58mm !important; background: #ffffff !important; z-index: 999999 !important; }
             #barcodeHideBtn, #barcodeHideBtnControls { display: none !important; }
@@ -400,14 +418,14 @@
     </div>
 
     <div id="receiptModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
-        <div class="printable" style="background:#ffffff; color:#1e293b; padding:25px; border-radius:12px; width:360px; max-width:95%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
-            <h3 style="color:#2563eb; margin-top:0; text-align:center;" id="receiptModalTitle">Receipt Generated!</h3>
+        <div class="printable" style="background:#ffffff; color:#1e293b; padding:20px; border-radius:12px; width:380px; max-width:95%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
+            <h3 style="color:#2563eb; margin-top:0; text-align:center; font-size:16px;" id="receiptModalTitle">Receipt Generated!</h3>
             <div id="receiptBoxContainer"></div>
-            <div id="printHideBtn" style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
-                <button onclick="triggerPrint('receiptModal')" style="background:#f59e0b; color:#fff; flex:1; border-radius:8px; padding:12px;">Print Bill</button>
-                <button onclick="copyReceiptText()" style="background:#2563eb; flex:1; border-radius:8px; padding:12px;">Copy</button>
-                <button onclick="sendWhatsAppMessage()" style="background:#10b981; flex:1; border-radius:8px; padding:12px;">WhatsApp</button>
-                <button onclick="closeReceiptModal()" style="background:#64748b; flex:1; border-radius:8px; padding:12px;">Close</button>
+            <div id="printHideBtn" style="display:flex; gap:8px; margin-top:15px; flex-wrap:wrap;">
+                <button onclick="triggerPrint('receiptModal')" style="background:#f59e0b; color:#fff; flex:1; border-radius:8px; padding:10px; font-size:13px;">Print Bill</button>
+                <button onclick="copyReceiptText()" style="background:#2563eb; flex:1; border-radius:8px; padding:10px; font-size:13px;">Copy</button>
+                <button onclick="sendWhatsAppMessage()" style="background:#10b981; flex:1; border-radius:8px; padding:10px; font-size:13px;">WhatsApp</button>
+                <button onclick="closeReceiptModal()" style="background:#64748b; flex:1; border-radius:8px; padding:10px; font-size:13px;">Close</button>
             </div>
         </div>
     </div>
@@ -1102,51 +1120,67 @@
             let now = new Date();
             let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
 
-            let textMsg = `================================
-            ${sale.branch.toUpperCase()}
-      Contact: ${sale.branch_phone || 'N/A'}
-================================
-       ${receiptTitle.toUpperCase()}
---------------------------------
-Date: ${dateStr}
-Sale ID: ${saleIdDisplay}
-Customer Name : ${sale.customer_name}
-Customer Phone: ${sale.customer_phone}
---------------------------------
-PURCHASED ITEMS:`;
+            let htmlContent = `
+                <div class="rcpt-header">
+                    <h3>${sale.branch.toUpperCase()}</h3>
+                    <p>Contact: ${sale.branch_phone || 'N/A'}</p>
+                    <p style="font-weight:700; margin-top:4px; color:#0f172a;">${receiptTitle.toUpperCase()}</p>
+                </div>
+                <div class="rcpt-meta">
+                    <div><span>Date:</span> <span>${dateStr}</span></div>
+                    <div><span>Sale ID:</span> <span><b>${saleIdDisplay}</b></span></div>
+                    <div><span>Customer:</span> <span>${sale.customer_name}</span></div>
+                    <div><span>Phone:</span> <span>${sale.customer_phone}</span></div>
+                </div>
+                <table class="rcpt-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th style="text-align:center;">Qty</th>
+                            <th style="text-align:right;">Total (Rs.)</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
 
             sale.items.forEach(i => {
                 let displayName = i.name || 'Product Item';
                 if (i.brand && !displayName.includes(i.brand)) {
                     displayName = `[${i.brand}] ${displayName}`;
                 }
-                textMsg += `
-- ${displayName} (Qty: ${i.qty})
-  Warranty    : ${i.warranty || 'No Warranty'}
-  IMEI        : ${i.imei || 'N/A'}
-  Total       : Rs. ${i.subtotal.toFixed(2)}`;
-            if(i.returned_valuation) {
-                textMsg += `
-  Return Val  : -Rs. ${i.returned_valuation.toFixed(2)}`;
-            }
+                htmlContent += `
+                    <tr>
+                        <td>
+                            <div class="rcpt-item-title">${displayName}</div>
+                            <div class="rcpt-item-sub">Warranty: ${i.warranty || 'No Warranty'}</div>
+                            <div class="rcpt-item-sub">IMEI: ${i.imei || 'N/A'}</div>`;
+                if(i.returned_valuation) {
+                    htmlContent += `<div class="rcpt-item-sub" style="color:#7c3aed;">Return Val: -Rs. ${i.returned_valuation.toFixed(2)}</div>`;
+                }
+                htmlContent += `</td>
+                        <td style="text-align:center; font-weight:600;">${i.qty}</td>
+                        <td style="text-align:right; font-weight:600;">Rs. ${i.subtotal.toFixed(2)}</td>
+                    </tr>`;
             });
 
-            textMsg += `
---------------------------------`;
+            htmlContent += `
+                    </tbody>
+                </table>
+                <div class="rcpt-summary">`;
+            
             if(sale.total_discount > 0) {
-                textMsg += `
-TOTAL DISCOUNT : Rs. ${sale.total_discount.toFixed(2)}`;
+                htmlContent += `<div><span>Total Discount:</span> <span style="color:#ef4444;">- Rs. ${sale.total_discount.toFixed(2)}</span></div>`;
             }
-            textMsg += `
-TOTAL PAYABLE  : Rs. ${sale.total_amount.toFixed(2)}
-AMOUNT PAID    : Rs. ${(sale.amount_paid || 0).toFixed(2)}
-CHANGE DUE     : Rs. ${(sale.change_due || 0).toFixed(2)}
-Payment Method : ${sale.payment_method}
-================================
-    Thank you for your business!
-================================`;
+            htmlContent += `
+                    <div class="total-row"><span>TOTAL PAYABLE:</span> <span>Rs. ${sale.total_amount.toFixed(2)}</span></div>
+                    <div><span>Amount Paid:</span> <span>Rs. ${(sale.amount_paid || 0).toFixed(2)}</span></div>
+                    <div><span>Change Due:</span> <span style="color:#059669; font-weight:700;">Rs. ${(sale.change_due || 0).toFixed(2)}</span></div>
+                    <div><span>Payment Method:</span> <span><b>${sale.payment_method}</b></span></div>
+                </div>
+                <div class="rcpt-footer">
+                    Thank you for your business!
+                </div>`;
 
-            document.getElementById('receiptBoxContainer').textContent = textMsg;
+            document.getElementById('receiptBoxContainer').innerHTML = htmlContent;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
@@ -1468,30 +1502,46 @@ Payment Method : ${sale.payment_method}
             let now = new Date();
             let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
 
-            let textMsg = `================================
-            ${adv.branch.toUpperCase()}
-      Contact: ${adv.branch_phone || 'N/A'}
-================================
-     REPAIR ADVANCE RECEIPT
---------------------------------
-Date: ${dateStr}
-Job ID: #${adv.repair_id}
-Customer Name : ${adv.customer_name}
-Customer Phone: ${adv.customer_phone}
---------------------------------
-DEVICE & ISSUE DETAILS:
-- ${adv.device_model} - ${adv.issue}
-  Warranty    : ${adv.warranty}
---------------------------------
-Total Cost   : Rs. ${adv.total_cost.toFixed(2)}
-Advance Paid : Rs. ${adv.advance_cost.toFixed(2)}
-Balance Due  : Rs. ${adv.balance_due.toFixed(2)}
-================================
-    Thank you for your business!
-================================`;
+            let htmlContent = `
+                <div class="rcpt-header">
+                    <h3>${adv.branch.toUpperCase()}</h3>
+                    <p>Contact: ${adv.branch_phone || 'N/A'}</p>
+                    <p style="font-weight:700; margin-top:4px; color:#0f172a;">REPAIR ADVANCE RECEIPT</p>
+                </div>
+                <div class="rcpt-meta">
+                    <div><span>Date:</span> <span>${dateStr}</span></div>
+                    <div><span>Job ID:</span> <span><b>#${adv.repair_id}</b></span></div>
+                    <div><span>Customer:</span> <span>${adv.customer_name}</span></div>
+                    <div><span>Phone:</span> <span>${adv.customer_phone}</span></div>
+                </div>
+                <table class="rcpt-table">
+                    <thead>
+                        <tr>
+                            <th>Device & Issue</th>
+                            <th style="text-align:right;">Total (Rs.)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="rcpt-item-title">${adv.device_model}</div>
+                                <div class="rcpt-item-sub">Issue: ${adv.issue}</div>
+                                <div class="rcpt-item-sub">Warranty: ${adv.warranty}</div>
+                            </td>
+                            <td style="text-align:right; font-weight:600;">Rs. ${adv.total_cost.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="rcpt-summary">
+                    <div><span>Advance Paid:</span> <span style="color:#f59e0b; font-weight:700;">Rs. ${adv.advance_cost.toFixed(2)}</span></div>
+                    <div class="total-row"><span>BALANCE DUE:</span> <span style="color:#ef4444;">Rs. ${adv.balance_due.toFixed(2)}</span></div>
+                </div>
+                <div class="rcpt-footer">
+                    Thank you for your business!
+                </div>`;
 
             document.getElementById('receiptModalTitle').textContent = `Repair Advance Receipt (#${adv.repair_id})`;
-            document.getElementById('receiptBoxContainer').textContent = textMsg;
+            document.getElementById('receiptBoxContainer').innerHTML = htmlContent;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
