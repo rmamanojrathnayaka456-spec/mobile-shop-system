@@ -1097,51 +1097,51 @@
             let now = new Date();
             let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
 
-            let htmlMsg = `================================
-            <b>${sale.branch.toUpperCase()}</b>
-      Contact: <b>${sale.branch_phone || 'N/A'}</b>
+            let textMsg = `================================
+            ${sale.branch.toUpperCase()}
+      Contact: ${sale.branch_phone || 'N/A'}
 ================================
-       <b>${receiptTitle.toUpperCase()}</b>
+       ${receiptTitle.toUpperCase()}
 --------------------------------
-<b>Date:</b> ${dateStr}
-<b>Sale ID:</b> ${saleIdDisplay}
-<b>Customer Name :</b> ${sale.customer_name}
-<b>Customer Phone:</b> ${sale.customer_phone}
+Date: ${dateStr}
+Sale ID: ${saleIdDisplay}
+Customer Name : ${sale.customer_name}
+Customer Phone: ${sale.customer_phone}
 --------------------------------
-<b>PURCHASED ITEMS:</b>`;
+PURCHASED ITEMS:`;
 
             sale.items.forEach(i => {
                 let displayName = i.name || 'Product Item';
                 if (i.brand && !displayName.includes(i.brand)) {
                     displayName = `[${i.brand}] ${displayName}`;
                 }
-                htmlMsg += `
-- <b>${displayName}</b> (Qty: ${i.qty})
-  <b>Warranty</b>    : ${i.warranty || 'No Warranty'}
-  <b>IMEI</b>        : ${i.imei || 'N/A'}
-  <b>Total</b>       : Rs. ${i.subtotal.toFixed(2)}`;
+                textMsg += `
+- ${displayName} (Qty: ${i.qty})
+  Warranty    : ${i.warranty || 'No Warranty'}
+  IMEI        : ${i.imei || 'N/A'}
+  Total       : Rs. ${i.subtotal.toFixed(2)}`;
             if(i.returned_valuation) {
-                htmlMsg += `
-  <b>Return Val</b>  : -Rs. ${i.returned_valuation.toFixed(2)}`;
+                textMsg += `
+  Return Val  : -Rs. ${i.returned_valuation.toFixed(2)}`;
             }
             });
 
-            htmlMsg += `
+            textMsg += `
 --------------------------------`;
             if(sale.total_discount > 0) {
-                htmlMsg += `
-<b>TOTAL DISCOUNT :</b> Rs. ${sale.total_discount.toFixed(2)}`;
+                textMsg += `
+TOTAL DISCOUNT : Rs. ${sale.total_discount.toFixed(2)}`;
             }
-            htmlMsg += `
-<b>TOTAL PAYABLE  :</b> Rs. ${sale.total_amount.toFixed(2)}
-<b>AMOUNT PAID    :</b> Rs. ${(sale.amount_paid || 0).toFixed(2)}
-<b>CHANGE DUE     :</b> Rs. ${(sale.change_due || 0).toFixed(2)}
-<b>Payment Method :</b> ${sale.payment_method}
+            textMsg += `
+TOTAL PAYABLE  : Rs. ${sale.total_amount.toFixed(2)}
+AMOUNT PAID    : Rs. ${(sale.amount_paid || 0).toFixed(2)}
+CHANGE DUE     : Rs. ${(sale.change_due || 0).toFixed(2)}
+Payment Method : ${sale.payment_method}
 ================================
-    <b>Thank you for your business!</b>
+    Thank you for your business!
 ================================`;
 
-            document.getElementById('receiptBoxContainer').textContent = htmlMsg;
+            document.getElementById('receiptBoxContainer').textContent = textMsg;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
@@ -1463,30 +1463,30 @@
             let now = new Date();
             let dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}, ${now.toLocaleTimeString()}`;
 
-            let htmlMsg = `================================
-            <b>${adv.branch.toUpperCase()}</b>
-      Contact: <b>${adv.branch_phone || 'N/A'}</b>
+            let textMsg = `================================
+            ${adv.branch.toUpperCase()}
+      Contact: ${adv.branch_phone || 'N/A'}
 ================================
-     <b>REPAIR ADVANCE RECEIPT</b>
+     REPAIR ADVANCE RECEIPT
 --------------------------------
-<b>Date:</b> ${dateStr}
-<b>Job ID:</b> #${adv.repair_id}
-<b>Customer Name :</b> ${adv.customer_name}
-<b>Customer Phone:</b> ${adv.customer_phone}
+Date: ${dateStr}
+Job ID: #${adv.repair_id}
+Customer Name : ${adv.customer_name}
+Customer Phone: ${adv.customer_phone}
 --------------------------------
-<b>DEVICE & ISSUE DETAILS:</b>
-- <b>${adv.device_model}</b> - ${adv.issue}
-  <b>Warranty</b>    : ${adv.warranty}
+DEVICE & ISSUE DETAILS:
+- ${adv.device_model} - ${adv.issue}
+  Warranty    : ${adv.warranty}
 --------------------------------
-<b>Total Cost   :</b> Rs. ${adv.total_cost.toFixed(2)}
-<b>Advance Paid :</b> Rs. ${adv.advance_cost.toFixed(2)}
-<b>Balance Due  :</b> Rs. ${adv.balance_due.toFixed(2)}
+Total Cost   : Rs. ${adv.total_cost.toFixed(2)}
+Advance Paid : Rs. ${adv.advance_cost.toFixed(2)}
+Balance Due  : Rs. ${adv.balance_due.toFixed(2)}
 ================================
-    <b>Thank you for your business!</b>
+    Thank you for your business!
 ================================`;
 
             document.getElementById('receiptModalTitle').textContent = `Repair Advance Receipt (#${adv.repair_id})`;
-            document.getElementById('receiptBoxContainer').textContent = htmlMsg;
+            document.getElementById('receiptBoxContainer').textContent = textMsg;
             document.getElementById('receiptModal').style.display = 'flex';
         }
 
