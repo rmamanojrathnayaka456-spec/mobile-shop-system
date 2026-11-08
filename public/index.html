@@ -65,7 +65,7 @@
         
         #receiptBoxContainer { background: #ffffff !important; color: #000000 !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-family: monospace; text-align: left; max-height: 450px; overflow-y: auto; width: 58mm !important; max-width: 58mm !important; margin: 0 auto !important; font-size: 11px; line-height: 1.3; white-space: pre-wrap; }
         
-        /* 58MM THERMAL PRINTER STRICT PRINT CSS - EXCLUDES BUTTONS COMPLETELY */
+        /* 58MM THERMAL PRINTER STRICT PRINT CSS - COMPLETELY HIDES ACTION BUTTONS */
         @media print {
             body * { visibility: hidden !important; display: none !important; }
             #receiptModal.printing-active, #receiptModal.printing-active * { visibility: visible !important; display: block !important; }
@@ -76,7 +76,7 @@
             
             #receiptBoxContainer { visibility: visible !important; display: block !important; border: none !important; box-shadow: none !important; width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 1mm !important; max-height: none !important; overflow: visible !important; font-family: monospace !important; font-size: 10px !important; color: #000 !important; background: #fff !important; }
             
-            /* FORCEFULLY HIDE MODAL TITLE, CLOSE & ACTION BUTTONS ON PRINT */
+            /* FORCEFULLY HIDE MODAL TITLE AND BUTTONS ON PRINT */
             #receiptModalTitle, #printHideBtn, #printHideBtn * { display: none !important; visibility: hidden !important; }
             
             .printable { position: relative !important; width: 58mm !important; max-width: 58mm !important; font-family: monospace !important; font-size: 10px !important; color: #000 !important; background: #fff !important; padding: 0 !important; box-shadow: none !important; margin: 0 !important; border: none !important; }
