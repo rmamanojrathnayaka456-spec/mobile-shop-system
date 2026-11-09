@@ -183,12 +183,12 @@ app.get('/api/repair-parts', (req, res) => {
 // Repair Parts Add API (Backend)
 app.post('/api/repair-parts', (req, res) => {
     const { shop_id, part_name, device_model, compatible_device, cost_price, selling_price, stock } = req.body;
-    const compDevice = compatible_device || device_model || '';
+    const devModel = device_model || compatible_device || '';
     const sellPrice = selling_price || 0;
     
     db.query(
-        'INSERT INTO repair_parts (shop_id, part_name, compatible_device, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)',
-        [shop_id, part_name, compDevice, cost_price, sellPrice, stock],
+        'INSERT INTO repair_parts (shop_id, part_name, device_model, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)',
+        [shop_id, part_name, devModel, cost_price, sellPrice, stock],
         (err, result) => {
             if (err) {
                 console.error("Add repair part error:", err);
