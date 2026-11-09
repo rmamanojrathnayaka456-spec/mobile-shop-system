@@ -40,7 +40,6 @@
         .section { display: none; background: var(--section-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); }
         .section.active { display: block; }
         
-        /* SCROLLABLE TABLE CONTAINER */
         .table-responsive { width: 100%; max-height: 420px; overflow-y: auto; overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--container-bg); }
         table { width: 100%; border-collapse: collapse; background: var(--container-bg); white-space: nowrap; }
         th, td { border-bottom: 1px solid var(--border-color); padding: 12px 15px; text-align: left; font-size: 14px; }
@@ -63,14 +62,12 @@
         .low-stock-row { background-color: rgba(245, 158, 11, 0.06) !important; font-weight: 600; }
         .low-stock-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
         
-        /* PROFESSIONAL BARCODE STICKER CARD DESIGN */
         .sticker-card { background: #ffffff !important; color: #000000 !important; padding: 8px 10px; border: 1px dashed #94a3b8; border-radius: 6px; text-align: center; margin-bottom: 10px; width: 50mm; margin-left: auto; margin-right: auto; box-sizing: border-box; }
         .sticker-card h4 { margin: 0 0 2px 0; font-size: 12px; font-weight: 700; color: #000 !important; }
         .sticker-prod-name { font-weight: 700; font-size: 11px; color: #000 !important; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sticker-price { font-weight: 800; font-size: 13px; color: #000 !important; margin-top: 2px; }
         .sticker-card svg { width: 100% !important; height: 36px !important; display: block; margin: 0 auto; }
 
-        /* PROFESSIONAL POS THERMAL RECEIPT CSS */
         #receiptBoxContainer { background: #ffffff !important; color: #000000 !important; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; font-family: 'Segoe UI', Tahoma, sans-serif; text-align: left; max-height: 480px; overflow-y: auto; width: 340px !important; max-width: 100% !important; margin: 0 auto !important; font-size: 13px; line-height: 1.4; }
         
         .rcpt-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px; background: #ffffff !important; }
@@ -90,12 +87,10 @@
         .rcpt-summary .total-row { font-size: 14px; font-weight: 700; color: #000 !important; background: transparent !important; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 0; margin-top: 6px; margin-bottom: 6px; }
         .rcpt-footer { text-align: center; margin-top: 15px; font-size: 12px; font-weight: 600; color: #000 !important; background: transparent !important; border-top: 1px dashed #000; padding-top: 8px; }
 
-        /* STRICT 58MM / 80MM THERMAL PRINTER PRINT CSS */
         @media print {
             body { background: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; }
             body * { visibility: hidden !important; display: none !important; }
             
-            /* WHEN PRINTING RECEIPT */
             #receiptModal.printing-active, #receiptModal.printing-active * { visibility: visible !important; display: block !important; }
             #receiptModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 58mm !important; background: #ffffff !important; z-index: 999999 !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
             #receiptModal.printing-active > div { width: 58mm !important; max-width: 58mm !important; padding: 0 !important; margin: 0 !important; background: #ffffff !important; border: none !important; box-shadow: none !important; }
@@ -104,7 +99,6 @@
             .rcpt-table th { background: #000 !important; color: #fff !important; font-size: 9px !important; padding: 3px !important; }
             .rcpt-table td { padding: 4px 3px !important; font-size: 10px !important; color: #000 !important; background: #fff !important; }
             
-            /* WHEN PRINTING BARCODE STICKER */
             #barcodeModal.printing-active, #barcodeModal.printing-active * { visibility: visible !important; display: block !important; }
             #barcodeModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 50mm !important; background: #ffffff !important; z-index: 999999 !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
             #barcodeModal.printing-active > div { width: 50mm !important; max-width: 50mm !important; padding: 0 !important; margin: 0 !important; background: #ffffff !important; border: none !important; box-shadow: none !important; }
@@ -164,18 +158,29 @@
                 <button type="button" class="cat-btn" onclick="setCategory('Button Phone', '1. Add New Product / Button Phone', this)">Button / Feature Phones</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Accessory', '1. Add New Product / Accessory', this)">Accessories</button>
                 <button type="button" class="cat-btn" onclick="setCategory('Karaoke Box', '1. Add New Product / Karaoke Box', this)">Karaoke Box</button>
+                <button type="button" class="cat-btn" onclick="setCategory('Repair Part', '1. Add New Product / Repair Part', this)">Repair Parts</button>
             </div>
 
             <form id="productForm" onsubmit="addProduct(event)">
                 <input type="hidden" id="pCategory" value="Brand New Phone">
                 <label id="lblModel">Model Name:</label><input type="text" id="pName" placeholder="e.g. Galaxy S24 Ultra" required>
-                <label>Select Brand:</label><input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple">
-                <datalist id="brandList"><option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"></datalist>
-                <label>Select Colour:</label><input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue">
-                <datalist id="colorList"><option value="Black"><option value="Blue"><option value="White"><option value="Red"></datalist>
+                
+                <div id="brandColorGroup">
+                    <label>Select Brand:</label><input type="text" id="pBrand" list="brandList" placeholder="e.g. Samsung, Apple">
+                    <datalist id="brandList"><option value="Samsung"><option value="Apple"><option value="Xiaomi"><option value="Oppo"><option value="Vivo"></datalist>
+                    
+                    <label>Select Colour:</label><input type="text" id="pColor" list="colorList" placeholder="e.g. Black, Blue">
+                    <datalist id="colorList"><option value="Black"><option value="Blue"><option value="White"><option value="Red"></datalist>
+                </div>
+
+                <div id="compDeviceGroup" style="display:none;">
+                    <label>Compatible Device:</label><input type="text" id="pCompatibleDevice" placeholder="e.g. iPhone 11 / Samsung A54">
+                </div>
+
                 <label style="font-weight:600; margin-top:8px; display:block;">Warranty Period:</label>
                 <input type="text" id="pWarranty" list="warrantyList" placeholder="Select Warranty">
                 <datalist id="warrantyList"><option value="No Warranty"><option value="1 Week"><option value="1 Month"><option value="3 Months"><option value="6 Months"><option value="1 Year"></datalist>
+                
                 <label>Cost Price (Rs.):</label><input type="number" id="pCost" placeholder="0.00" step="0.01">
                 <label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01" required>
                 <label>Stock Quantity:</label><input type="number" id="pStock" value="1" required>
@@ -240,7 +245,7 @@
             <input type="text" id="searchStock" placeholder="Search stock by ID, Name, Brand, IMEI..." onkeyup="filterStock()" style="margin-bottom: 15px; border: 2px solid #2563eb;">
             <div class="table-responsive">
                 <table>
-                    <thead><tr><th>ID Code</th><th>Name</th><th>Brand</th><th>Category</th><th>Colour</th><th>Warranty</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
+                    <thead><tr><th>ID Code</th><th>Name</th><th>Brand / Compatible</th><th>Category</th><th>Colour</th><th>Warranty</th><th>Price (Rs.)</th><th>Stock</th><th>IMEI</th><th>Action</th></tr></thead>
                     <tbody id="inventoryTable"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody>
                 </table>
             </div>
@@ -284,11 +289,10 @@
 
         <!-- Tab 5: Repair Jobs -->
         <div id="tab5" class="section">
-            <h3>5. Repair Jobs & Repair Parts Management</h3>
+            <h3>5. Repair Jobs Management</h3>
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" onclick="switchRepairSubTab('list', this)">Repair Jobs List</button>
                 <button class="sub-tab-btn" onclick="switchRepairSubTab('billing', this)">Repair Billing & Checkout</button>
-                <button class="sub-tab-btn" onclick="switchRepairSubTab('parts', this)">Repair Parts Inventory</button>
             </div>
             
             <div id="repListSubSection">
@@ -333,23 +337,6 @@
                             <button type="button" onclick="completeRepairCheckout()" style="background:#10b981; margin-top:20px; padding:14px; border-radius:8px; font-size:15px;">Complete Repair & Print Final Bill</button>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div id="repPartsSubSection" style="display:none;">
-                <form id="repairPartForm" onsubmit="addRepairPart(event)" style="background: var(--container-bg); padding: 20px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px;">
-                    <label>Part Name:</label><input type="text" id="partName" placeholder="e.g. iPhone 11 OLED Display" required>
-                    <label>Compatible Device:</label><input type="text" id="partDevice" placeholder="e.g. iPhone 11 / Samsung A54" required>
-                    <label>Cost Price (Rs.):</label><input type="number" id="partCost" placeholder="0.00" step="0.01" required>
-                    <label>Stock Quantity:</label><input type="number" id="partStock" value="1" min="1" required>
-                    <button type="submit" style="background:#10b981; margin-top:15px; padding:12px; border-radius:8px;">Add Repair Part</button>
-                </form>
-                <input type="text" id="searchRepairParts" placeholder="Search Repair Parts by Name, Device..." onkeyup="filterRepairParts()" style="margin-bottom: 15px; border: 2px solid #2563eb;">
-                <div class="table-responsive">
-                    <table>
-                        <thead><tr><th>Part ID</th><th>Part Name</th><th>Compatible Device</th><th>Cost (Rs.)</th><th>Stock</th><th>Action</th></tr></thead>
-                        <tbody id="repairPartsTable"><tr><td colspan="6" style="text-align:center;">Loading...</td></tr></tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -450,7 +437,6 @@
         let cart = [];
         let allProducts = [];
         let allRepairs = [];
-        let allRepairParts = [];
         let rawSalesData = [];
         let currentSalesFilter = 'all';
         let currentStockFilter = 'all';
@@ -498,7 +484,7 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
                 document.getElementById('userDisplay').textContent = currentUser.shop_name || "SHA MOBILE";
-                loadInventory(); loadSales(); loadRepairs(); loadRepairParts();
+                loadInventory(); loadSales(); loadRepairs();
             }
             setTheme(localStorage.getItem('pos_theme') || 'dark');
         }
@@ -520,12 +506,21 @@
             document.getElementById('categoryTitle').textContent = titleText;
             document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            
             const imeiGroup = document.getElementById('imeiGroup');
             const lblModel = document.getElementById('lblModel');
+            const brandColorGroup = document.getElementById('brandColorGroup');
+            const compDeviceGroup = document.getElementById('compDeviceGroup');
+
             if(cat === 'Accessory' || cat === 'Karaoke Box') {
                 lblModel.textContent = 'Name:'; imeiGroup.style.display = 'none';
+                brandColorGroup.style.display = 'block'; compDeviceGroup.style.display = 'none';
+            } else if(cat === 'Repair Part') {
+                lblModel.textContent = 'Part Name:'; imeiGroup.style.display = 'none';
+                brandColorGroup.style.display = 'none'; compDeviceGroup.style.display = 'block';
             } else {
                 lblModel.textContent = 'Model Name:'; imeiGroup.style.display = 'block';
+                brandColorGroup.style.display = 'block'; compDeviceGroup.style.display = 'none';
             }
         }
 
@@ -549,7 +544,6 @@
             btn.classList.add('active');
             document.getElementById('repListSubSection').style.display = 'none';
             document.getElementById('repBillingSubSection').style.display = 'none';
-            document.getElementById('repPartsSubSection').style.display = 'none';
 
             if(type === 'list') {
                 document.getElementById('repListSubSection').style.display = 'block';
@@ -557,9 +551,6 @@
                 document.getElementById('repBillingSubSection').style.display = 'block';
                 document.getElementById('repBillingSearch').value = '';
                 populateRepairBillingDropdown();
-            } else if(type === 'parts') {
-                document.getElementById('repPartsSubSection').style.display = 'block';
-                loadRepairParts();
             }
         }
 
@@ -617,10 +608,12 @@
                 const isOut = p.stock <= 0;
                 const isLow = p.stock > 0 && p.stock <= 2;
                 const parsed = parseProductItem(p.name);
+                const brandOrComp = p.category === 'Repair Part' ? (p.brand || '-') : (p.brand || '-');
+                
                 tbody.innerHTML += `<tr class="${isOut ? 'out-of-stock' : (isLow ? 'low-stock-row' : '')}">
                     <td><b>#${p.product_code || p.product_id}</b></td>
                     <td>${parsed.name} ${isLow ? '<span class="low-stock-badge">LOW</span>' : ''}</td>
-                    <td>${p.brand || '-'}</td><td>${p.category || '-'}</td><td>${p.color || '-'}</td>
+                    <td>${brandOrComp}</td><td>${p.category || '-'}</td><td>${p.color || '-'}</td>
                     <td><span style="color:#2563eb; font-weight:600;">${parsed.warranty}</span></td>
                     <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
                     <td>${p.stock} ${isOut ? '(OUT)' : ''}</td><td>${p.imei || '-'}</td>
@@ -658,16 +651,22 @@
         async function addProduct(e) {
             e.preventDefault();
             const shopId = currentUser ? currentUser.shop_id : 1;
+            const category = document.getElementById('pCategory').value;
             const baseName = document.getElementById('pName').value.trim();
             const warranty = document.getElementById('pWarranty').value.trim() || 'No Warranty';
             const finalName = `${baseName} [Warranty: ${warranty}]`;
             const stockQty = parseInt(document.getElementById('pStock').value) || 1;
             const price = document.getElementById('pPrice').value;
 
+            let brandVal = document.getElementById('pBrand').value;
+            if(category === 'Repair Part') {
+                brandVal = document.getElementById('pCompatibleDevice').value.trim();
+            }
+
             const data = {
                 shop_id: shopId, name: finalName,
-                brand: document.getElementById('pBrand').value, color: document.getElementById('pColor').value,
-                category: document.getElementById('pCategory').value, cost_price: document.getElementById('pCost').value,
+                brand: brandVal, color: document.getElementById('pColor').value,
+                category: category, cost_price: document.getElementById('pCost').value,
                 selling_price: price, stock: stockQty, imei: document.getElementById('pImei').value || 'N/A'
             };
             const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -711,62 +710,6 @@
             if(!confirm('Delete product?')) return;
             await fetch(`/api/products/${id}`, { method: 'DELETE' });
             loadInventory();
-        }
-
-        async function loadRepairParts() {
-            const shopId = currentUser ? currentUser.shop_id : 1;
-            const res = await fetch(`/api/repair-parts?shop_id=${shopId}`);
-            allRepairParts = await res.json();
-            renderRepairParts(allRepairParts);
-        }
-
-        function renderRepairParts(parts) {
-            const tbody = document.getElementById('repairPartsTable');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            if(parts.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No repair parts found.</td></tr>`; return; }
-            parts.forEach(p => {
-                const isOut = p.stock <= 0;
-                tbody.innerHTML += `<tr class="${isOut ? 'out-of-stock' : ''}">
-                    <td><b>#${p.part_id}</b></td><td>${p.part_name}</td><td>${p.compatible_device || p.device_model || '-'}</td>
-                    <td>Rs. ${parseFloat(p.cost_price).toFixed(2)}</td>
-                    <td>${p.stock} ${isOut ? '(OUT)' : ''}</td>
-                    <td><button onclick="deleteRepairPart(${p.part_id})" style="background:#ef4444; padding:5px 8px; border-radius:6px; font-size:11px;">Delete</button></td>
-                </tr>`;
-            });
-        }
-
-        async function addRepairPart(e) {
-            e.preventDefault();
-            const shopId = currentUser ? currentUser.shop_id : 1;
-            const data = {
-                shop_id: Number(shopId),
-                part_name: document.getElementById('partName').value.trim(),
-                compatible_device: document.getElementById('partDevice').value.trim(),
-                cost_price: parseFloat(document.getElementById('partCost').value) || 0,
-                selling_price: 0,
-                stock: parseInt(document.getElementById('partStock').value) || 1
-            };
-            const res = await fetch('/api/repair-parts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            if(res.ok) {
-                document.getElementById('repairPartForm').reset();
-                loadRepairParts();
-                alert('Repair part added successfully!');
-            } else {
-                const errData = await res.json().catch(() => ({}));
-                alert('Failed to add repair part: ' + (errData.error || 'Unknown error'));
-            }
-        }
-
-        async function deleteRepairPart(id) {
-            if(!confirm('Delete repair part?')) return;
-            await fetch(`/api/repair-parts/${id}`, { method: 'DELETE' });
-            loadRepairParts();
-        }
-
-        function filterRepairParts() {
-            const q = document.getElementById('searchRepairParts').value.toLowerCase();
-            renderRepairParts(allRepairParts.filter(p => p.part_name.toLowerCase().includes(q) || (p.compatible_device || p.device_model || '').toLowerCase().includes(q)));
         }
 
         function toggleCameraScanner() {
@@ -986,7 +929,6 @@
             }
         }
 
-        // --- EXCHANGE BILLING LOGIC ---
         function populateExchangeDropdowns() {
             const retSelect = document.getElementById('exReturnSelect');
             const newSelect = document.getElementById('exNewSelect');
@@ -1129,7 +1071,6 @@
                 loadInventory(); loadSales(); populateExchangeDropdowns();
             }
         }
-        // --- END EXCHANGE LOGIC ---
 
         function generateAutoMessage(sale, receiptTitle = "INVOICE / PURCHASE RECEIPT") {
             let saleIdDisplay = sale.sale_id ? `#${sale.sale_id}` : '#--';
@@ -1722,14 +1663,13 @@
 
         async function exportDataBackup() {
             const shopId = currentUser ? currentUser.shop_id : 1;
-            const [p, s, r, rp] = await Promise.all([
+            const [p, s, r] = await Promise.all([
                 fetch(`/api/products?shop_id=${shopId}`).then(res=>res.json()),
                 fetch('/api/sales').then(res=>res.json()),
-                fetch(`/api/repairs?shop_id=${shopId}`).then(res=>res.json()),
-                fetch(`/api/repair-parts?shop_id=${shopId}`).then(res=>res.json())
+                fetch(`/api/repairs?shop_id=${shopId}`).then(res=>res.json())
             ]);
             const a = document.createElement('a');
-            a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ products: p, sales: s, repairs: r, repair_parts: rp }, null, 2));
+            a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ products: p, sales: s, repairs: r }, null, 2));
             a.download = `backup_${currentUser ? currentUser.shop_name : 'shop'}.json`; document.body.appendChild(a); a.click(); a.remove();
         }
 
@@ -1740,7 +1680,7 @@
             const reader = new FileReader();
             reader.onload = async (e) => {
                 await fetch('/api/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: shopId, ...JSON.parse(e.target.result) }) });
-                alert('Restored successfully!'); loadInventory(); loadSales(); loadRepairs(); loadRepairParts();
+                alert('Restored successfully!'); loadInventory(); loadSales(); loadRepairs();
             };
             reader.readAsText(f);
         }
