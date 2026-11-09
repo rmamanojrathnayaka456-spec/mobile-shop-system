@@ -182,10 +182,10 @@
                 <datalist id="warrantyList"><option value="No Warranty"><option value="1 Week"><option value="1 Month"><option value="3 Months"><option value="6 Months"><option value="1 Year"></datalist>
                 
                 <label>Cost Price (Rs.):</label><input type="number" id="pCost" placeholder="0.00" step="0.01">
-                <label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01" required>
+                <div id="sellingPriceGroup"><label>Selling Price (Rs.):</label><input type="number" id="pPrice" placeholder="0.00" step="0.01"></div>
                 <label>Stock Quantity:</label><input type="number" id="pStock" value="1" required>
                 <div id="imeiGroup"><label>IMEI Number:</label><input type="text" id="pImei" placeholder="Enter IMEI"></div>
-                <button type="submit" style="margin-top: 20px; background: #10b981; padding: 12px; border-radius: 8px;">Add Product & Print Barcode</button>
+                <button type="submit" style="margin-top: 20px; background: #10b981; padding: 12px; border-radius: 8px;" id="addProductBtnText">Add Product & Print Barcode</button>
             </form>
         </div>
 
@@ -413,7 +413,7 @@
             <div id="barcodeHideBtn"><label style="font-weight:bold;">Print Quantity:</label><input type="number" id="bcPrintQty" value="1" min="1" oninput="renderBarcodeStickers()" style="width:100px; text-align:center; font-weight:bold; margin-bottom:15px; border:2px solid #2563eb;"></div>
             <div id="stickersContainer"></div>
             <div id="barcodeHideBtnControls" style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="triggerBarcodePrint()" style="background:#10b981; flex:1; border-radius:8px; padding:10px;">Print</button>
+                <button onclick="triggerBarcodePrint()" style="background:#10b981; flex:1; border-radius:8px; padding:10px;" id="bcPrintBtnText">Print</button>
                 <button onclick="closeBarcodeModal()" style="background:#64748b; flex:1; border-radius:8px; padding:10px;">Close</button>
             </div>
         </div>
@@ -511,16 +511,25 @@
             const lblModel = document.getElementById('lblModel');
             const brandColorGroup = document.getElementById('brandColorGroup');
             const compDeviceGroup = document.getElementById('compDeviceGroup');
+            const sellingPriceGroup = document.getElementById('sellingPriceGroup');
+            const addProductBtnText = document.getElementById('addProductBtnText');
 
             if(cat === 'Accessory' || cat === 'Karaoke Box') {
                 lblModel.textContent = 'Name:'; imeiGroup.style.display = 'none';
                 brandColorGroup.style.display = 'block'; compDeviceGroup.style.display = 'none';
+                sellingPriceGroup.style.display = 'block';
+                addProductBtnText.textContent = 'Add Product & Print Barcode';
             } else if(cat === 'Repair Part') {
                 lblModel.textContent = 'Part Name:'; imeiGroup.style.display = 'none';
                 brandColorGroup.style.display = 'none'; compDeviceGroup.style.display = 'block';
+                sellingPriceGroup.style.display = 'none'; // No selling price needed for repair parts
+                document.getElementById('pPrice').value = '0';
+                addProductBtnText.textContent = 'Add Repair Part';
             } else {
                 lblModel.textContent = 'Model Name:'; imeiGroup.style.display = 'block';
                 brandColorGroup.style.display = 'block'; compDeviceGroup.style.display = 'none';
+                sellingPriceGroup.style.display = 'block';
+                addProductBtnText.textContent = 'Add Product & Print Barcode';
             }
         }
 
@@ -609,17 +618,18 @@
                 const isLow = p.stock > 0 && p.stock <= 2;
                 const parsed = parseProductItem(p.name);
                 const brandOrComp = p.category === 'Repair Part' ? (p.brand || '-') : (p.brand || '-');
+                const priceDisplay = p.category === 'Repair Part' ? 'N/A (Repair Part)' : `Rs. ${parseFloat(p.selling_price).toFixed(2)}`;
                 
                 tbody.innerHTML += `<tr class="${isOut ? 'out-of-stock' : (isLow ? 'low-stock-row' : '')}">
                     <td><b>#${p.product_code || p.product_id}</b></td>
                     <td>${parsed.name} ${isLow ? '<span class="low-stock-badge">LOW</span>' : ''}</td>
                     <td>${brandOrComp}</td><td>${p.category || '-'}</td><td>${p.color || '-'}</td>
                     <td><span style="color:#2563eb; font-weight:600;">${parsed.warranty}</span></td>
-                    <td>Rs. ${parseFloat(p.selling_price).toFixed(2)}</td>
+                    <td>${priceDisplay}</td>
                     <td>${p.stock} ${isOut ? '(OUT)' : ''}</td><td>${p.imei || '-'}</td>
                     <td>
                         <div style="display:flex; gap:6px;">
-                            <button onclick="printExistingBarcode('${parsed.name}', '${p.product_code || p.product_id}', ${p.selling_price})" style="background:#06b6d4; padding:5px 8px; width:auto; font-size:11px; border-radius:6px;">Barcode</button>
+                            ${p.category !== 'Repair Part' ? `<button onclick="printExistingBarcode('${parsed.name}', '${p.product_code || p.product_id}', ${p.selling_price})" style="background:#06b6d4; padding:5px 8px; width:auto; font-size:11px; border-radius:6px;">Barcode</button>` : ''}
                             <button onclick="deleteProduct(${p.product_id})" style="background:#ef4444; padding:5px 8px; width:auto; font-size:11px; border-radius:6px;">Delete</button>
                         </div>
                     </td>
@@ -656,7 +666,7 @@
             const warranty = document.getElementById('pWarranty').value.trim() || 'No Warranty';
             const finalName = `${baseName} [Warranty: ${warranty}]`;
             const stockQty = parseInt(document.getElementById('pStock').value) || 1;
-            const price = document.getElementById('pPrice').value;
+            const price = category === 'Repair Part' ? 0 : (document.getElementById('pPrice').value || 0);
 
             let brandVal = document.getElementById('pBrand').value;
             if(category === 'Repair Part') {
@@ -665,16 +675,20 @@
 
             const data = {
                 shop_id: shopId, name: finalName,
-                brand: brandVal, color: document.getElementById('pColor').value,
-                category: category, cost_price: document.getElementById('pCost').value,
+                brand: brandVal, color: document.getElementById('pColor').value || '',
+                category: category, cost_price: document.getElementById('pCost').value || 0,
                 selling_price: price, stock: stockQty, imei: document.getElementById('pImei').value || 'N/A'
             };
             const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             const result = await res.json();
             if(res.ok) {
-                currentBarcodeData = { shop: currentUser ? currentUser.shop_name : "SHA MOBILE", name: baseName, code: result.product_code, price };
-                document.getElementById('bcPrintQty').value = stockQty;
-                showBarcodeModal();
+                if(category !== 'Repair Part') {
+                    currentBarcodeData = { shop: currentUser ? currentUser.shop_name : "SHA MOBILE", name: baseName, code: result.product_code, price };
+                    document.getElementById('bcPrintQty').value = stockQty;
+                    showBarcodeModal();
+                } else {
+                    alert('Repair Part added successfully to inventory!');
+                }
                 document.getElementById('productForm').reset();
                 loadInventory();
             }
@@ -707,7 +721,7 @@
         }
 
         async function deleteProduct(id) {
-            if(!confirm('Delete product?')) return;
+            if(!confirm('Delete item?')) return;
             await fetch(`/api/products/${id}`, { method: 'DELETE' });
             loadInventory();
         }
@@ -731,7 +745,7 @@
 
         function handleBillingSearch() {
             const query = document.getElementById('billingSearch').value.toLowerCase().trim();
-            const filteredProds = allProducts.filter(p => p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.brand && p.brand.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query)));
+            const filteredProds = allProducts.filter(p => p.category !== 'Repair Part' && (p.name.toLowerCase().includes(query) || (p.product_code && p.product_code.includes(query)) || (p.brand && p.brand.toLowerCase().includes(query)) || (p.imei && p.imei.toLowerCase().includes(query))));
             const filteredReps = allRepairs.filter(r => (r.id || r.repair_id).toString().includes(query) || r.customer_name.toLowerCase().includes(query) || r.customer_phone.includes(query) || r.device_model.toLowerCase().includes(query));
             populateCustomBillingDropdown(filteredProds, filteredReps);
         }
@@ -936,7 +950,7 @@
             retSelect.innerHTML = '';
             newSelect.innerHTML = '';
 
-            allProducts.forEach(p => {
+            allProducts.filter(p => p.category !== 'Repair Part').forEach(p => {
                 const parsed = parseProductItem(p.name);
                 const isOut = p.stock <= 0;
                 const isLow = p.stock > 0 && p.stock <= 2;
@@ -956,7 +970,7 @@
             const q = document.getElementById('exReturnSearch').value.toLowerCase();
             const retSelect = document.getElementById('exReturnSelect');
             retSelect.innerHTML = '';
-            allProducts.filter(p => p.name.toLowerCase().includes(q) || (p.product_code && p.product_code.includes(q))).forEach(p => {
+            allProducts.filter(p => p.category !== 'Repair Part' && (p.name.toLowerCase().includes(q) || (p.product_code && p.product_code.includes(q)))).forEach(p => {
                 const parsed = parseProductItem(p.name);
                 retSelect.innerHTML += `<option value="${p.product_id}">#${p.product_code || p.product_id} - ${parsed.name} (Rs. ${p.selling_price})</option>`;
             });
@@ -977,7 +991,7 @@
             const q = document.getElementById('exNewSearch').value.toLowerCase();
             const newSelect = document.getElementById('exNewSelect');
             newSelect.innerHTML = '';
-            allProducts.filter(p => p.name.toLowerCase().includes(q) || (p.product_code && p.product_code.includes(q))).forEach(p => {
+            allProducts.filter(p => p.category !== 'Repair Part' && (p.name.toLowerCase().includes(q) || (p.product_code && p.product_code.includes(q)))).forEach(p => {
                 const parsed = parseProductItem(p.name);
                 const isOut = p.stock <= 0;
                 const isLow = p.stock > 0 && p.stock <= 2;
