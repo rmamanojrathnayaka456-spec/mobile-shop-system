@@ -92,6 +92,7 @@
 
         /* STRICT 58MM / 80MM THERMAL PRINTER PRINT CSS */
         @media print {
+            body { background: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; }
             body * { visibility: hidden !important; display: none !important; }
             
             /* WHEN PRINTING RECEIPT */
@@ -103,7 +104,7 @@
             .rcpt-table th { background: #000 !important; color: #fff !important; font-size: 9px !important; padding: 3px !important; }
             .rcpt-table td { padding: 4px 3px !important; font-size: 10px !important; color: #000 !important; background: #fff !important; }
             
-            /* WHEN PRINTING BARCODE STICKER (PROFESSIONAL THERMAL LABELS) */
+            /* WHEN PRINTING BARCODE STICKER */
             #barcodeModal.printing-active, #barcodeModal.printing-active * { visibility: visible !important; display: block !important; }
             #barcodeModal.printing-active { position: absolute !important; left: 0 !important; top: 0 !important; width: 50mm !important; background: #ffffff !important; z-index: 999999 !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
             #barcodeModal.printing-active > div { width: 50mm !important; max-width: 50mm !important; padding: 0 !important; margin: 0 !important; background: #ffffff !important; border: none !important; box-shadow: none !important; }
@@ -739,18 +740,21 @@
             e.preventDefault();
             const shopId = currentUser ? currentUser.shop_id : 1;
             const data = {
-                shop_id: shopId,
+                shop_id: Number(shopId),
                 part_name: document.getElementById('partName').value.trim(),
                 device_model: document.getElementById('partDevice').value.trim(),
-                cost_price: document.getElementById('partCost').value,
+                cost_price: parseFloat(document.getElementById('partCost').value) || 0,
                 selling_price: 0,
-                stock: document.getElementById('partStock').value
+                stock: parseInt(document.getElementById('partStock').value) || 1
             };
             const res = await fetch('/api/repair-parts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             if(res.ok) {
                 document.getElementById('repairPartForm').reset();
                 loadRepairParts();
                 alert('Repair part added successfully!');
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                alert('Failed to add repair part: ' + (errData.error || 'Unknown error'));
             }
         }
 
