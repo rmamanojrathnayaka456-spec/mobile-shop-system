@@ -187,7 +187,6 @@ app.post('/api/repair-parts', async (req, res) => {
         const compDevice = compatible_device || device_model || '';
         const sellPrice = selling_price || 0;
         
-        // pool වෙනුවට ඔබේ සර්වර් එකේ ඇති ඩේටාබේස් ඔබ්ජෙක්ට් එක (උදා: db) යොදන්න
         const [result] = await db.query(
             'INSERT INTO repair_parts (shop_id, part_name, compatible_device, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)',
             [shop_id, part_name, compDevice, cost_price, sellPrice, stock]
