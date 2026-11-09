@@ -180,16 +180,22 @@ app.get('/api/repair-parts', (req, res) => {
     });
 });
 
-app.post('/api/repair-parts', (req, res) => {
-    const { shop_id, part_name, device_model, cost_price, selling_price, stock } = req.body;
-    db.query(
-        'INSERT INTO repair_parts (shop_id, part_name, device_model, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)',
-        [shop_id || 1, part_name, device_model || 'Universal', cost_price || 0, selling_price || 0, stock || 1],
-        (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Repair part added', part_id: result.insertId });
-        }
-    );
+// Repair Parts Add API (Backend)
+app.post('/api/repair-parts', async (req, res) => {
+    try {
+        const { shop_id, part_name, device_model, compatible_device, cost_price, selling_price, stock } = req.body;
+        const compDevice = compatible_device || device_model || '';
+        const sellPrice = selling_price || 0;
+        
+        const [result] = await pool.query(
+            'INSERT INTO repair_parts (shop_id, part_name, compatible_device, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)',
+            [shop_id, part_name, compDevice, cost_price, sellPrice, stock]
+        );
+        res.json({ success: true, part_id: result.insertId });
+    } catch (err) {
+        console.error("Add repair part error:", err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.delete('/api/repair-parts/:id', (req, res) => {
