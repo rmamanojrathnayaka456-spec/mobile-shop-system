@@ -522,7 +522,7 @@
             } else if(cat === 'Repair Part') {
                 lblModel.textContent = 'Part Name:'; imeiGroup.style.display = 'none';
                 brandColorGroup.style.display = 'none'; compDeviceGroup.style.display = 'block';
-                sellingPriceGroup.style.display = 'none'; // No selling price needed for repair parts
+                sellingPriceGroup.style.display = 'none';
                 document.getElementById('pPrice').value = '0';
                 addProductBtnText.textContent = 'Add Repair Part';
             } else {
@@ -1253,20 +1253,20 @@
             let waUrl = `https://wa.me/${phone}?text=` + encodeURIComponent(text);
             window.open(waUrl, '_blank');
         }
-
-        async function loadSales() {
-            try {
-                const res = await fetch('/api/sales');
-                const data = await res.json();
-                rawSalesData = Array.isArray(data) ? data : [];
-                populateYearDropdown();
-                applySalesFilters();
-            } catch(e) {
-                console.error("Error loading sales:", e);
-                rawSalesData = [];
-                renderSalesTable([]);
-            }
-        }
+async function loadSales() {
+    try {
+        const shopId = currentUser ? currentUser.shop_id : 1;
+        const res = await fetch(`/api/sales?shop_id=${shopId}`);
+        const data = await res.json();
+        rawSalesData = Array.isArray(data) ? data : [];
+        populateYearDropdown();
+        applySalesFilters();
+    } catch(e) {
+        console.error("Error loading sales:", e);
+        rawSalesData = [];
+        renderSalesTable([]);
+    }
+}
 
         function populateYearDropdown() {
             const yearSelect = document.getElementById('filterYear');
@@ -1299,10 +1299,11 @@
                 const sTotal = parseFloat(s.total_amount || 0);
                 const sDateOnly = s.date_only || (s.created_at ? new Date(s.created_at).toLocaleDateString('en-CA') : '');
                 const sMonthOnly = s.month_only || sDateOnly.substring(0, 7);
+                const sType = (s.sale_type || '').toLowerCase();
 
                 if(sDateOnly === todayStr) {
                     daily += sTotal;
-                    if(s.sale_type === 'Repair' || s.sale_type === 'repair') repair += sTotal;
+                    if(sType === 'repair') repair += sTotal;
                     const pm = (s.payment_method || 'Cash').trim();
                     if(pm === 'Cash') eCash += sTotal;
                     else if(pm === 'Card') eCard += sTotal;
@@ -1326,6 +1327,7 @@
                 const sDateOnly = s.date_only || (s.created_at ? new Date(s.created_at).toLocaleDateString('en-CA') : '');
                 const sMonthOnly = s.month_only || sDateOnly.substring(0, 7);
                 const sYearOnly = s.year_only || sDateOnly.substring(0, 4);
+                const sType = (s.sale_type || '').toLowerCase();
 
                 if(yearVal && sYearOnly !== yearVal) return false;
                 if(monthVal && (!sMonthOnly || sMonthOnly.slice(-2) !== monthVal)) return false;
@@ -1333,7 +1335,7 @@
 
                 if(currentSalesFilter === 'daily' && sDateOnly !== todayStr) return false;
                 if(currentSalesFilter === 'monthly' && sMonthOnly !== thisMonthStr) return false;
-                if(currentSalesFilter === 'repair' && (sDateOnly !== todayStr || (s.sale_type !== 'Repair' && s.sale_type !== 'repair'))) return false;
+                if(currentSalesFilter === 'repair' && (sDateOnly !== todayStr || sType !== 'repair')) return false;
                 if(['Cash', 'Card', 'Bank Transfer', 'Koko'].includes(currentSalesFilter) && (sDateOnly !== todayStr || s.payment_method !== currentSalesFilter)) return false;
 
                 if(query) {
@@ -1377,9 +1379,10 @@
             if(sales.length === 0) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No sales found.</td></tr>`; return; }
             sales.forEach(s => {
                 let badgeClass = 'badge-prod';
-                if(s.sale_type === 'Repair' || s.sale_type === 'repair') badgeClass = 'badge-rep';
-                else if(s.sale_type === 'Mixed') badgeClass = 'badge-mix';
-                else if(s.sale_type === 'Exchange') badgeClass = 'badge-ex';
+                const sTypeLower = (s.sale_type || '').toLowerCase();
+                if(sTypeLower === 'repair') badgeClass = 'badge-rep';
+                else if(sTypeLower === 'mixed') badgeClass = 'badge-mix';
+                else if(sTypeLower === 'exchange') badgeClass = 'badge-ex';
 
                 let displayTime = s.formatted_date || '';
                 if(s.created_at) {
@@ -1526,7 +1529,7 @@
                 </div>
                 <div class="rcpt-footer">
                     Thank you for your business!
-                </div>`;
+                `;
 
             document.getElementById('receiptModalTitle').textContent = `Repair Advance Receipt (#${adv.repair_id})`;
             document.getElementById('receiptBoxContainer').innerHTML = htmlContent;
