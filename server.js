@@ -99,8 +99,17 @@ function initDatabase() {
     db.query(createUsers, () => {});
     db.query(createProducts, () => {});
     db.query(createRepairParts, () => {});
-    db.query(createSales, () => {});
-    db.query(createRepairs, () => {});
+    db.query(createSales, (err) => {
+        if (!err) {
+            // Ensure shop_id column exists in sales if table already existed
+            db.query("ALTER TABLE sales ADD COLUMN shop_id INT DEFAULT 1", () => {});
+        }
+    });
+    db.query(createRepairs, (err) => {
+        if (!err) {
+            db.query("ALTER TABLE repairs ADD COLUMN shop_id INT DEFAULT 1", () => {});
+        }
+    });
 }
 
 // ==================== AUTH API ====================
@@ -203,22 +212,15 @@ app.delete('/api/repair-parts/:id', (req, res) => {
     });
 });
 
-// ==================== SALES API (SHOP ISOLATION FIXED) ====================
+// ==================== SALES API (STRICT SHOP ISOLATION & ID FIX) ====================
 app.get('/api/sales', (req, res) => {
-    const shopId = req.query.shop_id;
-    const query = shopId 
-        ? 'SELECT *, DATE_FORMAT(created_at, "%Y-%m-%d") as date_only, DATE_FORMAT(created_at, "%Y-%m") as month_only, DATE_FORMAT(created_at, "%Y") as year_only FROM sales WHERE shop_id = ? ORDER BY sale_id DESC'
-        : 'SELECT *, DATE_FORMAT(created_at, "%Y-%m-%d") as date_only, DATE_FORMAT(created_at, "%Y-%m") as month_only, DATE_FORMAT(created_at, "%Y") as year_only FROM sales ORDER BY sale_id DESC';
+    const shopId = req.query.shop_id || 1;
+    const query = 'SELECT *, sale_id, invoice_id, DATE_FORMAT(created_at, "%Y-%m-%d") as date_only, DATE_FORMAT(created_at, "%Y-%m") as month_only, DATE_FORMAT(created_at, "%Y") as year_only FROM sales WHERE shop_id = ? ORDER BY 1 DESC';
     
-    const params = shopId ? [shopId] : [];
-
-    db.query(query, params, (err, results) => {
+    db.query(query, [shopId], (err, results) => {
         if (err) {
-            db.query('SELECT * FROM sales ORDER BY 1 DESC', (err2, results2) => {
-                if (err2) return res.json([]);
-                processSalesResults(results2, res);
-            });
-            return;
+            console.error("Sales fetch error:", err);
+            return res.json([]);
         }
         processSalesResults(results, res);
     });
@@ -235,7 +237,7 @@ function processSalesResults(results, res) {
 
         return {
             ...s,
-            sale_id: s.sale_id || s.id,
+            sale_id: s.sale_id || s.invoice_id || s.id,
             items: itemsParsed,
             sale_type: s.sale_type || 'Product',
             payment_method: (s.payment_method || 'Cash').trim(),
@@ -299,7 +301,7 @@ app.post('/api/sales', (req, res) => {
 });
 
 app.delete('/api/sales/:id', (req, res) => {
-    db.query('DELETE FROM sales WHERE sale_id = ?', [req.params.id], (err) => {
+    db.query('DELETE FROM sales WHERE sale_id = ? OR invoice_id = ?', [req.params.id, req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
     });
@@ -340,6 +342,15 @@ app.delete('/api/repairs/:id', (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
     });
+});
+
+// ==================== MANUAL CLEAR / RESET API ====================
+app.post('/api/clear-all', (req, res) => {
+    db.query("DELETE FROM sales", () => {});
+    db.query("DELETE FROM repairs", () => {});
+    db.query("DELETE FROM products", () => {});
+    db.query("DELETE FROM repair_parts", () => {});
+    res.json({ success: true, message: "All data cleared successfully!" });
 });
 
 // ==================== BACKUP & RESTORE API ====================
@@ -392,5 +403,5 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port `${PORT}`);
 });
