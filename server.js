@@ -101,7 +101,6 @@ function initDatabase() {
     db.query(createRepairParts, () => {});
     db.query(createSales, (err) => {
         if (!err) {
-            // Ensure shop_id column exists in sales if table already existed
             db.query("ALTER TABLE sales ADD COLUMN shop_id INT DEFAULT 1", () => {});
         }
     });
@@ -212,7 +211,7 @@ app.delete('/api/repair-parts/:id', (req, res) => {
     });
 });
 
-// ==================== SALES API (STRICT SHOP ISOLATION & ID FIX) ====================
+// ==================== SALES API ====================
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
     const query = 'SELECT *, sale_id, invoice_id, DATE_FORMAT(created_at, "%Y-%m-%d") as date_only, DATE_FORMAT(created_at, "%Y-%m") as month_only, DATE_FORMAT(created_at, "%Y") as year_only FROM sales WHERE shop_id = ? ORDER BY 1 DESC';
@@ -344,15 +343,6 @@ app.delete('/api/repairs/:id', (req, res) => {
     });
 });
 
-// ==================== MANUAL CLEAR / RESET API ====================
-app.post('/api/clear-all', (req, res) => {
-    db.query("DELETE FROM sales", () => {});
-    db.query("DELETE FROM repairs", () => {});
-    db.query("DELETE FROM products", () => {});
-    db.query("DELETE FROM repair_parts", () => {});
-    res.json({ success: true, message: "All data cleared successfully!" });
-});
-
 // ==================== BACKUP & RESTORE API ====================
 app.post('/api/restore', (req, res) => {
     const { shop_id, products, sales, repairs, repair_parts } = req.body;
@@ -403,5 +393,5 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port `${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
