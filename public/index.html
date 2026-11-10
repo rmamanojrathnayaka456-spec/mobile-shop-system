@@ -1253,20 +1253,22 @@
             let waUrl = `https://wa.me/${phone}?text=` + encodeURIComponent(text);
             window.open(waUrl, '_blank');
         }
-async function loadSales() {
-    try {
-        const shopId = currentUser ? currentUser.shop_id : 1;
-        const res = await fetch(`/api/sales?shop_id=${shopId}`);
-        const data = await res.json();
-        rawSalesData = Array.isArray(data) ? data : [];
-        populateYearDropdown();
-        applySalesFilters();
-    } catch(e) {
-        console.error("Error loading sales:", e);
-        rawSalesData = [];
-        renderSalesTable([]);
-    }
-}
+
+        // ==================== LOAD SALES (FIXED) ====================
+        async function loadSales() {
+            try {
+                const shopId = currentUser ? currentUser.shop_id : 1;
+                const res = await fetch(`/api/sales?shop_id=${shopId}`);
+                const data = await res.json();
+                rawSalesData = Array.isArray(data) ? data : [];
+                populateYearDropdown();
+                applySalesFilters();
+            } catch(e) {
+                console.error("Error loading sales:", e);
+                rawSalesData = [];
+                renderSalesTable([]);
+            }
+        }
 
         function populateYearDropdown() {
             const yearSelect = document.getElementById('filterYear');
@@ -1682,7 +1684,7 @@ async function loadSales() {
             const shopId = currentUser ? currentUser.shop_id : 1;
             const [p, s, r] = await Promise.all([
                 fetch(`/api/products?shop_id=${shopId}`).then(res=>res.json()),
-                fetch('/api/sales').then(res=>res.json()),
+                fetch(`/api/sales?shop_id=${shopId}`).then(res=>res.json()),
                 fetch(`/api/repairs?shop_id=${shopId}`).then(res=>res.json())
             ]);
             const a = document.createElement('a');

@@ -100,14 +100,10 @@ function initDatabase() {
     db.query(createProducts, () => {});
     db.query(createRepairParts, () => {});
     db.query(createSales, (err) => {
-        if (!err) {
-            db.query("ALTER TABLE sales ADD COLUMN shop_id INT DEFAULT 1", () => {});
-        }
+        if (!err) db.query("ALTER TABLE sales ADD COLUMN shop_id INT DEFAULT 1", () => {});
     });
     db.query(createRepairs, (err) => {
-        if (!err) {
-            db.query("ALTER TABLE repairs ADD COLUMN shop_id INT DEFAULT 1", () => {});
-        }
+        if (!err) db.query("ALTER TABLE repairs ADD COLUMN shop_id INT DEFAULT 1", () => {});
     });
 }
 
