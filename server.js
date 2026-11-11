@@ -203,7 +203,6 @@ app.delete('/api/repair-parts/:id', (req, res) => {
     });
 });
 
-// FIXED: Sales GET API with shop_id filtering & safe error response
 app.get('/api/sales', (req, res) => {
     const shopId = req.query.shop_id || 1;
     db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY 1 DESC', [shopId], (err, results) => {
@@ -313,14 +312,38 @@ app.get('/api/repairs', (req, res) => {
     });
 });
 
+// FIXED: Repair Advance automatically recorded to sales history table
 app.post('/api/repairs', (req, res) => {
     const { shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost } = req.body;
+    const sId = shop_id || 1;
+    const advCost = parseFloat(advance_cost) || 0;
+    const totCost = parseFloat(total_cost) || 0;
+
     db.query(
         'INSERT INTO repairs (shop_id, customer_name, customer_phone, device_model, issue_description, advance_cost, total_cost) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [shop_id || 1, customer_name, customer_phone, device_model, issue_description, advance_cost || 0, total_cost],
+        [sId, customer_name, customer_phone, device_model, issue_description, advCost, totCost],
         (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Repair added', repair_id: result.insertId });
+            const repairId = result.insertId;
+
+            if (advCost > 0) {
+                const saleItems = JSON.stringify([{
+                    type: 'repair_advance',
+                    repair_id: repairId,
+                    name: `Repair Advance for Job #${repairId} (${device_model})`,
+                    warranty: 'No Warranty',
+                    qty: 1,
+                    subtotal: advCost
+                }]);
+
+                db.query(
+                    'INSERT INTO sales (shop_id, customer_name, customer_phone, payment_method, sale_type, discount, total_amount, sale_items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    [sId, customer_name, customer_phone, 'Cash', 'Repair Advance', 0, advCost, saleItems],
+                    () => {}
+                );
+            }
+
+            res.json({ message: 'Repair added', repair_id: repairId });
         }
     );
 });

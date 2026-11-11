@@ -1254,7 +1254,7 @@
             window.open(waUrl, '_blank');
         }
 
-        // FIXED: loadSales with shop_id parameter and safe JSON text parsing
+        // FIXED: Safe text parsing for sales data to prevent SyntaxError
         async function loadSales() {
             try {
                 const shopId = currentUser ? currentUser.shop_id : 1;
@@ -1306,7 +1306,7 @@
 
                 if(sDateOnly === todayStr) {
                     daily += sTotal;
-                    if(sType === 'repair') repair += sTotal;
+                    if(sType === 'repair' || sType === 'repair advance') repair += sTotal;
                     const pm = (s.payment_method || 'Cash').trim();
                     if(pm === 'Cash') eCash += sTotal;
                     else if(pm === 'Card') eCard += sTotal;
@@ -1338,7 +1338,7 @@
 
                 if(currentSalesFilter === 'daily' && sDateOnly !== todayStr) return false;
                 if(currentSalesFilter === 'monthly' && sMonthOnly !== thisMonthStr) return false;
-                if(currentSalesFilter === 'repair' && (sDateOnly !== todayStr || sType !== 'repair')) return false;
+                if(currentSalesFilter === 'repair' && (sDateOnly !== todayStr || (sType !== 'repair' && sType !== 'repair advance'))) return false;
                 if(['Cash', 'Card', 'Bank Transfer', 'Koko'].includes(currentSalesFilter) && (sDateOnly !== todayStr || s.payment_method !== currentSalesFilter)) return false;
 
                 if(query) {
@@ -1384,6 +1384,7 @@
                 let badgeClass = 'badge-prod';
                 const sTypeLower = (s.sale_type || '').toLowerCase();
                 if(sTypeLower === 'repair') badgeClass = 'badge-rep';
+                else if(sTypeLower === 'repair advance') badgeClass = 'badge-rep';
                 else if(sTypeLower === 'mixed') badgeClass = 'badge-mix';
                 else if(sTypeLower === 'exchange') badgeClass = 'badge-ex';
 
@@ -1409,13 +1410,14 @@
             });
         }
 
+        // FIXED: Safe JSON parsing for deleteSale response to eliminate SyntaxError
         async function deleteSale(id) {
             if(!confirm(`Are you sure you want to delete Sale #${id}?`)) return;
             try {
                 const res = await fetch(`/api/sales/${id}`, { method: 'DELETE' });
                 const text = await res.text();
                 const result = text ? JSON.parse(text) : {};
-                if(res.ok && result.success) {
+                if(res.ok) {
                     await loadSales();
                     alert('Sale deleted successfully!');
                 } else {
@@ -1490,6 +1492,7 @@
 
                 document.getElementById('repairForm').reset();
                 loadRepairs();
+                loadSales();
             }
         }
 
