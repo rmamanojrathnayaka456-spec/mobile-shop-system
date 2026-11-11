@@ -1254,10 +1254,13 @@
             window.open(waUrl, '_blank');
         }
 
+        // FIXED: loadSales with shop_id parameter and safe JSON text parsing
         async function loadSales() {
             try {
-                const res = await fetch('/api/sales');
-                const data = await res.json();
+                const shopId = currentUser ? currentUser.shop_id : 1;
+                const res = await fetch(`/api/sales?shop_id=${shopId}`);
+                const text = await res.text();
+                const data = text ? JSON.parse(text) : [];
                 rawSalesData = Array.isArray(data) ? data : [];
                 populateYearDropdown();
                 applySalesFilters();
@@ -1410,7 +1413,8 @@
             if(!confirm(`Are you sure you want to delete Sale #${id}?`)) return;
             try {
                 const res = await fetch(`/api/sales/${id}`, { method: 'DELETE' });
-                const result = await res.json();
+                const text = await res.text();
+                const result = text ? JSON.parse(text) : {};
                 if(res.ok && result.success) {
                     await loadSales();
                     alert('Sale deleted successfully!');
@@ -1682,7 +1686,7 @@
             const shopId = currentUser ? currentUser.shop_id : 1;
             const [p, s, r] = await Promise.all([
                 fetch(`/api/products?shop_id=${shopId}`).then(res=>res.json()),
-                fetch('/api/sales').then(res=>res.json()),
+                fetch(`/api/sales?shop_id=${shopId}`).then(res=>res.json()),
                 fetch(`/api/repairs?shop_id=${shopId}`).then(res=>res.json())
             ]);
             const a = document.createElement('a');

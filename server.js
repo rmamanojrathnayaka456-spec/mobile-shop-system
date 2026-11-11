@@ -180,7 +180,6 @@ app.get('/api/repair-parts', (req, res) => {
     });
 });
 
-// Repair Parts Add API (Backend)
 app.post('/api/repair-parts', (req, res) => {
     const { shop_id, part_name, device_model, compatible_device, cost_price, selling_price, stock } = req.body;
     const compDevice = compatible_device || device_model || '';
@@ -189,12 +188,9 @@ app.post('/api/repair-parts', (req, res) => {
     
     db.query(
         'INSERT INTO repair_parts (shop_id, part_name, compatible_device, cost_price, selling_price, stock) VALUES (?, ?, ?, ?, ?, ?)',
-        [shop_id, part_name, compDevice, cost_price, sellPrice, stockQty],
+        [shop_id || 1, part_name, compDevice, cost_price, sellPrice, stockQty],
         (err, result) => {
-            if (err) {
-                console.error("Add repair part error:", err);
-                return res.status(500).json({ error: err.message });
-            }
+            if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true, part_id: result.insertId });
         }
     );
@@ -207,8 +203,10 @@ app.delete('/api/repair-parts/:id', (req, res) => {
     });
 });
 
+// FIXED: Sales GET API with shop_id filtering & safe error response
 app.get('/api/sales', (req, res) => {
-    db.query('SELECT * FROM sales ORDER BY 1 DESC', (err, results) => {
+    const shopId = req.query.shop_id || 1;
+    db.query('SELECT * FROM sales WHERE shop_id = ? ORDER BY 1 DESC', [shopId], (err, results) => {
         if (err) {
             console.error("Sales Fetch Error:", err.message);
             return res.json([]);
@@ -274,7 +272,6 @@ app.post('/api/sales', (req, res) => {
                     if (item.type === 'product' && item.product_id) {
                         db.query('UPDATE products SET stock = stock - ? WHERE product_id = ?', [item.qty || 1, item.product_id]);
                     } else if (item.type === 'exchange') {
-                        // If returning an item, restore stock of returned product if applicable, and decrease stock of new item
                         if (item.new_product_id) {
                             db.query('UPDATE products SET stock = stock - ? WHERE product_id = ?', [item.qty || 1, item.new_product_id]);
                         }
